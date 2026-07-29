@@ -1,0 +1,85 @@
+import { Router } from "express";
+import { z } from "zod";
+import { prisma } from "../../lib/prisma";
+import { requireAuth, HttpError } from "../../middleware/auth";
+import { asyncHandler } from "../../middleware/errorHandler";
+import { upload } from "../../middleware/upload";
+import { assertObraVisible } from "../../lib/obraScope";
+
+export const evidenciasRouter = Router();
+evidenciasRouter.use(requireAuth);
+
+const ENTIDADES = ["asistencia", "avance", "remision", "herramienta"] as const;
+
+const metaSchema = z.object({
+  entidadTipo: z.enum(ENTIDADES),
+  entidadId: z.string().min(1),
+});
+
+// Version de test: sube directo al servidor (disco local) en una sola
+// llamada multipart, en vez del patron URL-prefirmada-a-S3 de produccion
+// descrito en la seccion 03. El modelo de datos (bucket/objectKey) es el
+// mismo, asi que migrar a S3 despues es solo cambiar esta ruta.
+evidenciasRouter.post(
+  "/",
+  upload.single("archivo"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) throw new HttpError(400, "Falta el archivo 'archivo'");
+    const { entidadTipo, entidadId } = metaSchema.parse(req.body);
+
+    if (entidadTipo !== "herramienta") {
+      // Para asistencia/avance/remision, la entidad vive dentro de una obra;
+      // se valida acceso a traves de su obra cuando aplica.
+      const obraId = await resolverObraDeEntidad(entidadTipo, entidadId);
+      if (obraId) await assertObraVisible(req.user!, obraId);
+    }
+
+    const evidencia = await prisma.evidencia.create({
+      data: {
+        tenantId: req.user!.tenantId,
+        entidadTipo,
+        entidadId,
+        bucket: "local",
+        objectKey: req.file.filename,
+        tipoMime: req.file.mimetype,
+        tamanoBytes: req.file.size,
+        subidaPor: req.user!.sub,
+      },
+    });
+
+    res.status(201).json({ ...evidencia, url: `/uploads/${req.file.filename}` });
+  })
+);
+
+async function resolverObraDeEntidad(entidadTipo: string, entidadId: string): Promise<string | null> {
+  if (entidadTipo === "asistencia") {
+    const a = await prisma.asistencia.findUnique({ where: { id: entidadId } });
+    return a?.obraId ?? null;
+  }
+  if (entidadTipo === "avance") {
+    const a = await prisma.avance.findUnique({ where: { id: entidadId } });
+    return a?.obraId ?? null;
+  }
+  if (entidadTipo === "remision") {
+    const r = await prisma.remision.findUnique({ where: { id: entidadId } });
+    return r?.obraId ?? null;
+  }
+  return null;
+}
+
+const listQuerySchema = z.object({
+  entidadTipo: z.enum(ENTIDADES),
+  entidadId: z.string().min(1),
+});
+
+evidenciasRouter.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    const q = listQuerySchema.parse(req.query);
+    const evidencias = await prisma.evidencia.findMany({
+      where: { tenantId: req.user!.tenantId, entidadTipo: q.entidadTipo, entidadId: q.entidadId },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(evidencias.map((e) => ({ ...e, url: `/uploads/${e.objectKey}` })));
+  })
+);

@@ -1,0 +1,347 @@
+// OBRA/OS - modelo de datos (version de test, SQLite)
+// Fiel al diseno de la seccion 05 del documento de especificacion.
+// numeric(...) -> Float (SQLite no soporta Decimal nativo en Prisma)
+// enums de texto -> String (SQLite no soporta enums nativos)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  nombre    String
+  slug      String   @unique
+  plan      String   @default("piloto")
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles        Rol[]
+  usuarios     Usuario[]
+  personas     Persona[]
+  obras        Obra[]
+  materiales   Material[]
+  herramientas Herramienta[]
+}
+
+model Rol {
+  id       String  @id @default(uuid())
+  tenantId String?
+  nombre   String // Administrador|Gerente|Supervisor|Oficial|Finanzas|Lectura
+  permisos String? // json libre, informativo
+
+  tenant   Tenant?   @relation(fields: [tenantId], references: [id])
+  usuarios Usuario[]
+
+  @@unique([tenantId, nombre])
+}
+
+model Usuario {
+  id            String    @id @default(uuid())
+  tenantId      String
+  email         String
+  passwordHash  String
+  rolId         String
+  personaId     String?   @unique
+  ultimoLoginAt DateTime?
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  rol           Rol            @relation(fields: [rolId], references: [id])
+  persona       Persona?       @relation(fields: [personaId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  usuarioId String
+  tokenHash String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+model Persona {
+  id             String    @id @default(uuid())
+  tenantId       String
+  nombreCompleto String
+  telefono       String?
+  puesto         String?
+  tipoTrabajador String?
+  costoDiario    Float     @default(0)
+  activo         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+  usuario                 Usuario?
+  obrasResponsable        Obra[]                   @relation("ObraResponsable")
+  obraPersonas             ObraPersona[]
+  asistencias              Asistencia[]
+  avancePersonas           AvancePersona[]
+  herramientaAsignaciones  HerramientaAsignacion[]
+  transacciones            Transaccion[]
+}
+
+model Obra {
+  id                    String    @id @default(uuid())
+  tenantId              String
+  nombre                String
+  cliente               String?
+  ubicacion             String?
+  descripcion           String?
+  observaciones         String?
+  responsableId         String?
+  fechaInicio           DateTime?
+  fechaFinEstimada      DateTime?
+  estado                String    @default("planeada") // planeada|en_ejecucion|pausada|cerrada|cancelada
+  presupuestoAutorizado Float     @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  tenant                  Tenant                   @relation(fields: [tenantId], references: [id])
+  responsable              Persona?                 @relation("ObraResponsable", fields: [responsableId], references: [id])
+  obraPersonas             ObraPersona[]
+  asistencias              Asistencia[]
+  avances                  Avance[]
+  partidas                 PartidaPresupuestal[]
+  transacciones             Transaccion[]
+  remisiones                Remision[]
+  herramientaAsignaciones  HerramientaAsignacion[]
+}
+
+model ObraPersona {
+  id               String    @id @default(uuid())
+  tenantId         String
+  obraId           String
+  personaId        String
+  rolEnObra        String?
+  fechaAsignacion  DateTime  @default(now())
+  activo           Boolean   @default(true)
+  costoDiarioObra  Float?
+
+  obra    Obra    @relation(fields: [obraId], references: [id])
+  persona Persona @relation(fields: [personaId], references: [id])
+
+  @@unique([obraId, personaId])
+}
+
+model Asistencia {
+  id               String   @id @default(uuid())
+  tenantId         String
+  obraId           String
+  personaId        String
+  fecha            DateTime
+  horaLlegada      String
+  registradoPor    String
+  geolocalizacion  String?
+  observaciones    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  obra           Obra            @relation(fields: [obraId], references: [id])
+  persona        Persona         @relation(fields: [personaId], references: [id])
+  transaccion    Transaccion?
+  avancePersonas AvancePersona[]
+
+  @@unique([obraId, personaId, fecha])
+}
+
+model Avance {
+  id            String    @id @default(uuid())
+  tenantId      String
+  obraId        String
+  fecha         DateTime
+  descripcion   String
+  registradoPor String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  obra           Obra            @relation(fields: [obraId], references: [id])
+  avancePersonas AvancePersona[]
+}
+
+model AvancePersona {
+  id            String @id @default(uuid())
+  avanceId      String
+  personaId     String
+  asistenciaId  String
+
+  avance     Avance     @relation(fields: [avanceId], references: [id])
+  persona    Persona    @relation(fields: [personaId], references: [id])
+  asistencia Asistencia @relation(fields: [asistenciaId], references: [id])
+
+  @@unique([avanceId, personaId])
+}
+
+model Evidencia {
+  id           String   @id @default(uuid())
+  tenantId     String
+  entidadTipo  String // asistencia|avance|remision|herramienta
+  entidadId    String
+  bucket       String   @default("local")
+  objectKey    String
+  tipoMime     String?
+  tamanoBytes  Int?
+  subidaPor    String
+  createdAt    DateTime @default(now())
+}
+
+model PartidaPresupuestal {
+  id                     String    @id @default(uuid())
+  tenantId               String
+  obraId                 String
+  codigo                 String
+  nombre                 String
+  descripcion            String?
+  tipo                   String?
+  presupuestoInicial     Float     @default(0)
+  presupuestoActualizado Float     @default(0)
+  estado                 String    @default("activa")
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  obra          Obra          @relation(fields: [obraId], references: [id])
+  transacciones Transaccion[]
+  remisiones    Remision[]
+}
+
+model Transaccion {
+  id             String    @id @default(uuid())
+  tenantId       String
+  obraId         String
+  partidaId      String
+  tipo           String // presupuesto_inicial|ajuste_presupuesto|costo_mano_obra|costo_material|otro_costo|devolucion
+  monto          Float
+  personaId      String?
+  asistenciaId   String?   @unique
+  remisionId     String?
+  registradoPor  String
+  descripcion    String?
+  motivoAjuste   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  updatedBy      String?
+
+  obra       Obra        @relation(fields: [obraId], references: [id])
+  partida    PartidaPresupuestal @relation(fields: [partidaId], references: [id])
+  persona    Persona?    @relation(fields: [personaId], references: [id])
+  asistencia Asistencia? @relation(fields: [asistenciaId], references: [id])
+  remision   Remision?   @relation(fields: [remisionId], references: [id])
+}
+
+model Remision {
+  id            String    @id @default(uuid())
+  tenantId      String
+  obraId        String
+  partidaId     String
+  proveedor     String
+  folio         String?
+  fecha         DateTime
+  costoTotal    Float     @default(0)
+  registradoPor String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  obra          Obra                @relation(fields: [obraId], references: [id])
+  partida       PartidaPresupuestal @relation(fields: [partidaId], references: [id])
+  materiales    RemisionMaterial[]
+  transacciones Transaccion[]
+}
+
+model RemisionMaterial {
+  id             String @id @default(uuid())
+  remisionId     String
+  materialId     String
+  cantidad       Float
+  costoUnitario  Float
+  costoTotal     Float
+
+  remision Remision @relation(fields: [remisionId], references: [id])
+  material Material @relation(fields: [materialId], references: [id])
+}
+
+model Material {
+  id        String  @id @default(uuid())
+  tenantId  String
+  nombre    String
+  unidad    String?
+  categoria String?
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id])
+  remisionMateriales RemisionMaterial[]
+}
+
+model Herramienta {
+  id           String    @id @default(uuid())
+  tenantId     String
+  codigo       String
+  nombre       String
+  descripcion  String?
+  marca        String?
+  modelo       String?
+  numeroSerie  String?
+  estado       String    @default("disponible") // disponible|asignada|mantenimiento|baja
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id])
+  asignaciones HerramientaAsignacion[]
+
+  @@unique([tenantId, codigo])
+}
+
+model HerramientaAsignacion {
+  id               String    @id @default(uuid())
+  tenantId         String
+  herramientaId    String
+  obraId           String?
+  personaId        String?
+  custodioNombre   String? // nombre libre del responsable cuando no es una Persona registrada en el catalogo
+  fechaAsignacion  DateTime  @default(now())
+  fechaDevolucion  DateTime?
+  observaciones    String?
+
+  herramienta Herramienta @relation(fields: [herramientaId], references: [id])
+  obra        Obra?       @relation(fields: [obraId], references: [id])
+  persona     Persona?    @relation(fields: [personaId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  usuarioId   String
+  entidadTipo String
+  entidadId   String
+  accion      String // crear|actualizar|eliminar|aprobar
+  cambios     String? // json diff antes/despues
+  createdAt   DateTime @default(now())
+}
+
+model Notificacion {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tipo      String
+  obraId    String?
+  mensaje   String
+  leida     Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
