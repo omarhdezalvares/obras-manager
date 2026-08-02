@@ -60,18 +60,6 @@ export function Login() {
             {loading ? "Entrando…" : "Entrar"}
           </Button>
         </form>
-
-        <div className="mt-6 rounded-lg border border-dashed border-black/15 bg-white/60 p-4 text-xs text-ink-soft">
-          <p className="mb-1 font-mono uppercase tracking-wide">Usuarios de demo (contraseña: obraos2026)</p>
-          <ul className="space-y-0.5">
-            <li>edgar@piloto.test — Administrador</li>
-            <li>lucia@piloto.test — Gerente de Proyecto</li>
-            <li>marco@piloto.test — Supervisor</li>
-            <li>ivan@piloto.test / rosa@piloto.test — Oficial</li>
-            <li>karla@piloto.test — Finanzas</li>
-            <li>auditoria@piloto.test — Solo lectura</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
