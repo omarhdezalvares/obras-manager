@@ -1,4 +1,6 @@
 import "dotenv/config";
+import fs from "fs";
+import path from "path";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -52,6 +54,17 @@ app.use("/api/obras/:obraId/avances", avancesRouter);
 app.use("/api/obras/:obraId/partidas", partidasRouter);
 app.use("/api/obras/:obraId/transacciones", transaccionesRouter);
 app.use("/api/obras/:obraId/remisiones", remisionesRouter);
+
+// Build estatico del frontend (web/dist), copiado a /app/web-dist en la
+// imagen de produccion. En desarrollo esta carpeta no existe: Vite sirve
+// el frontend en su propio puerto (5173) via proxy, asi que se omite.
+const webDistDir = path.resolve(__dirname, "../web-dist");
+if (fs.existsSync(webDistDir)) {
+  app.use(express.static(webDistDir));
+  app.get(/^(?!\/api|\/uploads).*/, (_req, res) => {
+    res.sendFile(path.join(webDistDir, "index.html"));
+  });
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);
