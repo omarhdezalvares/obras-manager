@@ -58,3 +58,11 @@ export const REPORTE_EXPORT_FINANCIERO: RoleName[] = [ROLES.ADMIN, ROLES.FINANZA
 
 // Administracion SaaS (gestion de tenants) - solo Administrador en el piloto.
 export const SAAS_ADMIN: RoleName[] = [ROLES.ADMIN];
+
+// Modulo de Seguridad: alta, edicion, activacion/desactivacion de usuarios
+// y restablecimiento de contrasena. Solo Administrador.
+export const USUARIO_GESTION: RoleName[] = [ROLES.ADMIN];
+
+// Perfil de empresa (razon social, RFC, direccion, contacto). Cualquier rol
+// autenticado lo puede consultar; solo Administrador lo edita.
+export const EMPRESA_GESTION: RoleName[] = [ROLES.ADMIN];

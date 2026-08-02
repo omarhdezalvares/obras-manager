@@ -172,6 +172,33 @@ export interface HerramientaAsignacion {
   persona?: Persona | null;
 }
 
+export interface EmpresaPerfil {
+  id: string;
+  nombre: string;
+  rfc: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  correoContacto: string | null;
+  plan: string;
+}
+
+export interface UsuarioAdmin {
+  id: string;
+  email: string;
+  activo: boolean;
+  ultimoLoginAt: string | null;
+  createdAt: string;
+  rolId: string;
+  rolNombre: RoleName;
+  personaId: string | null;
+  personaNombre: string | null;
+}
+
+export interface RolOption {
+  id: string;
+  nombre: RoleName;
+}
+
 export interface Notificaciones {
   guardadas: { id: string; tipo: string; mensaje: string; createdAt: string }[];
   sinActividad: { obraId: string; mensaje: string }[];

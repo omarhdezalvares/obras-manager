@@ -13,13 +13,17 @@ datasource db {
 }
 
 model Tenant {
-  id        String   @id @default(uuid())
-  nombre    String
-  slug      String   @unique
-  plan      String   @default("piloto")
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  nombre         String
+  slug           String   @unique
+  plan           String   @default("piloto")
+  activo         Boolean  @default(true)
+  rfc            String?
+  direccion      String?
+  telefono       String?
+  correoContacto String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   roles        Rol[]
   usuarios     Usuario[]

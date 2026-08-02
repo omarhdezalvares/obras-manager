@@ -11,12 +11,14 @@ import { Reportes } from "./pages/Reportes";
 import { MisObras } from "./pages/MisObras";
 import { MisHerramientas } from "./pages/MisHerramientas";
 import { Historial } from "./pages/Historial";
+import { Seguridad } from "./pages/Seguridad";
+import { Empresa } from "./pages/Empresa";
 import { ProcesoSelector } from "./pages/oficial/ProcesoSelector";
 import { AsistenciaWizard } from "./pages/oficial/AsistenciaWizard";
 import { EvidenciaWizard } from "./pages/oficial/EvidenciaWizard";
 
 function Loading() {
-  return <div className="flex min-h-screen items-center justify-center text-ink-soft">Cargando OBRA/OS…</div>;
+  return <div className="flex min-h-screen items-center justify-center text-ink-soft">Cargando Bitácora…</div>;
 }
 
 export default function App() {
@@ -43,6 +45,14 @@ export default function App() {
         <Route path="/personas" element={<Personas />} />
         <Route path="/herramientas" element={<Herramientas />} />
         <Route path="/reportes" element={<Reportes />} />
+        <Route
+          path="/seguridad"
+          element={usuario.rol === "Administrador" ? <Seguridad /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/empresa"
+          element={usuario.rol === "Administrador" ? <Empresa /> : <Navigate to="/" replace />}
+        />
         <Route path="/mis-obras" element={<MisObras />} />
         <Route path="/mis-obras/:obraId" element={<ProcesoSelector />} />
         <Route path="/mis-obras/:obraId/asistencia" element={<AsistenciaWizard />} />

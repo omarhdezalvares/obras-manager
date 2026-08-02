@@ -19,6 +19,8 @@ import { herramientasRouter } from "./modules/herramientas/herramientas.routes";
 import { reportesRouter } from "./modules/reportes/reportes.routes";
 import { notificacionesRouter } from "./modules/notificaciones/notificaciones.routes";
 import { historialRouter } from "./modules/historial/historial.routes";
+import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
+import { empresaRouter } from "./modules/empresa/empresa.routes";
 
 const app = express();
 
@@ -29,7 +31,7 @@ app.use(express.json({ limit: "5mb" }));
 // Evidencias servidas como estaticos locales (ver middleware/upload.ts).
 app.use("/uploads", express.static(env.uploadDir));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, service: "obra-os-api" }));
+app.get("/api/health", (_req, res) => res.json({ ok: true, service: "bitacora-api" }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/obras", obrasRouter);
@@ -40,6 +42,8 @@ app.use("/api/evidencias", evidenciasRouter);
 app.use("/api/reportes", reportesRouter);
 app.use("/api/notificaciones", notificacionesRouter);
 app.use("/api/mi-historial", historialRouter);
+app.use("/api/usuarios", usuariosRouter);
+app.use("/api/empresa", empresaRouter);
 
 // Rutas anidadas por obra (modulo modular: cada dominio vive en su propio
 // router, montado bajo /obras/:obraId/<dominio>, seccion 03).

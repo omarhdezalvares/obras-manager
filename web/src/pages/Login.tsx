@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { apiErrorMessage } from "../lib/api";
 import { Button, Input, Label } from "../components/ui";
+import { LogoMark } from "../components/Icons";
 
 export function Login() {
   const { login } = useAuth();
@@ -24,11 +25,12 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F0F3F4] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F1EEE7] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">Plataforma de control de obras</p>
-          <h1 className="mt-1 text-3xl font-semibold text-ink">OBRA/OS</h1>
+          <LogoMark className="mx-auto h-9 w-9 text-accent" />
+          <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">Plataforma de control de obras</p>
+          <h1 className="mt-1 text-3xl font-semibold text-ink">Bitácora</h1>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-black/10 bg-white p-6 shadow-sm">
