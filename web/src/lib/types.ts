@@ -105,6 +105,7 @@ export interface Evidencia {
   entidadId: string;
   url: string;
   tipoMime: string | null;
+  subidaPor: string;
   createdAt: string;
 }
 

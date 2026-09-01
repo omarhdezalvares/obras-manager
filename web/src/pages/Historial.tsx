@@ -35,7 +35,7 @@ export function Historial() {
 
       <div>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Evidencias recientes</h2>
-        {query.data?.avances.length === 0 && <EmptyState>Sin avances registrados todavia.</EmptyState>}
+        {query.data?.avances.length === 0 && <EmptyState>Sin evidencias registradas todavia.</EmptyState>}
         <div className="space-y-2">
           {query.data?.avances.map((a) => (
             <Card key={a.id}>

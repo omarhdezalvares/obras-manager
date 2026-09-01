@@ -21,7 +21,7 @@ export function MisObras() {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-ink">Mis obras</h1>
-        <p className="text-sm text-ink-soft">Toca una obra para registrar tu asistencia o el avance de hoy.</p>
+        <p className="text-sm text-ink-soft">Toca una obra para registrar tu asistencia o la evidencia de hoy.</p>
       </div>
 
       {query.data?.length === 0 && <EmptyState>Todavia no estas asignado a ninguna obra. Pide al Administrador que te asigne.</EmptyState>}

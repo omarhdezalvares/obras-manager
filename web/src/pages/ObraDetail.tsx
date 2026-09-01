@@ -25,7 +25,15 @@ function pctTone(pct: number): "ok" | "warn" | "crit" {
   return "ok";
 }
 
-type TabKey = "resumen" | "personas" | "asistencias" | "avances" | "presupuesto" | "transacciones" | "remisiones" | "herramientas";
+type TabKey =
+  | "resumen"
+  | "personas"
+  | "asistencias"
+  | "avances"
+  | "presupuesto"
+  | "transacciones"
+  | "remisiones"
+  | "herramientas";
 
 export function ObraDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,7 +63,7 @@ export function ObraDetail() {
   const tabs: { key: TabKey; label: string; visible: boolean }[] = [
     { key: "resumen", label: "Resumen", visible: true },
     { key: "asistencias", label: "Asistencias", visible: true },
-    { key: "avances", label: "Avances", visible: true },
+    { key: "avances", label: "Evidencias", visible: true },
     { key: "personas", label: "Personas", visible: !!usuario },
     { key: "presupuesto", label: "Presupuesto", visible: verPresupuesto },
     { key: "transacciones", label: "Transacciones", visible: verTransacciones },
@@ -121,7 +129,9 @@ export function ObraDetail() {
         {tab === "asistencias" && (
           <AsistenciasTab obraId={id} obraPersonas={obra.obraPersonas} puedeOperar={!!esOperativo} verFinanciero={verPresupuesto} />
         )}
-        {tab === "avances" && <AvancesTab obraId={id} puedeOperar={!!esOperativo} />}
+        {tab === "avances" && (
+          <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={usuario?.rol === "Administrador"} />
+        )}
         {tab === "presupuesto" && obra.financiero && (
           <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />
         )}
@@ -165,7 +175,7 @@ function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; 
       )}
       {esOperativo && (
         <p className="text-xs text-ink-soft">
-          Usa las pestañas "Asistencias" y "Avances" para capturar el registro diario de campo desde aqui.
+          Usa las pestañas "Asistencias" y "Evidencias" para capturar el registro diario de campo desde aqui.
         </p>
       )}
     </div>

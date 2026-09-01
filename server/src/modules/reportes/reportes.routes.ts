@@ -121,13 +121,13 @@ async function construirHoja(
   };
 
   if (tipo === "avances") {
-    const sheet = workbook.addWorksheet("Avances");
+    const sheet = workbook.addWorksheet("Evidencias");
     sheet.columns = [
       { header: "Obra", key: "obra", width: 24 },
       { header: "Fecha", key: "fecha", width: 14 },
       { header: "Descripcion", key: "descripcion", width: 50 },
       { header: "Personas presentes", key: "personas", width: 40 },
-      { header: "Evidencias", key: "evidencias", width: 12 },
+      { header: "Fotos", key: "evidencias", width: 12 },
     ];
     const avances = await prisma.avance.findMany({
       where: { ...obraFk, fecha: rangoFecha, deletedAt: null },

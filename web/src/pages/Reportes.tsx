@@ -8,7 +8,7 @@ import { Button, Card, Input, Label, Select } from "../components/ui";
 const TIPOS_FINANCIEROS = new Set(["presupuesto-vs-real", "materiales-remision", "costos-obra", "transacciones"]);
 
 const TODOS_LOS_TIPOS: { value: string; label: string }[] = [
-  { value: "avances", label: "Avances por obra" },
+  { value: "avances", label: "Evidencias por obra" },
   { value: "asistencias-obra", label: "Asistencias por obra" },
   { value: "asistencias-persona", label: "Asistencias por persona" },
   { value: "general-equipo", label: "General de equipo" },

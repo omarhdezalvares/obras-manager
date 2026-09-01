@@ -54,7 +54,7 @@ notificacionesRouter.get(
       if (count === 0) {
         incompletos.push({
           obraId: avance.obraId,
-          mensaje: `Avance del ${avance.fecha.toISOString().slice(0, 10)} en "${avance.obra.nombre}" sin fotos adjuntas`,
+          mensaje: `Evidencia del ${avance.fecha.toISOString().slice(0, 10)} en "${avance.obra.nombre}" sin fotos adjuntas`,
         });
       }
     }

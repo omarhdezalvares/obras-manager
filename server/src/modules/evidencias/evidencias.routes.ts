@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
@@ -5,6 +7,9 @@ import { requireAuth, HttpError } from "../../middleware/auth";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { upload } from "../../middleware/upload";
 import { assertObraVisible } from "../../lib/obraScope";
+import { writeAuditLog } from "../../lib/audit";
+import { ROLES } from "../../lib/roles";
+import { env } from "../../env";
 
 export const evidenciasRouter = Router();
 evidenciasRouter.use(requireAuth);
@@ -81,5 +86,45 @@ evidenciasRouter.get(
       orderBy: { createdAt: "desc" },
     });
     res.json(evidencias.map((e) => ({ ...e, url: `/uploads/${e.objectKey}` })));
+  })
+);
+
+// Permite corregir un registro equivocado (foto borrosa, entidad incorrecta,
+// etc). El Oficial solo puede borrar lo que el mismo subio; el resto de los
+// roles operativos (Administrador/Gerente/Supervisor/Finanzas) puede borrar
+// cualquier evidencia dentro de su alcance de obras. Solo lectura nunca borra.
+evidenciasRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const evidencia = await prisma.evidencia.findFirst({
+      where: { id: req.params.id, tenantId: req.user!.tenantId },
+    });
+    if (!evidencia) throw new HttpError(404, "Evidencia no encontrada");
+
+    if (evidencia.entidadTipo !== "herramienta") {
+      const obraId = await resolverObraDeEntidad(evidencia.entidadTipo, evidencia.entidadId);
+      if (obraId) await assertObraVisible(req.user!, obraId);
+    }
+
+    const rol = req.user!.rol;
+    const esPropia = evidencia.subidaPor === req.user!.sub;
+    if (rol === ROLES.LECTURA) throw new HttpError(403, "El rol Solo lectura no puede eliminar evidencias");
+    if (rol === ROLES.OFICIAL && !esPropia) throw new HttpError(403, "Solo puedes eliminar evidencias que tu mismo subiste");
+
+    await prisma.evidencia.delete({ where: { id: evidencia.id } });
+    if (evidencia.bucket === "local") {
+      fs.unlink(path.join(env.uploadDir, evidencia.objectKey), () => {});
+    }
+
+    await writeAuditLog({
+      tenantId: req.user!.tenantId,
+      usuarioId: req.user!.sub,
+      entidadTipo: "evidencia",
+      entidadId: evidencia.id,
+      accion: "eliminar",
+      cambios: { entidadTipo: evidencia.entidadTipo, entidadId: evidencia.entidadId, objectKey: evidencia.objectKey },
+    });
+
+    res.status(204).send();
   })
 );

@@ -39,7 +39,7 @@ export function ProcesoSelector() {
           <Card className="flex min-h-[160px] flex-col items-center justify-center gap-2 text-center hover:border-accent">
             <span className="text-4xl">📸</span>
             <span className="text-lg font-semibold text-ink">Evidencia</span>
-            <span className="text-xs text-ink-soft">Describe el avance. Foto obligatoria.</span>
+            <span className="text-xs text-ink-soft">Describe el trabajo realizado. Foto obligatoria.</span>
           </Card>
         </Link>
       </div>

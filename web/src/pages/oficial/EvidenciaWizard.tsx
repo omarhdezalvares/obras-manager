@@ -68,8 +68,8 @@ export function EvidenciaWizard() {
               <Input type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} max={hoyISO()} />
             </div>
             <div>
-              <Label>¿Qué se avanzó?</Label>
-              <Textarea required rows={4} placeholder="Describe el avance de hoy..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+              <Label>¿Qué se hizo?</Label>
+              <Textarea required rows={4} placeholder="Describe el trabajo de hoy..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
             </div>
             {error && <p className="text-sm text-crit">{error}</p>}
             <Button type="submit" className="w-full" disabled={mutation.isPending}>
