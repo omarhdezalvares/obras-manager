@@ -16,24 +16,24 @@ historialRouter.get(
       return;
     }
 
-    const [asistencias, avancePersonas] = await Promise.all([
+    const [asistencias, avances] = await Promise.all([
       prisma.asistencia.findMany({
         where: { tenantId: req.user!.tenantId, personaId: req.user!.personaId },
         include: { obra: true, transaccion: true },
         orderBy: { fecha: "desc" },
         take: 20,
       }),
-      prisma.avancePersona.findMany({
-        where: { personaId: req.user!.personaId },
-        include: { avance: { include: { obra: true } } },
-        orderBy: { id: "desc" },
+      // Por "registradoPor" (quien la escribio), no por vinculo de asistencia:
+      // ese vinculo se recalcula si la fecha de la evidencia se edita despues
+      // y podria dejar de incluir a quien la registro originalmente.
+      prisma.avance.findMany({
+        where: { tenantId: req.user!.tenantId, registradoPor: req.user!.sub, deletedAt: null },
+        include: { obra: true },
+        orderBy: { fecha: "desc" },
         take: 20,
       }),
     ]);
 
-    res.json({
-      asistencias,
-      avances: avancePersonas.map((ap) => ap.avance),
-    });
+    res.json({ asistencias, avances });
   })
 );

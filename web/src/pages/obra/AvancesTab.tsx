@@ -32,11 +32,13 @@ export function AvancesTab({
   esAdmin: boolean;
 }) {
   const qc = useQueryClient();
+  const [fecha, setFecha] = useState(hoyISO());
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
   const [errorFotos, setErrorFotos] = useState<string | null>(null);
   const [descargandoFotos, setDescargandoFotos] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["avances", obraId],
@@ -44,9 +46,10 @@ export function AvancesTab({
   });
 
   const mutation = useMutation({
-    mutationFn: () => api.post(`/obras/${obraId}/avances`, { fecha: hoyISO(), descripcion }),
+    mutationFn: () => api.post(`/obras/${obraId}/avances`, { fecha, descripcion }),
     onSuccess: (res) => {
       setDescripcion("");
+      setFecha(hoyISO());
       setUltimoId(res.data.id);
       qc.invalidateQueries({ queryKey: ["avances", obraId] });
     },
@@ -76,15 +79,20 @@ export function AvancesTab({
     <div className="space-y-4">
       {puedeOperar && (
         <Card>
-          <h2 className="mb-1 font-semibold text-ink">Registrar evidencia — {hoyISO()}</h2>
+          <h2 className="mb-1 font-semibold text-ink">Registrar evidencia</h2>
           <p className="mb-3 text-xs text-ink-soft">
-            Se vincula automaticamente con las personas que registraron asistencia hoy en esta obra.
+            Selecciona la fecha y describe lo realizado. Se vincula automaticamente con las personas que registraron
+            asistencia ese dia en esta obra.
           </p>
           <form onSubmit={onSubmit} className="space-y-3">
+            <div className="max-w-[200px]">
+              <Label>Fecha</Label>
+              <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            </div>
             <Textarea
               required
               rows={3}
-              placeholder="Que se hizo hoy..."
+              placeholder="Que se hizo ese dia..."
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
             />
@@ -114,28 +122,86 @@ export function AvancesTab({
         {errorFotos && <p className="mb-2 text-sm text-crit">{errorFotos}</p>}
         {query.data?.length === 0 && <EmptyState>Aun no hay evidencias registradas en esta obra.</EmptyState>}
         <div className="space-y-2">
-          {query.data?.map((a) => (
-            <Card key={a.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs text-ink-soft">{a.fecha.slice(0, 10)}</p>
-                  <p className="text-sm text-ink">{a.descripcion}</p>
-                  {a.avancePersonas.length > 0 && (
-                    <p className="mt-1 text-xs text-ink-soft">
-                      Presentes: {a.avancePersonas.map((ap) => ap.persona.nombreCompleto).join(", ")}
-                    </p>
-                  )}
+          {query.data?.map((a) =>
+            editandoId === a.id ? (
+              <EditarEvidenciaCard
+                key={a.id}
+                obraId={obraId}
+                avance={a}
+                onDone={() => setEditandoId(null)}
+              />
+            ) : (
+              <Card key={a.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-ink-soft">{a.fecha.slice(0, 10)}</p>
+                    <p className="text-sm text-ink">{a.descripcion}</p>
+                    {a.avancePersonas.length > 0 && (
+                      <p className="mt-1 text-xs text-ink-soft">
+                        Presentes: {a.avancePersonas.map((ap) => ap.persona.nombreCompleto).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {a.incompleto && <Pill tone="warn">Sin fotos</Pill>}
+                    {puedeOperar && (
+                      <button
+                        type="button"
+                        onClick={() => setEditandoId(a.id)}
+                        className="text-xs text-accent hover:underline"
+                      >
+                        Editar
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {a.incompleto && <Pill tone="warn">Sin fotos</Pill>}
-              </div>
-              <div className="mt-2">
-                <EvidenceUploader entidadTipo="avance" entidadId={a.id} compact />
-              </div>
-            </Card>
-          ))}
+                <div className="mt-2">
+                  <EvidenceUploader entidadTipo="avance" entidadId={a.id} compact />
+                </div>
+              </Card>
+            )
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function EditarEvidenciaCard({ obraId, avance, onDone }: { obraId: string; avance: Avance; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [fecha, setFecha] = useState(avance.fecha.slice(0, 10));
+  const [descripcion, setDescripcion] = useState(avance.descripcion);
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () => api.patch(`/obras/${obraId}/avances/${avance.id}`, { fecha, descripcion }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["avances", obraId] });
+      onDone();
+    },
+    onError: (err) => setError(apiErrorMessage(err)),
+  });
+
+  return (
+    <Card className="border-accent/40">
+      <div className="max-w-[200px]">
+        <Label>Fecha</Label>
+        <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      </div>
+      <div className="mt-3">
+        <Label>Descripcion</Label>
+        <Textarea required rows={3} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+      </div>
+      {error && <p className="mt-2 text-sm text-crit">{error}</p>}
+      <div className="mt-3 flex gap-2">
+        <Button disabled={mutation.isPending} onClick={() => mutation.mutate()}>
+          {mutation.isPending ? "Guardando…" : "Guardar cambios"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
+          Cancelar
+        </Button>
+      </div>
+    </Card>
   );
 }
 

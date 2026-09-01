@@ -94,6 +94,7 @@ export interface Avance {
   obraId: string;
   fecha: string;
   descripcion: string;
+  registradoPor: string;
   avancePersonas: { persona: Persona }[];
   evidencias?: Evidencia[];
   incompleto?: boolean;

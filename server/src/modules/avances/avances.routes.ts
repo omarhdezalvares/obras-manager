@@ -11,6 +11,7 @@ import { ASISTENCIA_AVANCE_OPERATIVO, ROLES } from "../../lib/roles";
 import { startOfDay } from "../../lib/dates";
 import { generarReporteAvancesPdf } from "../../lib/avancesPdf";
 import { env } from "../../env";
+import { writeAuditLog } from "../../lib/audit";
 
 export const avancesRouter = Router({ mergeParams: true });
 avancesRouter.use(requireAuth);
@@ -238,5 +239,82 @@ avancesRouter.get(
     }
     const evidencias = await prisma.evidencia.findMany({ where: { entidadTipo: "avance", entidadId: avance.id } });
     res.json({ ...avance, evidencias });
+  })
+);
+
+const updateSchema = z
+  .object({
+    fecha: z.string().min(1).optional(),
+    descripcion: z.string().min(1).optional(),
+  })
+  .refine((data) => data.fecha !== undefined || data.descripcion !== undefined, {
+    message: "Debes indicar al menos una fecha o descripcion para actualizar",
+  });
+
+// Permite corregir una evidencia ya guardada (fecha o descripcion
+// equivocada). El Oficial solo puede editar lo que el mismo registro;
+// Administrador/Supervisor pueden editar cualquiera dentro de su alcance de
+// obras (mismo criterio que el borrado de evidencias, ver evidencias.routes.ts).
+avancesRouter.patch(
+  "/:avanceId",
+  requireRole(...ASISTENCIA_AVANCE_OPERATIVO),
+  asyncHandler(async (req, res) => {
+    const obraId = req.params.obraId;
+    await assertObraVisible(req.user!, obraId);
+    const body = updateSchema.parse(req.body);
+
+    const existente = await prisma.avance.findFirst({
+      where: { id: req.params.avanceId, obraId, tenantId: req.user!.tenantId, deletedAt: null },
+    });
+    if (!existente) throw new HttpError(404, "Avance no encontrado");
+    if (req.user!.rol === ROLES.OFICIAL && existente.registradoPor !== req.user!.sub) {
+      throw new HttpError(403, "Solo puedes editar evidencias que tu mismo registraste");
+    }
+
+    const nuevaFecha = body.fecha ? startOfDay(body.fecha) : undefined;
+
+    const avance = await prisma.$transaction(async (tx) => {
+      const actualizado = await tx.avance.update({
+        where: { id: existente.id },
+        data: {
+          fecha: nuevaFecha,
+          descripcion: body.descripcion,
+        },
+      });
+
+      // Si cambia la fecha, el personal vinculado (seccion 08, flujo 6) se
+      // recalcula igual que en la creacion: se re-liga a las asistencias del
+      // nuevo dia en vez de dejar el vinculo apuntando al dia anterior.
+      if (nuevaFecha) {
+        await tx.avancePersona.deleteMany({ where: { avanceId: actualizado.id } });
+        const asistenciasDelDia = await tx.asistencia.findMany({ where: { obraId, fecha: nuevaFecha } });
+        if (asistenciasDelDia.length > 0) {
+          await tx.avancePersona.createMany({
+            data: asistenciasDelDia.map((a) => ({
+              avanceId: actualizado.id,
+              personaId: a.personaId,
+              asistenciaId: a.id,
+            })),
+          });
+        }
+      }
+
+      return actualizado;
+    });
+
+    await writeAuditLog({
+      tenantId: req.user!.tenantId,
+      usuarioId: req.user!.sub,
+      entidadTipo: "avance",
+      entidadId: avance.id,
+      accion: "actualizar",
+      cambios: { antes: { fecha: existente.fecha, descripcion: existente.descripcion }, despues: body },
+    });
+
+    const conRelaciones = await prisma.avance.findFirst({
+      where: { id: avance.id },
+      include: { avancePersonas: { include: { persona: true } } },
+    });
+    res.json(conRelaciones);
   })
 );
