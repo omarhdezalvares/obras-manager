@@ -71,7 +71,7 @@ function RegistrarAsistencia({
 }) {
   const { usuario } = useAuth();
   const qc = useQueryClient();
-  const [fecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyISO());
   const [horas, setHoras] = useState<Record<string, string>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
   const [resultado, setResultado] = useState<{ personaId: string; ok: boolean; motivo?: string }[] | null>(null);
@@ -105,10 +105,13 @@ function RegistrarAsistencia({
 
   return (
     <Card>
-      <h2 className="mb-1 font-semibold text-ink">Registrar asistencia — {fecha}</h2>
+      <h2 className="mb-1 font-semibold text-ink">Registrar asistencia</h2>
       <p className="mb-3 text-xs text-ink-soft">
-        Selecciona las personas presentes hoy. La hora se precarga con la hora actual del dispositivo pero es editable.
+        Selecciona las personas presentes y la fecha. La hora se precarga con la hora actual del dispositivo pero es editable.
       </p>
+      <div className="mb-3 max-w-[200px]">
+        <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      </div>
 
       {obraPersonas.length === 0 ? (
         <p className="text-sm text-ink-soft">No hay personas asignadas a esta obra todavia.</p>

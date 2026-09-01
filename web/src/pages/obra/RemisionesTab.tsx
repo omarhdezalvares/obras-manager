@@ -12,6 +12,10 @@ interface Linea {
   costoUnitario: string;
 }
 
+function hoyISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: PartidaConSaldo[] }) {
   const { usuario } = useAuth();
   const qc = useQueryClient();
@@ -31,6 +35,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
   const [partidaId, setPartidaId] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [folio, setFolio] = useState("");
+  const [fecha, setFecha] = useState(hoyISO());
   const [lineas, setLineas] = useState<Linea[]>([{ materialId: "", cantidad: "", costoUnitario: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
@@ -41,7 +46,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
         partidaId,
         proveedor,
         folio: folio || undefined,
-        fecha: new Date().toISOString().slice(0, 10),
+        fecha,
         materiales: lineas
           .filter((l) => l.materialId && l.cantidad && l.costoUnitario)
           .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad), costoUnitario: Number(l.costoUnitario) })),
@@ -53,6 +58,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
       setShowForm(false);
       setProveedor("");
       setFolio("");
+      setFecha(hoyISO());
       setLineas([{ materialId: "", cantidad: "", costoUnitario: "" }]);
     },
     onError: (err) => setError(apiErrorMessage(err)),
@@ -75,7 +81,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                 }}
                 className="space-y-3"
               >
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                   <div>
                     <Label>Partida</Label>
                     <Select required value={partidaId} onChange={(e) => setPartidaId(e.target.value)}>
@@ -94,6 +100,10 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   <div>
                     <Label>Folio</Label>
                     <Input value={folio} onChange={(e) => setFolio(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>Fecha</Label>
+                    <Input type="date" required max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
                   </div>
                 </div>
 

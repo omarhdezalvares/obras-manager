@@ -32,6 +32,7 @@ export function AsistenciaWizard() {
     enabled: !!obraId,
   });
 
+  const [fecha, setFecha] = useState(hoyISO());
   const [horas, setHoras] = useState<Record<string, string>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
   const [paso, setPaso] = useState<"seleccion" | "listo">("seleccion");
@@ -43,7 +44,7 @@ export function AsistenciaWizard() {
   const mutation = useMutation({
     mutationFn: () =>
       api.post(`/obras/${obraId}/asistencias`, {
-        fecha: hoyISO(),
+        fecha,
         registros: Array.from(seleccion).map((personaId) => ({
           personaId,
           horaLlegada: horas[personaId] ?? ahoraHHmm(),
@@ -77,12 +78,16 @@ export function AsistenciaWizard() {
         <Link to={`/mis-obras/${obraId}`} className="text-sm text-accent">
           ← {obraQuery.data?.nombre ?? "Regresar"}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-ink">Registrar asistencia — {hoyISO()}</h1>
+        <h1 className="mt-1 text-xl font-semibold text-ink">Registrar asistencia</h1>
       </div>
 
       {paso === "seleccion" && (
         <Card>
-          <p className="mb-3 text-sm text-ink-soft">Marca quiénes llegaron hoy. La hora se precarga pero puedes ajustarla.</p>
+          <p className="mb-3 text-sm text-ink-soft">Marca quiénes llegaron y la fecha. La hora se precarga pero puedes ajustarla.</p>
+
+          <div className="mb-3 max-w-[200px]">
+            <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          </div>
 
           {obraPersonas.length === 0 ? (
             <p className="text-sm text-ink-soft">No hay personas asignadas a esta obra todavía.</p>

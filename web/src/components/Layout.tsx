@@ -54,7 +54,10 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F1EEE7]">
-      <header className="sticky top-0 z-10 border-b border-black/10 bg-white">
+      <header
+        className="sticky top-0 z-10 border-b border-black/10 bg-white"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2.5">
             <LogoMark className="h-6 w-6 shrink-0 text-accent" />
@@ -89,7 +92,10 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-10 grid border-t border-black/10 bg-white md:hidden" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
+      <nav
+        className="fixed inset-x-0 bottom-0 z-10 grid border-t border-black/10 bg-white md:hidden"
+        style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         {items.map((item) => (
           <NavLink
             key={item.to}
