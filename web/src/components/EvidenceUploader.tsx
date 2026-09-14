@@ -20,13 +20,15 @@ function puedeEliminar(rol: string | undefined, subidaPor: string, usuarioId: st
   return true;
 }
 
-// "Boton que abre la camara directo (no el selector de galeria primero)"
-// (seccion 11): capture="environment" en un input file logra eso en moviles
-// sin necesitar una libreria de camara dedicada.
+// Dos botones/inputs separados: "Camara" usa capture="environment" para abrir
+// la camara directo (seccion 11), y "Galeria" usa un input sin capture para
+// que el selector nativo de archivos/fotos guardadas quede disponible (antes
+// un solo input con capture ocultaba la opcion de galeria en varios moviles).
 export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
   const { usuario } = useAuth();
   const qc = useQueryClient();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const camaraRef = useRef<HTMLInputElement>(null);
+  const galeriaRef = useRef<HTMLInputElement>(null);
   const key = ["evidencias", entidadTipo, entidadId];
 
   const query = useQuery({
@@ -83,18 +85,38 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
         ))}
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
+          onClick={() => camaraRef.current?.click()}
           disabled={upload.isPending}
           className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
         >
           <span className="text-lg">📷</span>
-          <span className="text-[10px]">{upload.isPending ? "Subiendo…" : "Agregar"}</span>
+          <span className="text-[10px]">{upload.isPending ? "Subiendo…" : "Cámara"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => galeriaRef.current?.click()}
+          disabled={upload.isPending}
+          className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
+        >
+          <span className="text-lg">🖼️</span>
+          <span className="text-[10px]">{upload.isPending ? "Subiendo…" : "Galería"}</span>
         </button>
         <input
-          ref={inputRef}
+          ref={camaraRef}
           type="file"
           accept="image/*,application/pdf"
           capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) upload.mutate(file);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={galeriaRef}
+          type="file"
+          accept="image/*,application/pdf"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
