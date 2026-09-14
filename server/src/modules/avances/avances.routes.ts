@@ -94,12 +94,12 @@ const reportePdfQuerySchema = z.object({
 });
 
 // Reporte fotografico de avances pensado para enviarse al cliente (seccion
-// "Evidencias" de la obra): solo el Administrador lo genera. Se registra
+// "Evidencias" de la obra): Administrador y Finanzas lo generan. Se registra
 // aparte de "/:avanceId" (arriba en el archivo, no abajo) porque de otro
 // modo Express interpretaria "reporte-pdf" como un :avanceId literal.
 avancesRouter.get(
   "/reporte-pdf",
-  requireRole(ROLES.ADMIN),
+  requireRole(ROLES.ADMIN, ROLES.FINANZAS),
   asyncHandler(async (req, res) => {
     const obraId = req.params.obraId;
     await assertObraVisible(req.user!, obraId);

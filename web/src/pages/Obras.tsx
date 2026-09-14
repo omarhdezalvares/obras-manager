@@ -25,7 +25,7 @@ export function Obras() {
   const [showForm, setShowForm] = useState(false);
   const obrasQuery = useQuery({ queryKey: ["obras"], queryFn: () => api.get<Obra[]>("/obras").then((r) => r.data) });
 
-  const puedeCrear = usuario && ["Administrador", "Gerente de Proyecto"].includes(usuario.rol);
+  const puedeCrear = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
   const verFinanciero = puedeVerFinanciero(usuario?.rol);
 
   return (

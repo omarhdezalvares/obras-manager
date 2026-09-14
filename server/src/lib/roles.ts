@@ -20,7 +20,14 @@ export const TENANT_WIDE_VIEW_ROLES: RoleName[] = [ROLES.ADMIN, ROLES.FINANZAS, 
 
 // Roles que pueden operar (capturar) asistencias y avances (seccion 06:
 // Administrador=Total, Supervisor/Oficial=Operativo, resto=Consulta/Ninguno).
-export const ASISTENCIA_AVANCE_OPERATIVO: RoleName[] = [ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.OFICIAL];
+// Finanzas se agrego despues para darle paridad operativa con Admin (fuera
+// de Seguridad/SaaS/perfil de empresa).
+export const ASISTENCIA_AVANCE_OPERATIVO: RoleName[] = [
+  ROLES.ADMIN,
+  ROLES.SUPERVISOR,
+  ROLES.OFICIAL,
+  ROLES.FINANZAS,
+];
 
 // Roles que pueden crear/editar presupuesto y partidas. Gerente de Proyecto
 // y Oficial quedan fuera: no deben ver ni administrar nada financiero.
@@ -43,11 +50,13 @@ export const SIN_ACCESO_FINANCIERO: RoleName[] = [ROLES.OFICIAL, ROLES.GERENTE];
 // Roles que pueden registrar remisiones.
 export const REMISION_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE, ROLES.SUPERVISOR, ROLES.FINANZAS];
 
-// Roles que pueden gestionar herramientas (alta/asignacion).
-export const HERRAMIENTA_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE];
+// Roles que pueden gestionar herramientas (alta/asignacion). Incluye
+// Finanzas por paridad con Admin (ver nota de ASISTENCIA_AVANCE_OPERATIVO).
+export const HERRAMIENTA_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE, ROLES.FINANZAS];
 
-// Roles que pueden gestionar obras/personas (crear/editar).
-export const OBRA_PERSONA_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE];
+// Roles que pueden gestionar obras/personas (crear/editar). Incluye
+// Finanzas por paridad con Admin (ver nota de ASISTENCIA_AVANCE_OPERATIVO).
+export const OBRA_PERSONA_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE, ROLES.FINANZAS];
 
 // Roles que pueden exportar reportes a Excel (en general).
 export const REPORTE_EXPORT: RoleName[] = [ROLES.ADMIN, ROLES.GERENTE, ROLES.FINANZAS];

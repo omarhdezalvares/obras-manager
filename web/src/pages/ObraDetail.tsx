@@ -54,8 +54,8 @@ export function ObraDetail() {
   if (!query.data) return <p className="text-sm text-crit">No se pudo cargar la obra.</p>;
 
   const obra = query.data;
-  const esOperativo = usuario && ["Administrador", "Supervisor", "Oficial"].includes(usuario.rol);
-  const esGestion = usuario && ["Administrador", "Gerente de Proyecto"].includes(usuario.rol);
+  const esOperativo = usuario && ["Administrador", "Supervisor", "Oficial", "Finanzas"].includes(usuario.rol);
+  const esGestion = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
   const esFinanzas = usuario && ["Administrador", "Finanzas"].includes(usuario.rol);
   const verPresupuesto = puedeVerPresupuesto(usuario?.rol);
   const verTransacciones = puedeVerTransacciones(usuario?.rol);
@@ -130,7 +130,7 @@ export function ObraDetail() {
           <AsistenciasTab obraId={id} obraPersonas={obra.obraPersonas} puedeOperar={!!esOperativo} verFinanciero={verPresupuesto} />
         )}
         {tab === "avances" && (
-          <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={usuario?.rol === "Administrador"} />
+          <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={["Administrador", "Finanzas"].includes(usuario?.rol ?? "")} />
         )}
         {tab === "presupuesto" && obra.financiero && (
           <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />

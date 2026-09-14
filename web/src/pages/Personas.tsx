@@ -10,7 +10,7 @@ export function Personas() {
   const [showForm, setShowForm] = useState(false);
   const [editando, setEditando] = useState<Persona | null>(null);
   const query = useQuery({ queryKey: ["personas"], queryFn: () => api.get<Persona[]>("/personas").then((r) => r.data) });
-  const puedeGestionar = usuario && ["Administrador", "Gerente de Proyecto"].includes(usuario.rol);
+  const puedeGestionar = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
   const verFinanciero = puedeVerFinanciero(usuario?.rol);
 
   return (

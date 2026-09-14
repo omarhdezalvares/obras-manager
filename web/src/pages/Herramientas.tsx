@@ -8,7 +8,7 @@ import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../compone
 export function Herramientas() {
   const { usuario } = useAuth();
   const qc = useQueryClient();
-  const puedeGestionar = usuario && ["Administrador", "Gerente de Proyecto"].includes(usuario.rol);
+  const puedeGestionar = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
 
   const [showForm, setShowForm] = useState(false);
   const [asignando, setAsignando] = useState<Herramienta | null>(null);
