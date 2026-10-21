@@ -44,6 +44,9 @@ export function Herramientas() {
 
       {showForm && <NuevaHerramientaForm onDone={() => setShowForm(false)} />}
 
+      {asignando && <AsignarForm herramienta={asignando} onDone={() => setAsignando(null)} />}
+      {editando && <EditarHerramientaForm herramienta={editando} onDone={() => setEditando(null)} />}
+
       {query.data?.length === 0 && <EmptyState>Aun no hay herramientas registradas.</EmptyState>}
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -67,7 +70,7 @@ export function Herramientas() {
             </p>
             {puedeGestionar && (
               <div className="mt-2 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => setAsignando(h)}>
+                <Button variant="secondary" onClick={() => { setAsignando(h); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                   {h.asignacionVigente ? "Reasignar" : "Asignar"}
                 </Button>
                 {h.asignacionVigente && (
@@ -75,7 +78,7 @@ export function Herramientas() {
                     Devolver
                   </Button>
                 )}
-                <Button variant="ghost" onClick={() => setEditando(h)}>
+                <Button variant="ghost" onClick={() => { setEditando(h); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                   Editar
                 </Button>
               </div>
@@ -84,8 +87,6 @@ export function Herramientas() {
         ))}
       </div>
 
-      {asignando && <AsignarForm herramienta={asignando} onDone={() => setAsignando(null)} />}
-      {editando && <EditarHerramientaForm herramienta={editando} onDone={() => setEditando(null)} />}
     </div>
   );
 }

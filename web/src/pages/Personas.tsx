@@ -41,7 +41,7 @@ export function Personas() {
               )}
             </div>
             {puedeGestionar && (
-              <Button variant="ghost" onClick={() => setEditando(p)}>
+              <Button variant="ghost" onClick={() => { setEditando(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                 Editar
               </Button>
             )}

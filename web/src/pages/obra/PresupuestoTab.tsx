@@ -31,6 +31,8 @@ export function PresupuestoTab({
       )}
       {showForm && <NuevaPartidaForm obraId={obraId} onDone={() => setShowForm(false)} />}
 
+      {editando && <EditarPartidaForm obraId={obraId} partida={editando} onDone={() => setEditando(null)} />}
+
       <div className="space-y-2">
         {partidas.map((p) => (
           <Card key={p.id}>
@@ -44,7 +46,7 @@ export function PresupuestoTab({
               <div className="flex items-center gap-2">
                 <Pill tone={tone(p.porcentajeConsumido)}>{p.porcentajeConsumido.toFixed(0)}%</Pill>
                 {puedeGestionar && (
-                  <Button variant="ghost" onClick={() => setEditando(p)}>
+                  <Button variant="ghost" onClick={() => { setEditando(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                     Editar
                   </Button>
                 )}
@@ -64,7 +66,6 @@ export function PresupuestoTab({
         ))}
       </div>
 
-      {editando && <EditarPartidaForm obraId={obraId} partida={editando} onDone={() => setEditando(null)} />}
     </div>
   );
 }

@@ -77,7 +77,7 @@ export function Seguridad() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="ghost" onClick={() => setEditando(u)}>
+              <Button variant="ghost" onClick={() => { setEditando(u); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                 Editar
               </Button>
               <Button variant="ghost" onClick={() => setCambiandoPassword(u)}>

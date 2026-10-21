@@ -27,6 +27,8 @@ export function TransaccionesTab({ obraId, puedeEditar }: { obraId: string; pued
         marcados con su motivo.
       </p>
 
+      {editando && <EditarTransaccionForm obraId={obraId} transaccion={editando} onDone={() => setEditando(null)} />}
+
       {query.data?.length === 0 && <EmptyState>Sin transacciones todavia.</EmptyState>}
 
       <div className="space-y-2">
@@ -54,7 +56,7 @@ export function TransaccionesTab({ obraId, puedeEditar }: { obraId: string; pued
                   <Pill tone={gasto ? "crit" : "ok"}>{gasto ? "Gasto" : "Presupuesto"}</Pill>
                   {t.updatedBy && <Pill tone="warn">Editada</Pill>}
                   {puedeEditar && (
-                    <Button variant="ghost" onClick={() => setEditando(t)}>
+                    <Button variant="ghost" onClick={() => { setEditando(t); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
                       Editar
                     </Button>
                   )}
@@ -65,7 +67,6 @@ export function TransaccionesTab({ obraId, puedeEditar }: { obraId: string; pued
         })}
       </div>
 
-      {editando && <EditarTransaccionForm obraId={obraId} transaccion={editando} onDone={() => setEditando(null)} />}
     </div>
   );
 }
