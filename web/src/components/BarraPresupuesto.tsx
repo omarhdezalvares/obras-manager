@@ -17,13 +17,15 @@ export function BarraPresupuesto({ porcentaje, alerta, alertaTo }: { porcentaje:
   );
   return (
     <div className="w-full min-w-[140px]">
-      <div className="flex items-baseline justify-between gap-2 text-[13px] text-ink-soft">
-        <span>{Math.round(porcentaje)}% consumido</span>
-        {texto && (alertaTo ? <Link to={alertaTo} className="font-medium underline-offset-2 hover:underline">{texto}</Link> : texto)}
-      </div>
+      <p className="text-[13px] text-ink-soft">{Math.round(porcentaje)}% consumido</p>
       <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10" role="progressbar" aria-valuenow={Math.round(porcentaje)} aria-valuemin={0} aria-valuemax={100}>
         <div className={`h-full ${color}`} style={{ width: `${Math.min(100, Math.max(0, porcentaje))}%` }} />
       </div>
+      {texto && (
+        <p className="mt-1 text-[13px] font-medium">
+          {alertaTo ? <Link to={alertaTo} className="underline-offset-2 hover:underline">{texto}</Link> : texto}
+        </p>
+      )}
     </div>
   );
 }

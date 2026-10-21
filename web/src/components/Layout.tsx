@@ -1,16 +1,15 @@
 import { ComponentType } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { MenuDesplegable } from "./MenuDesplegable";
 import { useAuth } from "../lib/auth";
 import {
   LogoMark,
   IconResumen,
   IconObras,
-  IconPersonas,
   IconHerramientas,
+  IconConfiguracion,
   IconReportes,
   IconHistorial,
-  IconSeguridad,
-  IconEmpresa,
 } from "./Icons";
 
 interface NavItem {
@@ -31,26 +30,28 @@ const NAV_OFICIAL: NavItem[] = [
 const NAV_GESTION: NavItem[] = [
   { to: "/", label: "Dashboard", Icon: IconResumen },
   { to: "/obras", label: "Obras", Icon: IconObras },
-  { to: "/personas", label: "Personas", Icon: IconPersonas },
-  { to: "/herramientas", label: "Herramientas", Icon: IconHerramientas },
   { to: "/reportes", label: "Reportes", Icon: IconReportes },
 ];
 
-const NAV_ADMIN_EXTRA: NavItem[] = [
-  { to: "/empresa", label: "Empresa", Icon: IconEmpresa },
-  { to: "/seguridad", label: "Seguridad", Icon: IconSeguridad },
+// Catalogos maestros y ajustes: fuera de la barra para que quede corta.
+const CONFIG_GESTION = [
+  { label: "Personas", to: "/personas" },
+  { label: "Herramientas", to: "/herramientas" },
+];
+const CONFIG_ADMIN = [
+  { label: "Empresa", to: "/empresa" },
+  { label: "Seguridad", to: "/seguridad" },
 ];
 
 export function Layout() {
   const { usuario, logout } = useAuth();
+  const { pathname } = useLocation();
   if (!usuario) return null;
 
-  const items =
-    usuario.rol === "Oficial"
-      ? NAV_OFICIAL
-      : usuario.rol === "Administrador"
-        ? [...NAV_GESTION, ...NAV_ADMIN_EXTRA]
-        : NAV_GESTION;
+  const esOficial = usuario.rol === "Oficial";
+  const items = esOficial ? NAV_OFICIAL : NAV_GESTION;
+  const config = esOficial ? [] : [...CONFIG_GESTION, ...(usuario.rol === "Administrador" ? CONFIG_ADMIN : [])];
+  const enConfig = config.some((c) => pathname.startsWith(c.to));
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F1EEE7]">
@@ -59,18 +60,36 @@ export function Layout() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
             <LogoMark className="h-6 w-6 shrink-0 text-accent" />
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-widest text-ink-soft">Bitácora · {usuario.tenantNombre}</p>
-              <p className="text-sm font-medium text-ink">
-                {usuario.personaNombre ?? usuario.email} <span className="text-ink-soft">· {usuario.rol}</span>
-              </p>
-            </div>
+            <MenuDesplegable
+              alinear="left"
+              ariaLabel="Menu de perfil"
+              className="min-w-0 text-left"
+              etiqueta={
+                <span className="min-w-0">
+                  <span className="block truncate font-mono text-[11px] uppercase tracking-widest text-ink-soft">Bitácora · {usuario.tenantNombre}</span>
+                  <span className="block truncate text-sm font-medium text-ink">
+                    {usuario.personaNombre ?? usuario.email} <span className="text-ink-soft">· {usuario.rol} ▾</span>
+                  </span>
+                </span>
+              }
+              items={[{ label: "Salir", onClick: logout, peligro: true }]}
+            />
           </div>
-          <button onClick={logout} className="min-h-[44px] rounded-md px-3 text-sm text-accent hover:bg-accent-soft">
-            Salir
-          </button>
+          {config.length > 0 && (
+            <MenuDesplegable
+              ariaLabel="Configuración"
+              className={enConfig ? "bg-accent-soft text-accent-ink" : "text-ink-soft"}
+              etiqueta={
+                <>
+                  <IconConfiguracion className="h-5 w-5" />
+                  <span className="hidden text-sm font-medium sm:inline">Configuración</span>
+                </>
+              }
+              items={config}
+            />
+          )}
         </div>
         <nav className="mx-auto hidden max-w-5xl gap-1 px-4 pb-2 md:flex">
           {items.map((item) => (
