@@ -5,7 +5,7 @@ import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-import { horasRegistradasEnFecha } from "../../lib/asistencias";
+import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
 import { hoyLocal, horaLocal } from "../../lib/fechas";
 
 export function AsistenciasTab({
@@ -165,7 +165,7 @@ function RegistrarAsistencia({
   const qc = useQueryClient();
   const [fecha, setFecha] = useState(hoyLocal());
   const [horas, setHoras] = useState<Record<string, string>>({});
-  const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
+  const [seleccion, setSeleccion] = useState<Set<string>>(() => seleccionInicial(usuario?.personaId, obraPersonas));
   const [resultado, setResultado] = useState<{ personaId: string; ok: boolean; motivo?: string }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 

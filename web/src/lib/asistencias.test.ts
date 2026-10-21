@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { horasRegistradasEnFecha } from "./asistencias";
+import { horasRegistradasEnFecha, seleccionInicial } from "./asistencias";
 
 const lista = [
   { personaId: "a", fecha: "2026-10-21T06:00:00.000Z", horaLlegada: "08:10" },
@@ -13,3 +13,8 @@ test("solo personas con asistencia en esa fecha", () => {
   assert.equal(m.has("b"), false);
 });
 test("sin datos devuelve mapa vacio", () => assert.equal(horasRegistradasEnFecha(undefined, "2026-10-21").size, 0));
+
+test("preselecciona solo si esta asignado", () => assert.deepEqual([...seleccionInicial("a", [{ personaId: "a" }])], ["a"]));
+test("no preselecciona si no esta en la obra", () => assert.equal(seleccionInicial("a", [{ personaId: "b" }]).size, 0));
+test("no preselecciona si la asignacion esta inactiva", () => assert.equal(seleccionInicial("a", [{ personaId: "a", activo: false }]).size, 0));
+test("sin persona", () => assert.equal(seleccionInicial(null, [{ personaId: "b" }]).size, 0));

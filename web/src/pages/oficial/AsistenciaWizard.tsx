@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../lib/api";
-import { ObraPersona, Obra } from "../../lib/types";
+import { Asistencia, ObraPersona, Obra } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, Input } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { hoyLocal, horaLocal } from "../../lib/fechas";
+import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
 
 interface ObraConPersonas extends Obra {
   obraPersonas: ObraPersona[];
@@ -27,18 +28,30 @@ export function AsistenciaWizard() {
 
   const [fecha, setFecha] = useState(hoyLocal());
   const [horas, setHoras] = useState<Record<string, string>>({});
-  const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
+  // null = el usuario aun no toca la lista: se usa la preseleccion (llega con la obra).
+  const [seleccionTocada, setSeleccion] = useState<Set<string> | null>(null);
   const [paso, setPaso] = useState<"seleccion" | "listo">("seleccion");
   const [resultado, setResultado] = useState<
     { personaId: string; ok: boolean; motivo?: string; asistenciaId?: string }[] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
 
+  const asistenciasDia = useQuery({
+    queryKey: ["asistencias", obraId, fecha],
+    queryFn: () =>
+      api.get<Asistencia[]>(`/obras/${obraId}/asistencias`, { params: { fecha_desde: fecha, fecha_hasta: fecha } }).then((r) => r.data),
+    enabled: !!obraId,
+  });
+  const obraPersonas = obraQuery.data?.obraPersonas ?? [];
+  const seleccion = seleccionTocada ?? seleccionInicial(usuario?.personaId, obraPersonas);
+  const yaRegistradas = horasRegistradasEnFecha(asistenciasDia.data, fecha);
+  const aEnviar = Array.from(seleccion).filter((id) => !yaRegistradas.has(id));
+
   const mutation = useMutation({
     mutationFn: () =>
       api.post(`/obras/${obraId}/asistencias`, {
         fecha,
-        registros: Array.from(seleccion).map((personaId) => ({
+        registros: aEnviar.map((personaId) => ({
           personaId,
           horaLlegada: horas[personaId] ?? horaLocal(),
         })),
@@ -53,8 +66,8 @@ export function AsistenciaWizard() {
   });
 
   function toggle(personaId: string) {
-    setSeleccion((prev) => {
-      const next = new Set(prev);
+    setSeleccion(() => {
+      const next = new Set(seleccion);
       if (next.has(personaId)) next.delete(personaId);
       else next.add(personaId);
       return next;
@@ -62,7 +75,6 @@ export function AsistenciaWizard() {
     setHoras((prev) => (prev[personaId] ? prev : { ...prev, [personaId]: horaLocal() }));
   }
 
-  const obraPersonas = obraQuery.data?.obraPersonas ?? [];
   const misAsistenciasOk = resultado?.filter((r) => r.ok) ?? [];
 
   return (
@@ -86,23 +98,30 @@ export function AsistenciaWizard() {
             <p className="text-sm text-ink-soft">No hay personas asignadas a esta obra todavía.</p>
           ) : (
             <div className="space-y-2">
-              {obraPersonas.map((op) => (
+              {obraPersonas.map((op) => {
+                const horaRegistrada = yaRegistradas.get(op.personaId);
+                const marcado = !horaRegistrada && seleccion.has(op.personaId);
+                return (
                 <label
                   key={op.id}
                   className={`flex min-h-[52px] items-center justify-between gap-3 rounded-md border px-3 py-2 ${
-                    seleccion.has(op.personaId) ? "border-accent bg-accent-soft" : "border-black/10"
+                    horaRegistrada ? "border-black/10 bg-black/5 opacity-60" : marcado ? "border-accent bg-accent-soft" : "border-black/10"
                   }`}
                 >
                   <span className="flex items-center gap-3 text-base">
                     <input
                       type="checkbox"
                       className="h-6 w-6"
-                      checked={seleccion.has(op.personaId)}
+                      checked={marcado}
+                      disabled={!!horaRegistrada}
                       onChange={() => toggle(op.personaId)}
                     />
-                    {op.persona.nombreCompleto}
+                    <span>
+                      {op.persona.nombreCompleto}
+                      {horaRegistrada && <span className="block text-[13px] text-ink-soft">Ya registrada (llegada {horaRegistrada})</span>}
+                    </span>
                   </span>
-                  {seleccion.has(op.personaId) && (
+                  {marcado && (
                     <Input
                       type="time"
                       className="w-28"
@@ -111,14 +130,15 @@ export function AsistenciaWizard() {
                     />
                   )}
                 </label>
-              ))}
+                );
+              })}
             </div>
           )}
 
           {error && <p className="mt-2 text-sm text-crit">{error}</p>}
 
-          <Button className="mt-4 w-full" disabled={seleccion.size === 0 || mutation.isPending} onClick={() => mutation.mutate()}>
-            {mutation.isPending ? "Guardando…" : `Guardar asistencia (${seleccion.size})`}
+          <Button className="mt-4 w-full" disabled={aEnviar.length === 0 || mutation.isPending} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? "Guardando…" : `Guardar asistencia (${aEnviar.length})`}
           </Button>
         </Card>
       )}
