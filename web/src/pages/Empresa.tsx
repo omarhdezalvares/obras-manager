@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { EmpresaPerfil } from "../lib/types";
@@ -26,17 +26,22 @@ export function Empresa() {
   const [correoContacto, setCorreoContacto] = useState("");
   const [colorPrimario, setColorPrimario] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [logoMsg, setLogoMsg] = useState<{ ok: boolean; texto: string } | null>(null);
 
-  useEffect(() => {
-    if (empresa) {
-      setNombre(empresa.nombre);
-      setRfc(empresa.rfc ?? "");
-      setDireccion(empresa.direccion ?? "");
-      setTelefono(empresa.telefono ?? "");
-      setCorreoContacto(empresa.correoContacto ?? "");
-      setColorPrimario(empresa.colorPrimario ?? "");
-    }
-  }, [empresa]);
+  // El formulario se carga solo al entrar a editar: si se recargara con cada
+  // refetch (p. ej. tras subir el logo) se perderian los cambios sin guardar.
+  function iniciarEdicion() {
+    if (!empresa) return;
+    setNombre(empresa.nombre);
+    setRfc(empresa.rfc ?? "");
+    setDireccion(empresa.direccion ?? "");
+    setTelefono(empresa.telefono ?? "");
+    setCorreoContacto(empresa.correoContacto ?? "");
+    setColorPrimario(empresa.colorPrimario ?? "");
+    setError(null);
+    setLogoMsg(null);
+    setEditando(true);
+  }
 
   const mutation = useMutation({
     mutationFn: () => api.patch("/empresa", { nombre, rfc, direccion, telefono, correoContacto, colorPrimario }),
@@ -54,8 +59,12 @@ export function Empresa() {
       form.append("logo", file);
       return api.post("/empresa/logo", form, { headers: { "Content-Type": "multipart/form-data" } });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa"] }),
-    onError: (err) => setError(apiErrorMessage(err)),
+    onMutate: () => setLogoMsg(null),
+    onSuccess: () => {
+      setLogoMsg({ ok: true, texto: "Logo actualizado. Ya aparece en el PDF de evidencias." });
+      qc.invalidateQueries({ queryKey: ["empresa"] });
+    },
+    onError: (err) => setLogoMsg({ ok: false, texto: apiErrorMessage(err) }),
   });
 
   if (!empresa) return <p className="text-sm text-ink-soft">Cargando…</p>;
@@ -70,7 +79,7 @@ export function Empresa() {
             <p className="text-sm text-ink-soft">Perfil de la compañía registrada en Bitácora.</p>
           </div>
         </div>
-        {puedeEditar && !editando && <Button onClick={() => setEditando(true)}>Editar</Button>}
+        {puedeEditar && !editando && <Button onClick={iniciarEdicion}>Editar</Button>}
       </div>
 
       {!editando && (
@@ -171,7 +180,7 @@ export function Empresa() {
               <div>
                 <Label>Logo (PNG o JPG)</Label>
                 <div className="flex items-center gap-2">
-                  {empresa.logoUrl && <img src={empresa.logoUrl} alt="Logo actual" className="h-10 w-10 rounded object-contain" />}
+                  {empresa.logoUrl && <img src={empresa.logoUrl} alt="Logo actual" className="h-16 w-16 rounded border border-black/10 object-contain" />}
                   <input
                     type="file"
                     accept="image/png,image/jpeg"
@@ -185,6 +194,7 @@ export function Empresa() {
                   />
                 </div>
                 {subirLogo.isPending && <p className="text-xs text-ink-soft">Subiendo logo…</p>}
+                {logoMsg && <p className={`text-xs ${logoMsg.ok ? "text-ok" : "text-crit"}`}>{logoMsg.texto}</p>}
               </div>
             </div>
             <p className="text-xs text-ink-soft">El color y el logo se usan en el encabezado del PDF de evidencias y en los reportes de Excel.</p>
