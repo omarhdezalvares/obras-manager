@@ -4,6 +4,7 @@ import { prisma } from "../../lib/prisma";
 import { requireAuth, requireRole, HttpError } from "../../middleware/auth";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { OBRA_PERSONA_GESTION, ROLES, SIN_ACCESO_FINANCIERO } from "../../lib/roles";
+import { visibleObraIds } from "../../lib/obraScope";
 
 export const personasRouter = Router();
 personasRouter.use(requireAuth);
@@ -29,13 +30,19 @@ personasRouter.get(
       res.json(propia.map(sinCosto));
       return;
     }
+    // Solo se nombran las obras que el usuario puede abrir.
+    const visibles = await visibleObraIds(req.user!);
     const registros = await prisma.persona.findMany({
       where: { tenantId: req.user!.tenantId, deletedAt: null },
       orderBy: { nombreCompleto: "asc" },
       // Obras vigentes donde esta asignada, para ubicar a cada quien desde el catalogo.
       include: {
         obraPersonas: {
-          where: { activo: true, obra: { deletedAt: null, estado: { notIn: ["cerrada", "cancelada"] } } },
+          where: {
+            activo: true,
+            obra: { deletedAt: null, estado: { notIn: ["cerrada", "cancelada"] } },
+            ...(visibles === "ALL" ? {} : { obraId: { in: visibles } }),
+          },
           include: { obra: { select: { id: true, nombre: true } } },
         },
       },

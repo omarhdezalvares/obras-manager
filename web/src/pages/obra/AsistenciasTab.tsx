@@ -216,9 +216,12 @@ function RegistrarAsistencia({
           horaLlegada: horas[personaId] ?? horaLocal(),
         })),
       }),
+    // La respuesta es 200 aunque se rechacen filas: el resultado por persona es el aviso.
+    meta: { aviso: false },
     onSuccess: (res) => {
       setResultado(res.data.resultados);
-      qc.invalidateQueries({ queryKey: ["asistencias", obraId] });
+      invalidarAsistencias(qc, obraId);
+      qc.invalidateQueries({ queryKey: ["obras", "hoy"] });
     },
     onError: (err) => setError(apiErrorMessage(err)),
   });
