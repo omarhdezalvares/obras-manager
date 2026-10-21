@@ -6,6 +6,7 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { visibleObraIds, assertObraVisible } from "../../lib/obraScope";
 import { resumenFinancieroObra } from "../../lib/finance";
 import { writeAuditLog } from "../../lib/audit";
+import { FECHA_ISO, startOfDay } from "../../lib/dates";
 import { OBRA_PERSONA_GESTION, SIN_ACCESO_FINANCIERO } from "../../lib/roles";
 
 export const obrasRouter = Router();
@@ -37,6 +38,25 @@ obrasRouter.get(
     const verFinanciero = puedeVerFinanciero(req.user!.rol);
     const resumenes = verFinanciero ? await Promise.all(obras.map((o) => resumenFinancieroObra(o.id))) : null;
 
+    // ?fecha=YYYY-MM-DD (el "hoy" del dispositivo): estado del dia por obra.
+    const fechaQ = z.object({ fecha: z.string().regex(FECHA_ISO, "Fecha invalida, usa AAAA-MM-DD").optional() }).parse(req.query).fecha;
+    let hoyPorObra: Map<string, { miLlegada: string | null; avances: number; asistencias: number }> | null = null;
+    if (fechaQ) {
+      const dia = startOfDay(fechaQ);
+      const ids = obras.map((o) => o.id);
+      const [asistencias, avances] = await Promise.all([
+        prisma.asistencia.findMany({ where: { obraId: { in: ids }, fecha: dia }, select: { obraId: true, personaId: true, horaLlegada: true } }),
+        prisma.avance.groupBy({ by: ["obraId"], where: { obraId: { in: ids }, fecha: dia, deletedAt: null }, _count: { _all: true } }),
+      ]);
+      hoyPorObra = new Map(ids.map((id) => [id, { miLlegada: null, avances: 0, asistencias: 0 }]));
+      for (const a of asistencias) {
+        const h = hoyPorObra.get(a.obraId)!;
+        h.asistencias += 1;
+        if (a.personaId === req.user!.personaId) h.miLlegada = a.horaLlegada;
+      }
+      for (const av of avances) hoyPorObra.get(av.obraId)!.avances = av._count._all;
+    }
+
     res.json(
       obras.map((o, i) => ({
         id: o.id,
@@ -48,6 +68,7 @@ obrasRouter.get(
         personasAsignadas: o._count.obraPersonas,
         fechaInicio: o.fechaInicio,
         fechaFinEstimada: o.fechaFinEstimada,
+        ...(hoyPorObra ? { hoy: hoyPorObra.get(o.id) } : {}),
         ...(verFinanciero
           ? {
               presupuestoAutorizado: o.presupuestoAutorizado,

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import { Obra } from "../../lib/types";
 import { Card } from "../../components/ui";
+import { useObrasHoy } from "../../lib/obrasHoy";
 
 // Paso 1 del flujo de campo (a peticion del usuario): selecciona proyecto
 // (Mis obras) -> selecciona proceso -> pasos minimos para llenar solo lo que
@@ -15,14 +16,20 @@ export function ProcesoSelector() {
     enabled: !!obraId,
   });
 
+  const obrasHoy = useObrasHoy();
+  // Con una sola obra, "Mis obras" redirige aqui mismo: el enlace no lleva a ningun lado.
+  const variasObras = (obrasHoy.data?.length ?? 0) > 1;
+
   if (!obraId) return null;
 
   return (
     <div className="space-y-5">
       <div>
-        <Link to="/mis-obras" className="text-sm text-accent">
-          ← Mis obras
-        </Link>
+        {variasObras && (
+          <Link to="/mis-obras" className="text-sm text-accent">
+            ← Mis obras
+          </Link>
+        )}
         <h1 className="mt-1 text-xl font-semibold text-ink">{query.data?.nombre ?? "Cargando…"}</h1>
         <p className="text-sm text-ink-soft">¿Qué quieres registrar hoy?</p>
       </div>

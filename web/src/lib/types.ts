@@ -29,6 +29,8 @@ export interface Obra {
   // Omitidos por el backend para roles sin acceso financiero (Oficial, Gerente de Proyecto).
   presupuestoAutorizado?: number;
   presupuestoTotal?: number;
+  // Solo cuando se pide /obras?fecha=YYYY-MM-DD.
+  hoy?: { miLlegada: string | null; avances: number; asistencias: number };
   personasAsignadas: number;
   fechaInicio: string | null;
   fechaFinEstimada: string | null;

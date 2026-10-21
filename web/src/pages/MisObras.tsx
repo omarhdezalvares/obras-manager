@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { api } from "../lib/api";
+import { Link, Navigate } from "react-router-dom";
+import { useObrasHoy } from "../lib/obrasHoy";
 import { Obra } from "../lib/types";
 import { Card, EmptyState, Pill } from "../components/ui";
 
@@ -15,7 +14,10 @@ const ESTADO_LABEL: Record<Obra["estado"], string> = {
 // Pantalla "Mis obras" (seccion 11): tarjetas grandes, no tabla; el Oficial
 // solo ve las obras a las que esta explicitamente asignado (lo filtra el API).
 export function MisObras() {
-  const query = useQuery({ queryKey: ["obras"], queryFn: () => api.get<Obra[]>("/obras").then((r) => r.data) });
+  const query = useObrasHoy();
+
+  // Con una sola obra no hay nada que elegir: directo a "¿que registras hoy?".
+  if (query.data?.length === 1) return <Navigate to={`/mis-obras/${query.data[0].id}`} replace />;
 
   return (
     <div className="space-y-4">
@@ -37,6 +39,16 @@ export function MisObras() {
                 </div>
                 <Pill>{ESTADO_LABEL[o.estado]}</Pill>
               </div>
+              {o.hoy && (
+                <div className="mt-3 flex flex-wrap gap-2 text-[13px]">
+                  <span className={`rounded-full px-2.5 py-1 ${o.hoy.miLlegada ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>
+                    {o.hoy.miLlegada ? `✓ Llegaste ${o.hoy.miLlegada}` : "Asistencia pendiente"}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-1 ${o.hoy.avances > 0 ? "bg-ok-soft text-ok" : "bg-warn-soft text-warn"}`}>
+                    {o.hoy.avances > 0 ? "✓ Evidencia de hoy" : "Falta evidencia"}
+                  </span>
+                </div>
+              )}
             </Card>
           </Link>
         ))}
