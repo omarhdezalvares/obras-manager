@@ -215,7 +215,7 @@ export interface RolOption {
 }
 
 export interface Notificaciones {
-  guardadas: { id: string; tipo: string; mensaje: string; createdAt: string }[];
+  guardadas: { id: string; tipo: string; obraId: string | null; mensaje: string; createdAt: string }[];
   sinActividad: { obraId: string; mensaje: string }[];
-  avancesIncompletos: { obraId: string; mensaje: string }[];
+  avancesIncompletos: { obraId: string; obraNombre: string; fecha: string; mensaje: string }[];
 }

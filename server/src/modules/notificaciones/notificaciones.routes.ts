@@ -48,12 +48,14 @@ notificacionesRouter.get(
       orderBy: { fecha: "desc" },
       take: 100,
     });
-    const incompletos: Array<{ obraId: string; mensaje: string }> = [];
+    const incompletos: Array<{ obraId: string; obraNombre: string; fecha: string; mensaje: string }> = [];
     for (const avance of avancesSinEvidencia) {
       const count = await prisma.evidencia.count({ where: { entidadTipo: "avance", entidadId: avance.id } });
       if (count === 0) {
         incompletos.push({
           obraId: avance.obraId,
+          obraNombre: avance.obra.nombre,
+          fecha: avance.fecha.toISOString().slice(0, 10),
           mensaje: `Evidencia del ${avance.fecha.toISOString().slice(0, 10)} en "${avance.obra.nombre}" sin fotos adjuntas`,
         });
       }
