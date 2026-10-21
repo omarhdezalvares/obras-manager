@@ -34,6 +34,7 @@ export function AsistenciasTab({
 
   const eliminar = useMutation({
     mutationFn: (id: string) => api.delete(`/obras/${obraId}/asistencias/${id}`),
+    meta: { aviso: "Asistencia eliminada" },
     onSuccess: () => invalidarAsistencias(qc, obraId),
     onError: (err) => alert(apiErrorMessage(err)),
   });

@@ -59,6 +59,7 @@ export function AsistenciaWizard() {
           horaLlegada: horas[personaId] ?? horaLocal(),
         })),
       }),
+    meta: { aviso: false },
     onSuccess: (res) => {
       setResultado(res.data.resultados);
       setPaso("listo");

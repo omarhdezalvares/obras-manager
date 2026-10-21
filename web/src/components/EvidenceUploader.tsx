@@ -55,6 +55,7 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact, plegado }: P
 
   const eliminar = useMutation({
     mutationFn: (id: string) => api.delete(`/evidencias/${id}`),
+    meta: { aviso: "Foto eliminada" },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
     onError: (err) => alert(apiErrorMessage(err)),
   });

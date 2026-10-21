@@ -36,6 +36,7 @@ export function Herramientas() {
   const devolver = useMutation({
     mutationFn: (h: Herramienta) =>
       api.post(`/herramientas/${h.id}/asignaciones/${h.asignacionVigente!.id}/devolver`),
+    meta: { aviso: "Herramienta devuelta ✓" },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["herramientas"] }),
   });
 

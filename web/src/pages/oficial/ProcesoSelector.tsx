@@ -43,6 +43,7 @@ export function ProcesoSelector() {
       if (!r?.ok) throw new Error(r?.motivo ?? "No se pudo registrar");
       return hora;
     },
+    meta: { aviso: false },
     onSuccess: (hora) => {
       setRegistrada(hora);
       qc.invalidateQueries({ queryKey: ["obras", "hoy"] });
