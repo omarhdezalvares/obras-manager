@@ -4,10 +4,7 @@ import { api, apiErrorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Asistencia, Avance } from "../lib/types";
 import { Button, Card, EmptyState, Input, Label, Textarea } from "../components/ui";
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { hoyLocal } from "../lib/fechas";
 
 export function Historial() {
   const { usuario } = useAuth();
@@ -92,7 +89,7 @@ function EditarEvidenciaCard({ avance, onDone }: { avance: Avance; onDone: () =>
     <Card className="border-accent/40">
       <div className="max-w-[200px]">
         <Label>Fecha</Label>
-        <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
       </div>
       <div className="mt-3">
         <Label>Descripcion</Label>

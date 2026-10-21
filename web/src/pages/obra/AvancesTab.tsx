@@ -4,10 +4,7 @@ import { api, apiErrorMessage } from "../../lib/api";
 import { Avance } from "../../lib/types";
 import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { hoyLocal } from "../../lib/fechas";
 
 function descargarBlob(data: BlobPart, tipo: string, nombreArchivo: string): void {
   const url = URL.createObjectURL(new Blob([data], { type: tipo }));
@@ -32,7 +29,7 @@ export function AvancesTab({
   esAdmin: boolean;
 }) {
   const qc = useQueryClient();
-  const [fecha, setFecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyLocal());
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
@@ -49,7 +46,7 @@ export function AvancesTab({
     mutationFn: () => api.post(`/obras/${obraId}/avances`, { fecha, descripcion }),
     onSuccess: (res) => {
       setDescripcion("");
-      setFecha(hoyISO());
+      setFecha(hoyLocal());
       setUltimoId(res.data.id);
       qc.invalidateQueries({ queryKey: ["avances", obraId] });
     },
@@ -67,7 +64,7 @@ export function AvancesTab({
     setDescargandoFotos(true);
     try {
       const res = await api.get(`/obras/${obraId}/avances/fotos.zip`, { responseType: "blob" });
-      descargarBlob(res.data, "application/zip", `fotos-${obraNombre.replace(/[^a-z0-9]+/gi, "-")}-${hoyISO()}.zip`);
+      descargarBlob(res.data, "application/zip", `fotos-${obraNombre.replace(/[^a-z0-9]+/gi, "-")}-${hoyLocal()}.zip`);
     } catch (err) {
       setErrorFotos(apiErrorMessage(err));
     } finally {
@@ -87,7 +84,7 @@ export function AvancesTab({
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="max-w-[200px]">
               <Label>Fecha</Label>
-              <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+              <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
             </div>
             <Textarea
               required
@@ -186,7 +183,7 @@ function EditarEvidenciaCard({ obraId, avance, onDone }: { obraId: string; avanc
     <Card className="border-accent/40">
       <div className="max-w-[200px]">
         <Label>Fecha</Label>
-        <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
       </div>
       <div className="mt-3">
         <Label>Descripcion</Label>
@@ -219,7 +216,7 @@ function ReportePdfCard({ obraId, obraNombre }: { obraId: string; obraNombre: st
         params: { desde: desde || undefined, hasta: hasta || undefined },
         responseType: "blob",
       });
-      descargarBlob(res.data, "application/pdf", `evidencias-${obraNombre.replace(/[^a-z0-9]+/gi, "-")}-${hoyISO()}.pdf`);
+      descargarBlob(res.data, "application/pdf", `evidencias-${obraNombre.replace(/[^a-z0-9]+/gi, "-")}-${hoyLocal()}.pdf`);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {

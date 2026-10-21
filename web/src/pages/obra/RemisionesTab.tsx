@@ -5,15 +5,12 @@ import { Material, PartidaConSaldo, Remision } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label, Select } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
+import { hoyLocal } from "../../lib/fechas";
 
 interface Linea {
   materialId: string;
   cantidad: string;
   costoUnitario: string;
-}
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: PartidaConSaldo[] }) {
@@ -35,7 +32,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
   const [partidaId, setPartidaId] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [folio, setFolio] = useState("");
-  const [fecha, setFecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyLocal());
   const [lineas, setLineas] = useState<Linea[]>([{ materialId: "", cantidad: "", costoUnitario: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
@@ -49,7 +46,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
     setMotivo("");
     setProveedor("");
     setFolio("");
-    setFecha(hoyISO());
+    setFecha(hoyLocal());
     setLineas([{ materialId: "", cantidad: "", costoUnitario: "" }]);
     setError(null);
   }
@@ -134,7 +131,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   </div>
                   <div>
                     <Label>Fecha</Label>
-                    <Input type="date" required max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+                    <Input type="date" required max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
                   </div>
                 </div>
 

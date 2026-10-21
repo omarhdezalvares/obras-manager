@@ -5,10 +5,7 @@ import { api, apiErrorMessage } from "../../lib/api";
 import { Evidencia, Obra } from "../../lib/types";
 import { Button, Card, Input, Label, Textarea } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { hoyLocal } from "../../lib/fechas";
 
 // Paso 2 del flujo de campo para "Evidencia" (antes "Avance"): la fecha de
 // registro es editable (a peticion del usuario) y al menos una foto es
@@ -23,7 +20,7 @@ export function EvidenciaWizard() {
     enabled: !!obraId,
   });
 
-  const [fecha, setFecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyLocal());
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [avanceId, setAvanceId] = useState<string | null>(null);
@@ -65,7 +62,7 @@ export function EvidenciaWizard() {
           <form onSubmit={onSubmit} className="space-y-3">
             <div>
               <Label>Fecha del registro</Label>
-              <Input type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} max={hoyISO()} />
+              <Input type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} max={hoyLocal()} />
             </div>
             <div>
               <Label>¿Qué se hizo?</Label>

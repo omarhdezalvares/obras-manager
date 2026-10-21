@@ -6,17 +6,10 @@ import { ObraPersona, Obra } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, Input } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
+import { hoyLocal, horaLocal } from "../../lib/fechas";
 
 interface ObraConPersonas extends Obra {
   obraPersonas: ObraPersona[];
-}
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function ahoraHHmm(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 // Paso 2 del flujo de campo: solo lo necesario para asistencia. La foto es
@@ -32,7 +25,7 @@ export function AsistenciaWizard() {
     enabled: !!obraId,
   });
 
-  const [fecha, setFecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyLocal());
   const [horas, setHoras] = useState<Record<string, string>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
   const [paso, setPaso] = useState<"seleccion" | "listo">("seleccion");
@@ -47,7 +40,7 @@ export function AsistenciaWizard() {
         fecha,
         registros: Array.from(seleccion).map((personaId) => ({
           personaId,
-          horaLlegada: horas[personaId] ?? ahoraHHmm(),
+          horaLlegada: horas[personaId] ?? horaLocal(),
         })),
       }),
     onSuccess: (res) => {
@@ -66,7 +59,7 @@ export function AsistenciaWizard() {
       else next.add(personaId);
       return next;
     });
-    setHoras((prev) => (prev[personaId] ? prev : { ...prev, [personaId]: ahoraHHmm() }));
+    setHoras((prev) => (prev[personaId] ? prev : { ...prev, [personaId]: horaLocal() }));
   }
 
   const obraPersonas = obraQuery.data?.obraPersonas ?? [];
@@ -86,7 +79,7 @@ export function AsistenciaWizard() {
           <p className="mb-3 text-sm text-ink-soft">Marca quiénes llegaron y la fecha. La hora se precarga pero puedes ajustarla.</p>
 
           <div className="mb-3 max-w-[200px]">
-            <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+            <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
           </div>
 
           {obraPersonas.length === 0 ? (
@@ -113,7 +106,7 @@ export function AsistenciaWizard() {
                     <Input
                       type="time"
                       className="w-28"
-                      value={horas[op.personaId] ?? ahoraHHmm()}
+                      value={horas[op.personaId] ?? horaLocal()}
                       onChange={(e) => setHoras((prev) => ({ ...prev, [op.personaId]: e.target.value }))}
                     />
                   )}

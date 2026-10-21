@@ -6,14 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { horasRegistradasEnFecha } from "../../lib/asistencias";
-
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-function ahoraHHmm(): string {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+import { hoyLocal, horaLocal } from "../../lib/fechas";
 
 export function AsistenciasTab({
   obraId,
@@ -133,7 +126,7 @@ function EditarAsistenciaForm({ obraId, asistencia, onDone }: { obraId: string; 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div>
           <Label>Fecha</Label>
-          <Input type="date" required max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          <Input type="date" required max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
         </div>
         <div>
           <Label>Hora de llegada</Label>
@@ -170,7 +163,7 @@ function RegistrarAsistencia({
 }) {
   const { usuario } = useAuth();
   const qc = useQueryClient();
-  const [fecha, setFecha] = useState(hoyISO());
+  const [fecha, setFecha] = useState(hoyLocal());
   const [horas, setHoras] = useState<Record<string, string>>({});
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set(usuario?.personaId ? [usuario.personaId] : []));
   const [resultado, setResultado] = useState<{ personaId: string; ok: boolean; motivo?: string }[] | null>(null);
@@ -187,7 +180,7 @@ function RegistrarAsistencia({
         fecha,
         registros: aEnviar.map((personaId) => ({
           personaId,
-          horaLlegada: horas[personaId] ?? ahoraHHmm(),
+          horaLlegada: horas[personaId] ?? horaLocal(),
         })),
       }),
     onSuccess: (res) => {
@@ -204,7 +197,7 @@ function RegistrarAsistencia({
       else next.add(personaId);
       return next;
     });
-    setHoras((prev) => (prev[personaId] ? prev : { ...prev, [personaId]: ahoraHHmm() }));
+    setHoras((prev) => (prev[personaId] ? prev : { ...prev, [personaId]: horaLocal() }));
   }
 
   return (
@@ -214,7 +207,7 @@ function RegistrarAsistencia({
         Selecciona las personas presentes y la fecha. La hora se precarga con la hora actual del dispositivo pero es editable.
       </p>
       <div className="mb-3 max-w-[200px]">
-        <Input type="date" max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
       </div>
 
       {obraPersonas.length === 0 ? (
@@ -251,7 +244,7 @@ function RegistrarAsistencia({
                 <Input
                   type="time"
                   className="w-28"
-                  value={horas[op.personaId] ?? ahoraHHmm()}
+                  value={horas[op.personaId] ?? horaLocal()}
                   onChange={(e) => setHoras((prev) => ({ ...prev, [op.personaId]: e.target.value }))}
                 />
               )}
