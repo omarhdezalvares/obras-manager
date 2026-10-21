@@ -12,11 +12,20 @@ if (!fs.existsSync(env.uploadDir)) {
   fs.mkdirSync(env.uploadDir, { recursive: true });
 }
 
+const EXTENSION_POR_MIME: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/heic": ".heic",
+  "application/pdf": ".pdf",
+};
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, env.uploadDir),
+  // La extension sale del mimetype validado, nunca del nombre del cliente:
+  // /uploads se sirve en el mismo origen y un "x.html" ejecutaria scripts.
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || "";
-    cb(null, `${uuid()}${ext}`);
+    cb(null, `${uuid()}${EXTENSION_POR_MIME[file.mimetype] ?? ""}`);
   },
 });
 

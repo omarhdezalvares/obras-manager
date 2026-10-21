@@ -208,6 +208,17 @@ asistenciasRouter.patch(
           data: { descripcion: `Costo de mano de obra - ${antes.persona.nombreCompleto} - ${body.fecha}` },
         });
       }
+      // Los avances ligan personal por fecha (flujo 6): al mover el dia, la
+      // asistencia pasa a los avances del nuevo dia.
+      if (fecha) {
+        await tx.avancePersona.deleteMany({ where: { asistenciaId: antes.id } });
+        const avancesDelDia = await tx.avance.findMany({ where: { obraId: antes.obraId, fecha, deletedAt: null } });
+        if (avancesDelDia.length > 0) {
+          await tx.avancePersona.createMany({
+            data: avancesDelDia.map((av) => ({ avanceId: av.id, personaId: antes.personaId, asistenciaId: antes.id })),
+          });
+        }
+      }
       return actualizada;
     });
 

@@ -45,6 +45,7 @@ herramientasRouter.get(
 
     const asignaciones = await prisma.herramientaAsignacion.findMany({
       where: {
+        tenantId: req.user!.tenantId,
         fechaDevolucion: null,
         OR: [
           { personaId: req.user!.personaId },
