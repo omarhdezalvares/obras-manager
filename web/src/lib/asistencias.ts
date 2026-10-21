@@ -16,3 +16,18 @@ export function seleccionInicial(
 ): Set<string> {
   return new Set(personaId && obraPersonas.some((op) => op.personaId === personaId && op.activo !== false) ? [personaId] : []);
 }
+
+// Historial por dia (mas reciente primero) con el costo del dia.
+export function agruparPorDia<T extends { fecha: string; transaccion?: { monto: number } | null }>(
+  asistencias: T[]
+): { fecha: string; items: T[]; costo: number }[] {
+  const porDia = new Map<string, { fecha: string; items: T[]; costo: number }>();
+  for (const a of asistencias) {
+    const fecha = a.fecha.slice(0, 10);
+    const dia = porDia.get(fecha) ?? { fecha, items: [], costo: 0 };
+    dia.items.push(a);
+    dia.costo += a.transaccion?.monto ?? 0;
+    porDia.set(fecha, dia);
+  }
+  return [...porDia.values()].sort((x, y) => y.fecha.localeCompare(x.fecha));
+}

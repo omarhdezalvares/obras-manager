@@ -9,6 +9,8 @@ interface Props {
   entidadTipo: "asistencia" | "avance" | "remision" | "herramienta";
   entidadId: string;
   compact?: boolean;
+  // En listas: solo "📎 Fotos (n)"; se despliega al tocar para no llenar cada tarjeta de botones.
+  plegado?: boolean;
 }
 
 // El rol Solo lectura nunca puede borrar; el Oficial solo puede borrar lo
@@ -25,7 +27,8 @@ function puedeEliminar(rol: string | undefined, subidaPor: string, usuarioId: st
 // la camara directo (seccion 11), y "Galeria" usa un input sin capture para
 // que el selector nativo de archivos/fotos guardadas quede disponible (antes
 // un solo input con capture ocultaba la opcion de galeria en varios moviles).
-export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
+export function EvidenceUploader({ entidadTipo, entidadId, compact, plegado }: Props) {
+  const [abierto, setAbierto] = useState(false);
   const { usuario } = useAuth();
   const qc = useQueryClient();
   const camaraRef = useRef<HTMLInputElement>(null);
@@ -55,6 +58,17 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
     onError: (err) => alert(apiErrorMessage(err)),
   });
+
+  if (plegado && !abierto)
+    return (
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className="min-h-[44px] rounded-md px-2 text-sm text-accent hover:bg-accent-soft"
+      >
+        📎 Fotos ({query.data?.length ?? 0})
+      </button>
+    );
 
   return (
     <div className={compact ? "" : "space-y-2"}>

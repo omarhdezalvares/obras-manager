@@ -5,7 +5,7 @@ import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
+import { agruparPorDia, horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
 import { fechaCorta, horaLocal, hoyLocal } from "../../lib/fechas";
 
 export function AsistenciasTab({
@@ -23,10 +23,14 @@ export function AsistenciasTab({
 }) {
   const qc = useQueryClient();
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [diasVisibles, setDiasVisibles] = useState(7);
+  const [abiertos, setAbiertos] = useState<Record<string, boolean>>({});
   const query = useQuery({
     queryKey: ["asistencias", obraId],
     queryFn: () => api.get<Asistencia[]>(`/obras/${obraId}/asistencias`).then((r) => r.data),
   });
+
+  const dias = agruparPorDia(query.data ?? []);
 
   const eliminar = useMutation({
     mutationFn: (id: string) => api.delete(`/obras/${obraId}/asistencias/${id}`),
@@ -44,16 +48,34 @@ export function AsistenciasTab({
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
         {query.data?.length === 0 && <EmptyState>Aun no hay asistencias registradas en esta obra.</EmptyState>}
         <div className="space-y-2">
-          {query.data?.map((a) => (
-            <Card key={a.id}>
-              {editandoId === a.id ? (
+          {dias.slice(0, diasVisibles).map((d, idx) => {
+            const abierto = abiertos[d.fecha] ?? idx === 0;
+            return (
+              <Card key={d.fecha}>
+                <button
+                  type="button"
+                  aria-expanded={abierto}
+                  onClick={() => setAbiertos((prev) => ({ ...prev, [d.fecha]: !abierto }))}
+                  className="flex min-h-[44px] w-full items-center justify-between gap-3 text-left"
+                >
+                  <span className="font-medium text-ink">
+                    {fechaCorta(d.fecha)} · {d.items.length} {d.items.length === 1 ? "persona" : "personas"}
+                    {verFinanciero && <span className="font-normal text-ink-soft"> · ${d.costo.toLocaleString("es-MX")}</span>}
+                  </span>
+                  <span className="text-ink-soft">{abierto ? "▴" : "▾"}</span>
+                </button>
+                {abierto && (
+                  <div className="mt-2 divide-y divide-black/5 border-t border-black/5">
+                    {d.items.map((a) => (
+                      <div key={a.id} className="py-2">
+                        {editandoId === a.id ? (
                 <EditarAsistenciaForm obraId={obraId} asistencia={a} onDone={() => setEditandoId(null)} />
               ) : (
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-ink">{a.persona?.nombreCompleto}</p>
                   <p className="text-xs text-ink-soft">
-                    {fechaCorta(a.fecha)} · llegada {a.horaLlegada}
+                    Llegada {a.horaLlegada}
                     {verFinanciero && a.transaccion && ` · costo aplicado $${a.transaccion.monto.toLocaleString("es-MX")}`}
                   </p>
                   {a.observaciones && <p className="text-xs text-ink-soft">{a.observaciones}</p>}
@@ -79,10 +101,20 @@ export function AsistenciasTab({
               </div>
               )}
               <div className="mt-2">
-                <EvidenceUploader entidadTipo="asistencia" entidadId={a.id} compact />
+                <EvidenceUploader entidadTipo="asistencia" entidadId={a.id} compact plegado />
               </div>
-            </Card>
-          ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+          {dias.length > diasVisibles && (
+            <Button variant="secondary" onClick={() => setDiasVisibles((n) => n + 7)}>
+              Ver días anteriores
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -234,7 +234,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                 ))}
               </ul>
               <div className="mt-2">
-                <EvidenceUploader entidadTipo="remision" entidadId={r.id} compact />
+                <EvidenceUploader entidadTipo="remision" entidadId={r.id} compact plegado />
               </div>
             </Card>
           ))}
