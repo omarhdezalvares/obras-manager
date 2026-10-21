@@ -1,15 +1,8 @@
 import { Link, Navigate } from "react-router-dom";
 import { useObrasHoy } from "../lib/obrasHoy";
+import { etiquetaEstadoObra } from "../lib/etiquetas";
 import { Obra } from "../lib/types";
 import { Card, EmptyState, Pill } from "../components/ui";
-
-const ESTADO_LABEL: Record<Obra["estado"], string> = {
-  planeada: "Planeada",
-  en_ejecucion: "En ejecucion",
-  pausada: "Pausada",
-  cerrada: "Cerrada",
-  cancelada: "Cancelada",
-};
 
 // Pantalla "Mis obras" (seccion 11): tarjetas grandes, no tabla; el Oficial
 // solo ve las obras a las que esta explicitamente asignado (lo filtra el API).
@@ -37,7 +30,7 @@ export function MisObras() {
                   <p className="text-lg font-semibold text-ink">{o.nombre}</p>
                   <p className="text-sm text-ink-soft">{o.cliente} · {o.ubicacion}</p>
                 </div>
-                <Pill>{ESTADO_LABEL[o.estado]}</Pill>
+                <Pill>{etiquetaEstadoObra(o.estado)}</Pill>
               </div>
               {o.hoy && (
                 <div className="mt-3 flex flex-wrap gap-2 text-[13px]">

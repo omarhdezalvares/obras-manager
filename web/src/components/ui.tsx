@@ -18,7 +18,7 @@ export function Pill({
     crit: "bg-crit-soft text-crit",
   };
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-mono uppercase tracking-wide ${tones[tone]}`}>
+    <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-[13px] font-medium ${tones[tone]}`}>
       {children}
     </span>
   );

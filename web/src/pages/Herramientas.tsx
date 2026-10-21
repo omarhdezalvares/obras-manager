@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from "../lib/api";
 import { Herramienta, Obra, Persona } from "../lib/types";
 import { useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
+import { etiquetaEstadoHerramienta } from "../lib/etiquetas";
 import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../components/ui";
 
 export function Herramientas() {
@@ -77,7 +78,7 @@ export function Herramientas() {
                   {h.codigo} {h.marca && `· ${h.marca}`} {h.modelo && h.modelo}
                 </p>
               </div>
-              <Pill tone={ESTADO_TONE[h.estado]}>{h.estado}</Pill>
+              <Pill tone={ESTADO_TONE[h.estado]}>{etiquetaEstadoHerramienta(h.estado)}</Pill>
             </div>
             <p className="mt-2 text-sm text-ink-soft">
               {h.asignacionVigente

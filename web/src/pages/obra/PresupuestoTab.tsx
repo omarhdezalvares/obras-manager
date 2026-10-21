@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { PartidaConSaldo } from "../../lib/types";
 import { Button, Card, Input, Label, Pill, Select } from "../../components/ui";
+import { etiquetaTipoPartida } from "../../lib/etiquetas";
 
 function tone(pct: number): "ok" | "warn" | "crit" {
   if (pct >= 100) return "crit";
@@ -40,7 +41,7 @@ export function PresupuestoTab({
               <div>
                 <p className="font-medium text-ink">{p.codigo} · {p.nombre}</p>
                 <p className="text-xs text-ink-soft">
-                  Tipo: {p.tipo ?? "otro"} · Presupuesto: ${(p.presupuestoActualizado || p.presupuestoInicial).toLocaleString("es-MX")}
+                  Tipo: {etiquetaTipoPartida(p.tipo)} · Presupuesto: ${(p.presupuestoActualizado || p.presupuestoInicial).toLocaleString("es-MX")}
                 </p>
               </div>
               <div className="flex items-center gap-2">

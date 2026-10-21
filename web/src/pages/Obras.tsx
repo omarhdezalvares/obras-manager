@@ -5,16 +5,9 @@ import { api, apiErrorMessage } from "../lib/api";
 import { Obra } from "../lib/types";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
+import { etiquetaEstadoObra } from "../lib/etiquetas";
 import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../components/ui";
-
-const ESTADOS: Record<Obra["estado"], string> = {
-  planeada: "Planeada",
-  en_ejecucion: "En ejecucion",
-  pausada: "Pausada",
-  cerrada: "Cerrada",
-  cancelada: "Cancelada",
-};
 
 export function Obras() {
   const { usuario } = useAuth();
@@ -59,7 +52,7 @@ export function Obras() {
                   <p className="mt-1 text-xs text-ink-soft">Responsable: {o.responsable ?? "—"} · {o.personasAsignadas} personas</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <Pill>{ESTADOS[o.estado]}</Pill>
+                  <Pill>{etiquetaEstadoObra(o.estado)}</Pill>
                   {verFinanciero && o.porcentajeConsumido != null && (
                     <div className="w-40">
                       <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
