@@ -32,7 +32,8 @@ export function TransaccionesTab({ obraId, puedeEditar }: { obraId: string; pued
       <div className="space-y-2">
         {query.data?.map((t) => {
           const gasto = esGasto(t.tipo);
-          const monto = Math.abs(t.monto);
+          const conSigno = t.montoConSigno ?? (gasto ? -Math.abs(t.monto) : t.monto);
+          const resta = conSigno < 0;
           return (
             <Card key={t.id}>
               <div className="flex items-start justify-between gap-3">
@@ -43,8 +44,8 @@ export function TransaccionesTab({ obraId, puedeEditar }: { obraId: string; pued
                       <span className="font-normal text-ink-soft"> · {t.persona.nombreCompleto}</span>
                     )}
                   </p>
-                  <p className={`text-lg font-semibold ${gasto ? "text-crit" : "text-ok"}`}>
-                    {gasto ? "−" : "+"}${monto.toLocaleString("es-MX")}
+                  <p className={`text-lg font-semibold ${resta ? "text-crit" : "text-ok"}`}>
+                    {resta ? "−" : "+"}${Math.abs(conSigno).toLocaleString("es-MX")}
                   </p>
                   <p className="text-xs text-ink-soft">{t.descripcion}</p>
                   {t.motivoAjuste && <p className="mt-1 text-xs text-copper">Editada — motivo: {t.motivoAjuste}</p>}

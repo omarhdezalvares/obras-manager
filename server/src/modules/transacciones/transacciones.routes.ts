@@ -6,7 +6,7 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { assertObraVisible } from "../../lib/obraScope";
 import { writeAuditLog } from "../../lib/audit";
 import { TRANSACCION_GESTION, VER_TRANSACCIONES } from "../../lib/roles";
-import { esGasto } from "../../lib/finance";
+import { esGasto, montoConSigno } from "../../lib/finance";
 
 export const transaccionesRouter = Router({ mergeParams: true });
 transaccionesRouter.use(requireAuth);
@@ -41,7 +41,7 @@ transaccionesRouter.get(
     const conSigno = transacciones.map((t) => ({
       ...t,
       esGasto: esGasto(t.tipo),
-      montoConSigno: esGasto(t.tipo) ? -Math.abs(t.monto) : Math.abs(t.monto),
+      montoConSigno: montoConSigno(t.tipo, t.monto),
     }));
     res.json(conSigno);
   })

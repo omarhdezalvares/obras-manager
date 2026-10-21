@@ -22,6 +22,12 @@ export function esGasto(tipo: string): boolean {
   return COSTO_TIPOS.includes(tipo);
 }
 
+// Los gastos siempre restan; lo demas conserva su signo (un ajuste de
+// presupuesto a la baja se guarda negativo y debe mostrarse como resta).
+export function montoConSigno(tipo: string, monto: number): number {
+  return esGasto(tipo) ? -Math.abs(monto) : monto;
+}
+
 // Seccion 05: "el saldo de una partida no es un campo que se actualiza: es
 // SUM(transacciones) agrupado por partida, calculado al vuelo." Esta funcion
 // es la unica fuente de verdad para presupuesto vs. real en toda la app

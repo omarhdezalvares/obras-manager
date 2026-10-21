@@ -8,7 +8,7 @@ import { assertObraVisible, visibleObraIds } from "../../lib/obraScope";
 import { resumenFinancieroObra } from "../../lib/finance";
 import { REPORTE_EXPORT, REPORTE_EXPORT_FINANCIERO, ROLES, VER_PRESUPUESTO } from "../../lib/roles";
 import { startOfDay } from "../../lib/dates";
-import { esGasto } from "../../lib/finance";
+import { montoConSigno } from "../../lib/finance";
 
 export const reportesRouter = Router();
 reportesRouter.use(requireAuth);
@@ -338,18 +338,18 @@ async function construirHoja(
       orderBy: { createdAt: "desc" },
     });
     for (const t of transacciones) {
-      const gasto = esGasto(t.tipo);
+      const monto = montoConSigno(t.tipo, t.monto);
       const row = sheet.addRow({
         obra: t.obra.nombre,
         partida: t.partida.nombre,
         tipo: t.tipo,
         persona: t.tipo === "costo_mano_obra" ? (t.persona?.nombreCompleto ?? "") : "",
-        monto: gasto ? -Math.abs(t.monto) : Math.abs(t.monto),
+        monto,
         motivo: t.motivoAjuste ?? "",
         editor: t.updatedBy ?? "",
         fecha_edicion: t.updatedBy ? t.updatedAt.toISOString().slice(0, 10) : "",
       });
-      row.getCell("monto").font = { color: { argb: gasto ? ROJO : VERDE }, bold: true };
+      row.getCell("monto").font = { color: { argb: monto < 0 ? ROJO : VERDE }, bold: true };
     }
     return;
   }

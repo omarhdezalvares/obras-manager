@@ -114,11 +114,11 @@ partidasRouter.patch(
 
       // Si el presupuesto cambia, se registra tambien como transaccion de
       // ajuste_presupuesto para que el libro de transacciones refleje el cambio.
-      if (
-        cambios.presupuestoActualizado !== undefined &&
-        cambios.presupuestoActualizado !== antes.presupuestoActualizado
-      ) {
-        const delta = cambios.presupuestoActualizado - antes.presupuestoActualizado;
+      // Mismo criterio que partidasConSaldo: partidas viejas pueden tener
+      // presupuestoActualizado = 0, su base real es el presupuesto inicial.
+      const base = antes.presupuestoActualizado || antes.presupuestoInicial;
+      if (cambios.presupuestoActualizado !== undefined && cambios.presupuestoActualizado !== base) {
+        const delta = cambios.presupuestoActualizado - base;
         await tx.transaccion.create({
           data: {
             tenantId: req.user!.tenantId,
