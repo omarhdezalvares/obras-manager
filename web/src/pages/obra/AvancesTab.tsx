@@ -22,11 +22,13 @@ export function AvancesTab({
   obraNombre,
   puedeOperar,
   esAdmin,
+  registrarAlAbrir,
 }: {
   obraId: string;
   obraNombre: string;
   puedeOperar: boolean;
   esAdmin: boolean;
+  registrarAlAbrir?: boolean;
 }) {
   const qc = useQueryClient();
   const [fecha, setFecha] = useState(hoyLocal());
@@ -36,7 +38,7 @@ export function AvancesTab({
   const [errorFotos, setErrorFotos] = useState<string | null>(null);
   const [descargandoFotos, setDescargandoFotos] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarForm, setMostrarForm] = useState(!!registrarAlAbrir);
   const [mostrarPdf, setMostrarPdf] = useState(false);
 
   const query = useQuery({
@@ -78,7 +80,7 @@ export function AvancesTab({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Evidencias</h2>
         <div className="flex flex-wrap gap-2">
           {puedeOperar && (
             <Button onClick={() => setMostrarForm((v) => !v)}>{mostrarForm ? "Cancelar" : "+ Registrar evidencia"}</Button>

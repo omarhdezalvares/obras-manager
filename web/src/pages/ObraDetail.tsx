@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Navigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { puedeVerPresupuesto, puedeVerTransacciones, useAuth } from "../lib/auth";
@@ -21,21 +21,30 @@ interface ObraDetalle extends Obra {
   herramientaAsignaciones: HerramientaAsignacion[];
 }
 
-type TabKey =
-  | "resumen"
-  | "personas"
-  | "asistencias"
-  | "avances"
-  | "presupuesto"
-  | "transacciones"
-  | "remisiones"
-  | "herramientas";
+type TabKey = "hoy" | "bitacora" | "equipo" | "dinero";
+
+// Enlaces viejos (?tab=asistencias, ?tab=presupuesto…) siguen llevando a la pestana que ahora los contiene.
+const TAB_DE: Record<string, TabKey> = {
+  hoy: "hoy",
+  resumen: "hoy",
+  asistencias: "hoy",
+  bitacora: "bitacora",
+  avances: "bitacora",
+  equipo: "equipo",
+  personas: "equipo",
+  herramientas: "equipo",
+  dinero: "dinero",
+  presupuesto: "dinero",
+  transacciones: "dinero",
+  remisiones: "dinero",
+};
 
 export function ObraDetail() {
   const { id } = useParams<{ id: string }>();
   const { usuario } = useAuth();
-  const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState<TabKey>((searchParams.get("tab") as TabKey | null) ?? "resumen");
+  // La pestana vive en la URL: un enlace ?tab= dentro de la misma obra tambien la cambia.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab: TabKey = TAB_DE[searchParams.get("tab") ?? ""] ?? "hoy";
   const [editando, setEditando] = useState(false);
 
   const query = useQuery({
@@ -57,18 +66,14 @@ export function ObraDetail() {
   const verPresupuesto = puedeVerPresupuesto(usuario?.rol);
   const verTransacciones = puedeVerTransacciones(usuario?.rol);
 
-  const tabs: { key: TabKey; label: string; visible: boolean }[] = [
-    { key: "resumen", label: "Resumen", visible: true },
-    { key: "asistencias", label: "Asistencias", visible: true },
-    { key: "avances", label: "Evidencias", visible: true },
-    { key: "personas", label: "Personas", visible: !!usuario },
-    { key: "presupuesto", label: "Presupuesto", visible: verPresupuesto },
-    { key: "transacciones", label: "Transacciones", visible: verTransacciones },
-    { key: "remisiones", label: "Remisiones", visible: !!usuario },
-    { key: "herramientas", label: "Herramientas", visible: true },
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "hoy", label: "Hoy" },
+    { key: "bitacora", label: "Bitácora" },
+    { key: "equipo", label: "Equipo" },
+    // Remisiones las ven todos los roles; presupuesto y transacciones solo con acceso financiero.
+    { key: "dinero", label: verPresupuesto || verTransacciones ? "Dinero" : "Remisiones" },
   ];
-  // ?tab= puede pedir una pestana que el rol no ve: entonces se abre el Resumen.
-  const tabActual: TabKey = tabs.some((t) => t.visible && t.key === tab) ? tab : "resumen";
+  const irA = (key: TabKey) => setSearchParams({ tab: key }, { replace: true });
 
   return (
     <div className="space-y-4">
@@ -104,83 +109,107 @@ export function ObraDetail() {
             <BarraPresupuesto
               porcentaje={obra.financiero.porcentajeConsumido}
               alerta={obra.financiero.alertaPartida}
-              alertaTo={`/obras/${obra.id}?tab=presupuesto`}
+              alertaTo={`/obras/${obra.id}?tab=dinero`}
             />
           </div>
         </Card>
       )}
 
-      <div className="flex gap-1 overflow-x-auto border-b border-black/10 pb-px">
-        {tabs
-          .filter((t) => t.visible)
-          .map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`min-h-[44px] shrink-0 rounded-t-md px-3 py-2 text-sm font-medium ${
-                tabActual === t.key ? "border-b-2 border-accent text-accent" : "text-ink-soft hover:text-ink"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+      <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-black/10 pb-px">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            onClick={() => irA(t.key)}
+            className={`min-h-[44px] shrink-0 rounded-t-md px-4 py-2 text-sm font-medium ${
+              tab === t.key ? "border-b-2 border-accent text-accent" : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <div>
-        {tabActual === "resumen" && <ResumenTab obra={obra} esOperativo={!!esOperativo} verPresupuesto={verPresupuesto} />}
-        {tabActual === "personas" && (
-          <PersonasTab obraId={id} obraPersonas={obra.obraPersonas} puedeGestionar={!!esGestion} verFinanciero={verPresupuesto} />
+        {tab === "hoy" && <HoyTab obra={obra} esOperativo={!!esOperativo} verPresupuesto={verPresupuesto} />}
+        {tab === "bitacora" && (
+          <div className="space-y-6">
+            <AvancesTab
+              obraId={id}
+              obraNombre={obra.nombre}
+              puedeOperar={!!esOperativo}
+              esAdmin={["Administrador", "Finanzas"].includes(usuario?.rol ?? "")}
+              registrarAlAbrir={searchParams.get("registrar") === "1"}
+            />
+            <AsistenciasTab
+              obraId={id}
+              obraPersonas={obra.obraPersonas}
+              puedeOperar={!!esOperativo}
+              puedeEditar={!!esGestion}
+              verFinanciero={verPresupuesto}
+              vista="historial"
+            />
+          </div>
         )}
-        {tabActual === "asistencias" && (
-          <AsistenciasTab
-            obraId={id}
-            obraPersonas={obra.obraPersonas}
-            puedeOperar={!!esOperativo}
-            puedeEditar={!!esGestion}
-            verFinanciero={verPresupuesto}
-          />
+        {tab === "equipo" && (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <PersonasTab obraId={id} obraPersonas={obra.obraPersonas} puedeGestionar={!!esGestion} verFinanciero={verPresupuesto} />
+            <HerramientasTab obraId={id} asignaciones={obra.herramientaAsignaciones ?? []} />
+          </div>
         )}
-        {tabActual === "avances" && (
-          <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={["Administrador", "Finanzas"].includes(usuario?.rol ?? "")} />
+        {tab === "dinero" && (
+          <div className="space-y-6">
+            {verPresupuesto && obra.financiero && (
+              <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />
+            )}
+            {verTransacciones && (
+              <TransaccionesTab
+                obraId={id}
+                puedeEditar={!!esFinanzas}
+                obraPersonas={obra.obraPersonas}
+                partidas={obra.financiero?.partidas ?? []}
+              />
+            )}
+            <RemisionesTab obraId={id} partidas={obra.financiero?.partidas ?? []} />
+          </div>
         )}
-        {tabActual === "presupuesto" && obra.financiero && (
-          <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />
-        )}
-        {tabActual === "transacciones" && (
-          <TransaccionesTab
-            obraId={id}
-            puedeEditar={!!esFinanzas}
-            obraPersonas={obra.obraPersonas}
-            partidas={obra.financiero?.partidas ?? []}
-          />
-        )}
-        {tabActual === "remisiones" && <RemisionesTab obraId={id} partidas={obra.financiero?.partidas ?? []} />}
-        {tabActual === "herramientas" && <HerramientasTab obraId={id} asignaciones={obra.herramientaAsignaciones ?? []} />}
       </div>
     </div>
   );
 }
 
-function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; esOperativo: boolean; verPresupuesto: boolean }) {
+// "Hoy": capturar la asistencia y la evidencia del dia, y ver lo ultimo registrado.
+function HoyTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; esOperativo: boolean; verPresupuesto: boolean }) {
   const hoy = hoyLocal();
   const asistenciasHoy = useQuery({
     queryKey: ["asistencias", obra.id, hoy],
     queryFn: () =>
       api.get<Asistencia[]>(`/obras/${obra.id}/asistencias`, { params: { fecha_desde: hoy, fecha_hasta: hoy } }).then((r) => r.data),
+    enabled: !esOperativo,
   });
   const avances = useQuery({
     queryKey: ["avances", obra.id],
     queryFn: () => api.get<Avance[]>(`/obras/${obra.id}/avances`).then((r) => r.data),
   });
   const ultima = avances.data?.[0];
+  const hayEvidenciaHoy = (avances.data ?? []).some((a) => a.fecha.slice(0, 10) === hoy);
   const llegaron = asistenciasHoy.data ?? [];
 
-  // "¿Como va la obra?": quien vino hoy, lo ultimo registrado y el dinero.
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      {esOperativo ? (
+        <AsistenciasTab
+          obraId={obra.id}
+          obraPersonas={obra.obraPersonas}
+          puedeOperar
+          puedeEditar={false}
+          verFinanciero={verPresupuesto}
+          vista="registro"
+        />
+      ) : (
         <Card>
-          <p className="text-[13px] uppercase text-ink-soft">Hoy · {fechaLarga(hoy)}</p>
+          <h2 className="font-semibold text-ink">Asistencia de hoy · {fechaLarga(hoy)}</h2>
           {llegaron.length === 0 ? (
             <p className="mt-1 text-sm text-warn">Nadie ha registrado asistencia hoy.</p>
           ) : (
@@ -193,8 +222,26 @@ function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; 
             </ul>
           )}
         </Card>
+      )}
+      <div className="space-y-3">
         <Card>
-          <p className="text-[13px] uppercase text-ink-soft">Última evidencia</p>
+          <h2 className="font-semibold text-ink">Evidencia de hoy</h2>
+          {hayEvidenciaHoy ? (
+            <p className="mt-1 text-sm text-ink">✓ Ya hay evidencia registrada hoy.</p>
+          ) : (
+            <p className="mt-1 text-sm text-warn">Falta la evidencia del día.</p>
+          )}
+          {esOperativo && (
+            <Link
+              to={`/obras/${obra.id}?tab=bitacora&registrar=1`}
+              className="mt-3 inline-flex min-h-[44px] items-center rounded-md bg-accent px-4 text-sm font-semibold text-white"
+            >
+              + Registrar evidencia
+            </Link>
+          )}
+        </Card>
+        <Card>
+          <h2 className="font-semibold text-ink">Última evidencia</h2>
           {ultima ? (
             <>
               <p className="mt-1 text-sm font-medium text-ink">
@@ -206,37 +253,13 @@ function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; 
             <p className="mt-1 text-sm text-ink-soft">Aún no hay evidencias.</p>
           )}
         </Card>
+        {obra.descripcion && (
+          <Card>
+            <h2 className="font-semibold text-ink">Descripción</h2>
+            <p className="mt-1 text-sm text-ink">{obra.descripcion}</p>
+          </Card>
+        )}
       </div>
-      {obra.descripcion && (
-        <Card>
-          <p className="text-xs uppercase text-ink-soft">Descripcion</p>
-          <p className="mt-1 text-sm text-ink">{obra.descripcion}</p>
-        </Card>
-      )}
-      {verPresupuesto && obra.financiero && (
-        <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Partidas presupuestales</h2>
-          <div className="space-y-2">
-            {obra.financiero.partidas.map((p) => (
-              <Card key={p.id}>
-                <div className="mb-1 flex items-baseline justify-between gap-3">
-                  <p className="font-medium text-ink">{p.nombre}</p>
-                  <p className="text-[13px] text-ink-soft">
-                    ${p.consumido.toLocaleString("es-MX", { maximumFractionDigits: 0 })} de $
-                    {(p.presupuestoActualizado || p.presupuestoInicial).toLocaleString("es-MX")}
-                  </p>
-                </div>
-                <BarraPresupuesto porcentaje={p.porcentajeConsumido} />
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-      {esOperativo && (
-        <p className="text-xs text-ink-soft">
-          Usa las pestañas "Asistencias" y "Evidencias" para capturar el registro diario de campo desde aqui.
-        </p>
-      )}
     </div>
   );
 }

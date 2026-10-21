@@ -15,12 +15,15 @@ export function AsistenciasTab({
   puedeOperar,
   puedeEditar,
   verFinanciero,
+  vista,
 }: {
   obraId: string;
   obraPersonas: ObraPersona[];
   puedeOperar: boolean;
   puedeEditar: boolean;
   verFinanciero: boolean;
+  // "registro" para la pestana Hoy, "historial" para la Bitacora; sin valor muestra ambos.
+  vista?: "registro" | "historial";
 }) {
   const qc = useQueryClient();
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -40,14 +43,17 @@ export function AsistenciasTab({
     onError: (err) => alert(apiErrorMessage(err)),
   });
 
+  if (vista === "registro")
+    return <RegistrarAsistencia obraId={obraId} obraPersonas={obraPersonas} verFinanciero={verFinanciero} asistencias={query.data} />;
+
   return (
     <div className="space-y-4">
-      {puedeOperar && (
+      {puedeOperar && vista !== "historial" && (
         <RegistrarAsistencia obraId={obraId} obraPersonas={obraPersonas} verFinanciero={verFinanciero} asistencias={query.data} />
       )}
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Asistencias</h2>
         {query.data?.length === 0 && <EmptyState>Aun no hay asistencias registradas en esta obra.</EmptyState>}
         <div className="space-y-2">
           {dias.slice(0, diasVisibles).map((d, idx) => {

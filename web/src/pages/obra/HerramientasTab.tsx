@@ -6,6 +6,7 @@ import { fechaCortaDe } from "../../lib/fechas";
 export function HerramientasTab({ asignaciones }: { obraId: string; asignaciones: HerramientaAsignacion[] }) {
   return (
     <div className="space-y-3">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Herramientas en la obra</h2>
       <p className="text-xs text-ink-soft">
         Herramientas actualmente asignadas a esta obra. La asignacion/devolucion se gestiona desde{" "}
         <Link to="/herramientas" className="text-accent underline">

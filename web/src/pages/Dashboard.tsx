@@ -28,13 +28,13 @@ export function Dashboard() {
 
   // "Para hoy": lo que hay que resolver, cada pendiente lleva a donde se resuelve.
   const hace7 = hoyLocal(new Date(Date.now() - 7 * 864e5));
-  const sinAsistencia = activas.filter((o) => o.hoy?.asistencias === 0).map((o) => ({ label: o.nombre, to: `/obras/${o.id}?tab=asistencias` }));
+  const sinAsistencia = activas.filter((o) => o.hoy?.asistencias === 0).map((o) => ({ label: o.nombre, to: `/obras/${o.id}?tab=hoy` }));
   const sinFoto = (notifQuery.data?.avancesIncompletos ?? [])
     .filter((a) => a.fecha >= hace7)
-    .map((a) => ({ label: `${a.obraNombre} · ${fechaCorta(a.fecha)}`, to: `/obras/${a.obraId}?tab=avances` }));
+    .map((a) => ({ label: `${a.obraNombre} · ${fechaCorta(a.fecha)}`, to: `/obras/${a.obraId}?tab=bitacora` }));
   const partidasAlerta = obras
     .filter((o) => o.alertaPartida)
-    .map((o) => ({ label: `${o.nombre} · ${o.alertaPartida!.nombre} al ${o.alertaPartida!.porcentaje}%`, to: `/obras/${o.id}?tab=presupuesto` }));
+    .map((o) => ({ label: `${o.nombre} · ${o.alertaPartida!.nombre} al ${o.alertaPartida!.porcentaje}%`, to: `/obras/${o.id}?tab=dinero` }));
 
   return (
     <div className="space-y-6">
@@ -114,17 +114,17 @@ export function Dashboard() {
               notifQuery.data.sinActividad.length === 0 &&
               notifQuery.data.avancesIncompletos.length === 0 && <EmptyState>Sin alertas abiertas.</EmptyState>}
             {guardadas.map((n) => (
-              <Alerta key={n.id} to={n.obraId ? `/obras/${n.obraId}?tab=presupuesto` : undefined} className="border-copper/40 bg-copper-soft/40">
+              <Alerta key={n.id} to={n.obraId ? `/obras/${n.obraId}?tab=dinero` : undefined} className="border-copper/40 bg-copper-soft/40">
                 {n.mensaje}
               </Alerta>
             ))}
             {notifQuery.data.sinActividad.map((n, i) => (
-              <Alerta key={`sa-${i}`} to={`/obras/${n.obraId}?tab=asistencias`} className="border-warn/40 bg-warn-soft/40">
+              <Alerta key={`sa-${i}`} to={`/obras/${n.obraId}?tab=hoy`} className="border-warn/40 bg-warn-soft/40">
                 {n.mensaje}
               </Alerta>
             ))}
             {notifQuery.data.avancesIncompletos.map((n, i) => (
-              <Alerta key={`ai-${i}`} to={`/obras/${n.obraId}?tab=avances`} className="border-black/10">
+              <Alerta key={`ai-${i}`} to={`/obras/${n.obraId}?tab=bitacora`} className="border-black/10">
                 Evidencia del {fechaCorta(n.fecha)} en "{n.obraNombre}" sin fotos adjuntas
               </Alerta>
             ))}
