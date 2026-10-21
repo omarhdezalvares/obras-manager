@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
 import { env } from "../env";
+import { COLOR_HEX } from "./marca";
 
 const ACCENT = "#5C4632";
 const INK = "#2A2622";
@@ -23,6 +24,8 @@ interface TenantHeader {
   direccion: string | null;
   telefono: string | null;
   correoContacto: string | null;
+  logoKey: string | null;
+  colorPrimario: string | null;
 }
 
 interface AvanceConEvidencias {
@@ -107,8 +110,17 @@ export async function generarReporteAvancesPdf(params: {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    // Encabezado con la identidad de la empresa que envia el reporte.
-    doc.rect(0, 0, doc.page.width, 92).fill(ACCENT);
+    // Encabezado con la identidad de la empresa que envia el reporte (color
+    // y logo configurables en Empresa; si no hay, el color de la app).
+    const acento = params.tenant.colorPrimario && COLOR_HEX.test(params.tenant.colorPrimario) ? params.tenant.colorPrimario : ACCENT;
+    doc.rect(0, 0, doc.page.width, 92).fill(acento);
+    if (params.tenant.logoKey) {
+      try {
+        doc.image(path.join(env.uploadDir, params.tenant.logoKey), doc.page.width - MARGIN - 64, 14, { fit: [64, 64], align: "right", valign: "center" });
+      } catch {
+        // logo faltante o ilegible: el reporte sale sin logo en vez de fallar
+      }
+    }
     doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(18).text(params.tenant.nombre, MARGIN, 26);
     const contacto = [params.tenant.direccion, params.tenant.telefono, params.tenant.correoContacto].filter(Boolean).join("   ·   ");
     doc.font("Helvetica").fontSize(9).fillColor(FONDO_SUAVE);
@@ -152,7 +164,7 @@ export async function generarReporteAvancesPdf(params: {
 
     for (const avance of params.avances) {
       ensureSpace(doc, 48);
-      doc.font("Helvetica-Bold").fontSize(12).fillColor(ACCENT).text(formatoFechaLarga(avance.fecha), MARGIN, doc.y, {
+      doc.font("Helvetica-Bold").fontSize(12).fillColor(acento).text(formatoFechaLarga(avance.fecha), MARGIN, doc.y, {
         width: doc.page.width - MARGIN * 2,
       });
       doc

@@ -9,6 +9,7 @@ import { resumenFinancieroObra } from "../../lib/finance";
 import { REPORTE_EXPORT, REPORTE_EXPORT_FINANCIERO, ROLES, VER_PRESUPUESTO } from "../../lib/roles";
 import { startOfDay } from "../../lib/dates";
 import { montoConSigno } from "../../lib/finance";
+import { colorExcelArgb } from "../../lib/marca";
 
 export const reportesRouter = Router();
 reportesRouter.use(requireAuth);
@@ -93,6 +94,18 @@ reportesRouter.post(
     workbook.created = new Date();
 
     await construirHoja(workbook, tipo, filtros, req.user!.tenantId, obraIdsPermitidas, VER_PRESUPUESTO.includes(rol));
+
+    // Encabezados con el color de la empresa (configurable en Empresa).
+    const tenant = await prisma.tenant.findUnique({ where: { id: req.user!.tenantId }, select: { colorPrimario: true } });
+    const argb = colorExcelArgb(tenant?.colorPrimario);
+    if (argb) {
+      workbook.eachSheet((sheet) => {
+        sheet.getRow(1).eachCell((cell) => {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb } };
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+        });
+      });
+    }
 
     const buffer = await workbook.xlsx.writeBuffer();
     const nombreArchivo = `${tipo}-${new Date().toISOString().slice(0, 10)}.xlsx`;

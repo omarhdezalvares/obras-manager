@@ -22,6 +22,8 @@ model Tenant {
   direccion      String?
   telefono       String?
   correoContacto String?
+  logoKey        String? // archivo en uploadDir, se usa en encabezados de reportes
+  colorPrimario  String? // "#RRGGBB"
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

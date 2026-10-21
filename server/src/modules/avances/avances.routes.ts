@@ -113,7 +113,7 @@ avancesRouter.get(
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: req.user!.tenantId },
-      select: { nombre: true, direccion: true, telefono: true, correoContacto: true },
+      select: { nombre: true, direccion: true, telefono: true, correoContacto: true, logoKey: true, colorPrimario: true },
     });
     if (!tenant) throw new HttpError(404, "Empresa no encontrada");
 

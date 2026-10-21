@@ -182,6 +182,8 @@ export interface EmpresaPerfil {
   telefono: string | null;
   correoContacto: string | null;
   plan: string;
+  colorPrimario: string | null;
+  logoUrl: string | null;
 }
 
 export interface UsuarioAdmin {

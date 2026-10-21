@@ -24,6 +24,7 @@ export function Empresa() {
   const [direccion, setDireccion] = useState("");
   const [telefono, setTelefono] = useState("");
   const [correoContacto, setCorreoContacto] = useState("");
+  const [colorPrimario, setColorPrimario] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,16 +34,27 @@ export function Empresa() {
       setDireccion(empresa.direccion ?? "");
       setTelefono(empresa.telefono ?? "");
       setCorreoContacto(empresa.correoContacto ?? "");
+      setColorPrimario(empresa.colorPrimario ?? "");
     }
   }, [empresa]);
 
   const mutation = useMutation({
-    mutationFn: () => api.patch("/empresa", { nombre, rfc, direccion, telefono, correoContacto }),
+    mutationFn: () => api.patch("/empresa", { nombre, rfc, direccion, telefono, correoContacto, colorPrimario }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["empresa"] });
       await refreshUsuario();
       setEditando(false);
     },
+    onError: (err) => setError(apiErrorMessage(err)),
+  });
+
+  const subirLogo = useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData();
+      form.append("logo", file);
+      return api.post("/empresa/logo", form, { headers: { "Content-Type": "multipart/form-data" } });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["empresa"] }),
     onError: (err) => setError(apiErrorMessage(err)),
   });
 
@@ -64,6 +76,7 @@ export function Empresa() {
       {!editando && (
         <Card className="space-y-3">
           <div className="flex items-center gap-2">
+            {empresa.logoUrl && <img src={empresa.logoUrl} alt="Logo" className="h-10 w-10 rounded object-contain" />}
             <p className="text-lg font-semibold text-ink">{empresa.nombre}</p>
             <Pill tone="neutral">Plan {empresa.plan}</Pill>
           </div>
@@ -83,6 +96,19 @@ export function Empresa() {
             <div>
               <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Dirección</dt>
               <dd className="text-ink">{empresa.direccion ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Color de reportes</dt>
+              <dd className="flex items-center gap-2 text-ink">
+                {empresa.colorPrimario ? (
+                  <>
+                    <span className="h-4 w-4 rounded border border-black/10" style={{ background: empresa.colorPrimario }} />
+                    {empresa.colorPrimario}
+                  </>
+                ) : (
+                  "Predeterminado"
+                )}
+              </dd>
             </div>
           </dl>
           {!puedeEditar && (
@@ -124,6 +150,44 @@ export function Empresa() {
               <Label>Dirección</Label>
               <Input value={direccion} onChange={(e) => setDireccion(e.target.value)} />
             </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <Label>Color de reportes</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    aria-label="Color de reportes"
+                    className="h-10 w-14 cursor-pointer rounded border border-black/10"
+                    value={colorPrimario || "#5C4632"}
+                    onChange={(e) => setColorPrimario(e.target.value)}
+                  />
+                  {colorPrimario && (
+                    <Button type="button" variant="ghost" onClick={() => setColorPrimario("")}>
+                      Usar predeterminado
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <Label>Logo (PNG o JPG)</Label>
+                <div className="flex items-center gap-2">
+                  {empresa.logoUrl && <img src={empresa.logoUrl} alt="Logo actual" className="h-10 w-10 rounded object-contain" />}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    disabled={subirLogo.isPending}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) subirLogo.mutate(file);
+                      e.target.value = "";
+                    }}
+                    className="text-sm"
+                  />
+                </div>
+                {subirLogo.isPending && <p className="text-xs text-ink-soft">Subiendo logo…</p>}
+              </div>
+            </div>
+            <p className="text-xs text-ink-soft">El color y el logo se usan en el encabezado del PDF de evidencias y en los reportes de Excel.</p>
             {error && <p className="text-sm text-crit">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={mutation.isPending}>
