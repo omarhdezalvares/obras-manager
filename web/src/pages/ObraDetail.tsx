@@ -3,7 +3,8 @@ import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { puedeVerPresupuesto, puedeVerTransacciones, useAuth } from "../lib/auth";
-import { HerramientaAsignacion, Obra, ObraPersona, ResumenFinanciero } from "../lib/types";
+import { Asistencia, Avance, HerramientaAsignacion, Obra, ObraPersona, ResumenFinanciero } from "../lib/types";
+import { fechaCorta, fechaLarga, hoyLocal } from "../lib/fechas";
 import { Button, Card, Input, Label, Pill, Textarea } from "../components/ui";
 import { AsistenciasTab } from "./obra/AsistenciasTab";
 import { BarraPresupuesto } from "../components/BarraPresupuesto";
@@ -161,8 +162,51 @@ export function ObraDetail() {
 }
 
 function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; esOperativo: boolean; verPresupuesto: boolean }) {
+  const hoy = hoyLocal();
+  const asistenciasHoy = useQuery({
+    queryKey: ["asistencias", obra.id, hoy],
+    queryFn: () =>
+      api.get<Asistencia[]>(`/obras/${obra.id}/asistencias`, { params: { fecha_desde: hoy, fecha_hasta: hoy } }).then((r) => r.data),
+  });
+  const avances = useQuery({
+    queryKey: ["avances", obra.id],
+    queryFn: () => api.get<Avance[]>(`/obras/${obra.id}/avances`).then((r) => r.data),
+  });
+  const ultima = avances.data?.[0];
+  const llegaron = asistenciasHoy.data ?? [];
+
+  // "¿Como va la obra?": quien vino hoy, lo ultimo registrado y el dinero.
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Card>
+          <p className="text-[13px] uppercase text-ink-soft">Hoy · {fechaLarga(hoy)}</p>
+          {llegaron.length === 0 ? (
+            <p className="mt-1 text-sm text-warn">Nadie ha registrado asistencia hoy.</p>
+          ) : (
+            <ul className="mt-1 space-y-0.5 text-sm text-ink">
+              {llegaron.map((a) => (
+                <li key={a.id}>
+                  ✓ {a.persona?.nombreCompleto} <span className="text-ink-soft">· {a.horaLlegada}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+        <Card>
+          <p className="text-[13px] uppercase text-ink-soft">Última evidencia</p>
+          {ultima ? (
+            <>
+              <p className="mt-1 text-sm font-medium text-ink">
+                {fechaCorta(ultima.fecha)} · {ultima.evidencias?.length ?? 0} {ultima.evidencias?.length === 1 ? "foto" : "fotos"}
+              </p>
+              <p className="line-clamp-2 text-sm text-ink-soft">{ultima.descripcion}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-ink-soft">Aún no hay evidencias.</p>
+          )}
+        </Card>
+      </div>
       {obra.descripcion && (
         <Card>
           <p className="text-xs uppercase text-ink-soft">Descripcion</p>
@@ -174,17 +218,15 @@ function ResumenTab({ obra, esOperativo, verPresupuesto }: { obra: ObraDetalle; 
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Partidas presupuestales</h2>
           <div className="space-y-2">
             {obra.financiero.partidas.map((p) => (
-              <Card key={p.id} className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-ink">{p.codigo} · {p.nombre}</p>
-                  <p className="text-xs text-ink-soft">
+              <Card key={p.id}>
+                <div className="mb-1 flex items-baseline justify-between gap-3">
+                  <p className="font-medium text-ink">{p.nombre}</p>
+                  <p className="text-[13px] text-ink-soft">
                     ${p.consumido.toLocaleString("es-MX", { maximumFractionDigits: 0 })} de $
                     {(p.presupuestoActualizado || p.presupuestoInicial).toLocaleString("es-MX")}
                   </p>
                 </div>
-                <Pill tone={p.porcentajeConsumido >= 100 ? "crit" : p.porcentajeConsumido >= 90 ? "warn" : "ok"}>
-                  {p.porcentajeConsumido.toFixed(0)}%
-                </Pill>
+                <BarraPresupuesto porcentaje={p.porcentajeConsumido} />
               </Card>
             ))}
           </div>
