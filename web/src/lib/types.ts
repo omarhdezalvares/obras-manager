@@ -28,6 +28,7 @@ export interface Obra {
   responsableId?: string | null;
   // Omitidos por el backend para roles sin acceso financiero (Oficial, Gerente de Proyecto).
   presupuestoAutorizado?: number;
+  presupuestoTotal?: number;
   personasAsignadas: number;
   fechaInicio: string | null;
   fechaFinEstimada: string | null;

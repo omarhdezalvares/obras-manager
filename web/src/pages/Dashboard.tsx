@@ -22,7 +22,7 @@ export function Dashboard() {
 
   const obras = obrasQuery.data ?? [];
   const activas = obras.filter((o) => o.estado === "en_ejecucion");
-  const presupuestoTotal = obras.reduce((a, o) => a + (o.presupuestoAutorizado ?? 0), 0);
+  const presupuestoTotal = obras.reduce((a, o) => a + (o.presupuestoTotal ?? 0), 0);
   const consumidoTotal = obras.reduce((a, o) => a + (o.consumidoTotal ?? 0), 0);
 
   // Las alertas de sobreconsumo son informacion financiera; se ocultan para
@@ -79,7 +79,7 @@ export function Dashboard() {
                       <Pill tone={pctTone(o.porcentajeConsumido)}>{o.porcentajeConsumido.toFixed(0)}% consumido</Pill>
                       <p className="mt-1 text-xs text-ink-soft">
                         ${(o.consumidoTotal ?? 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })} / $
-                        {(o.presupuestoAutorizado ?? 0).toLocaleString("es-MX")}
+                        {(o.presupuestoTotal ?? 0).toLocaleString("es-MX")}
                       </p>
                     </div>
                   )}

@@ -132,7 +132,7 @@ function NuevaObraForm({ onDone, verFinanciero }: { onDone: () => void; verFinan
         </div>
         {verFinanciero && (
           <div>
-            <Label>Presupuesto autorizado (MXN)</Label>
+            <Label>Presupuesto autorizado por el cliente (MXN)</Label>
             <Input type="number" min={0} step="0.01" value={presupuesto} onChange={(e) => setPresupuesto(e.target.value)} />
             <p className="mt-1 text-xs text-ink-soft">
               Se crea automaticamente la partida "General" y la transaccion de presupuesto inicial por este monto.

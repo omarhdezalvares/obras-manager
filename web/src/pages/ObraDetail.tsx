@@ -271,7 +271,7 @@ function EditarObraForm({ obra, onDone }: { obra: ObraDetalle; onDone: () => voi
         </div>
         {verPresupuesto && (
           <div>
-            <Label>Presupuesto autorizado (MXN)</Label>
+            <Label>Presupuesto autorizado por el cliente (MXN)</Label>
             <Input type="number" min={0} step="0.01" value={presupuestoAutorizado} onChange={(e) => setPresupuesto(e.target.value)} />
           </div>
         )}

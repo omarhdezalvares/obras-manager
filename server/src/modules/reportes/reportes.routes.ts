@@ -344,7 +344,7 @@ async function construirHoja(
       const bonos = transacciones.filter((t) => t.tipo === "bono" || t.tipo === "comision").reduce((a, t) => a + t.monto, 0);
       const otros = transacciones.filter((t) => t.tipo === "otro_costo").reduce((a, t) => a + t.monto, 0);
       const total = mo + mat + bonos + otros;
-      const presupuesto = obra.presupuestoAutorizado;
+      const presupuesto = (await resumenFinancieroObra(obra.id)).presupuestoTotal;
       sheet.addRow({ obra: obra.nombre, mo, mat, bonos, otros, total, pct: presupuesto > 0 ? `${((total / presupuesto) * 100).toFixed(1)}%` : "n/a" });
     }
     return;

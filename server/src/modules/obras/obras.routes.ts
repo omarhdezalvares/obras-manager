@@ -51,6 +51,8 @@ obrasRouter.get(
         ...(verFinanciero
           ? {
               presupuestoAutorizado: o.presupuestoAutorizado,
+              // Cifra oficial: suma de partidas (refleja ajustes); el autorizado es informativo.
+              presupuestoTotal: resumenes![i].presupuestoTotal,
               consumidoTotal: resumenes![i].consumidoTotal,
               porcentajeConsumido: resumenes![i].porcentajeConsumido,
             }
