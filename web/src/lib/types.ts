@@ -127,7 +127,7 @@ export interface Transaccion {
   persona?: Persona | null;
 }
 
-const TIPOS_GASTO = ["costo_mano_obra", "costo_material", "otro_costo"];
+const TIPOS_GASTO = ["costo_mano_obra", "costo_material", "otro_costo", "bono", "comision"];
 export function esGasto(tipo: string): boolean {
   return TIPOS_GASTO.includes(tipo);
 }

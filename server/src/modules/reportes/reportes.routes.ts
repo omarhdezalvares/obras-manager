@@ -303,6 +303,7 @@ async function construirHoja(
       { header: "Obra", key: "obra", width: 24 },
       { header: "Mano de obra", key: "mo", width: 16 },
       { header: "Materiales", key: "mat", width: 16 },
+      { header: "Bonos/comisiones", key: "bonos", width: 18 },
       { header: "Otros costos", key: "otros", width: 16 },
       { header: "Total", key: "total", width: 16 },
       { header: "% del presupuesto", key: "pct", width: 16 },
@@ -312,10 +313,11 @@ async function construirHoja(
       const transacciones = await prisma.transaccion.findMany({ where: { obraId: obra.id, createdAt: rangoFecha.gte || rangoFecha.lte ? rangoFecha : undefined } });
       const mo = transacciones.filter((t) => t.tipo === "costo_mano_obra").reduce((a, t) => a + t.monto, 0);
       const mat = transacciones.filter((t) => t.tipo === "costo_material").reduce((a, t) => a + t.monto, 0);
+      const bonos = transacciones.filter((t) => t.tipo === "bono" || t.tipo === "comision").reduce((a, t) => a + t.monto, 0);
       const otros = transacciones.filter((t) => t.tipo === "otro_costo").reduce((a, t) => a + t.monto, 0);
-      const total = mo + mat + otros;
+      const total = mo + mat + bonos + otros;
       const presupuesto = obra.presupuestoAutorizado;
-      sheet.addRow({ obra: obra.nombre, mo, mat, otros, total, pct: presupuesto > 0 ? `${((total / presupuesto) * 100).toFixed(1)}%` : "n/a" });
+      sheet.addRow({ obra: obra.nombre, mo, mat, bonos, otros, total, pct: presupuesto > 0 ? `${((total / presupuesto) * 100).toFixed(1)}%` : "n/a" });
     }
     return;
   }
@@ -343,7 +345,7 @@ async function construirHoja(
         obra: t.obra.nombre,
         partida: t.partida.nombre,
         tipo: t.tipo,
-        persona: t.tipo === "costo_mano_obra" ? (t.persona?.nombreCompleto ?? "") : "",
+        persona: t.persona?.nombreCompleto ?? "",
         monto,
         motivo: t.motivoAjuste ?? "",
         editor: t.updatedBy ?? "",

@@ -13,7 +13,7 @@ export interface PartidaConSaldo {
   porcentajeConsumido: number;
 }
 
-export const COSTO_TIPOS = ["costo_mano_obra", "costo_material", "otro_costo"];
+export const COSTO_TIPOS = ["costo_mano_obra", "costo_material", "otro_costo", "bono", "comision"];
 
 // Clasificacion usada para signo/color en transacciones y reportes: los
 // gastos se muestran en negativo/rojo, las partidas de presupuesto

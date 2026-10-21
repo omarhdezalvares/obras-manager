@@ -49,13 +49,18 @@ transaccionesRouter.get(
 
 // Creacion manual de transacciones (seccion 07: "el punto de entrada para
 // todo ajuste manual"). Solo Administrador/Finanzas (seccion 06).
-const createSchema = z.object({
-  partidaId: z.string().min(1),
-  tipo: z.enum(["otro_costo", "ajuste_presupuesto", "devolucion"]),
-  monto: z.number(),
-  personaId: z.string().optional(),
-  descripcion: z.string().optional(),
-});
+const createSchema = z
+  .object({
+    partidaId: z.string().min(1),
+    tipo: z.enum(["otro_costo", "ajuste_presupuesto", "devolucion", "bono", "comision"]),
+    monto: z.number(),
+    personaId: z.string().optional(),
+    descripcion: z.string().optional(),
+  })
+  .refine((d) => !["bono", "comision"].includes(d.tipo) || d.monto > 0, {
+    message: "El monto de un bono o comision debe ser mayor a cero",
+    path: ["monto"],
+  });
 
 transaccionesRouter.post(
   "/",
@@ -67,6 +72,10 @@ transaccionesRouter.post(
 
     const partida = await prisma.partidaPresupuestal.findFirst({ where: { id: body.partidaId, obraId } });
     if (!partida) throw new HttpError(404, "Partida no encontrada en esta obra");
+    if (body.personaId) {
+      const persona = await prisma.persona.findFirst({ where: { id: body.personaId, tenantId: req.user!.tenantId } });
+      if (!persona) throw new HttpError(404, "Trabajador no encontrado");
+    }
 
     const transaccion = await prisma.transaccion.create({
       data: {

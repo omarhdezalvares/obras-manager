@@ -141,7 +141,14 @@ export function ObraDetail() {
         {tab === "presupuesto" && obra.financiero && (
           <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />
         )}
-        {tab === "transacciones" && <TransaccionesTab obraId={id} puedeEditar={!!esFinanzas} />}
+        {tab === "transacciones" && (
+          <TransaccionesTab
+            obraId={id}
+            puedeEditar={!!esFinanzas}
+            obraPersonas={obra.obraPersonas}
+            partidas={obra.financiero?.partidas ?? []}
+          />
+        )}
         {tab === "remisiones" && <RemisionesTab obraId={id} partidas={obra.financiero?.partidas ?? []} />}
         {tab === "herramientas" && <HerramientasTab obraId={id} asignaciones={obra.herramientaAsignaciones ?? []} />}
       </div>
