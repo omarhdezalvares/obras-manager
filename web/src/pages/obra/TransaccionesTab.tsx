@@ -74,7 +74,7 @@ export function TransaccionesTab({
                 type="button"
                 aria-pressed={filtro === g}
                 onClick={() => setFiltro(g)}
-                className={`min-h-[36px] rounded-full border px-3 text-sm ${filtro === g ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
+                className={`min-h-[44px] rounded-full border px-3 text-sm ${filtro === g ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
               >
                 {g === "todos" ? "Todos" : GRUPOS_TIPO[g]}
               </button>

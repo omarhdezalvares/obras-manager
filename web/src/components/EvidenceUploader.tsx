@@ -93,9 +93,11 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact, plegado }: P
                 onClick={() => {
                   if (confirm("¿Eliminar esta evidencia? Esta accion no se puede deshacer.")) eliminar.mutate(ev.id);
                 }}
-                className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-black/10 bg-white text-xs leading-none text-crit shadow-sm hover:bg-crit hover:text-white"
+                className="group/x absolute -right-4 -top-4 flex h-11 w-11 items-center justify-center"
               >
-                ×
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-black/10 bg-white text-sm leading-none text-crit shadow-sm group-hover/x:bg-crit group-hover/x:text-white">
+                  ×
+                </span>
               </button>
             )}
           </div>
@@ -107,7 +109,7 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact, plegado }: P
           className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
         >
           <span className="text-lg">📷</span>
-          <span className="text-[10px]">{ocupado ? etiquetaSubiendo : "Cámara"}</span>
+          <span className="text-xs">{ocupado ? etiquetaSubiendo : "Cámara"}</span>
         </button>
         <button
           type="button"
@@ -116,7 +118,7 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact, plegado }: P
           className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
         >
           <span className="text-lg">🖼️</span>
-          <span className="text-[10px]">{ocupado ? etiquetaSubiendo : "Galería"}</span>
+          <span className="text-xs">{ocupado ? etiquetaSubiendo : "Galería"}</span>
         </button>
         <input
           ref={camaraRef}

@@ -117,7 +117,7 @@ export function ObraDetail() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`shrink-0 rounded-t-md px-3 py-2 text-sm font-medium ${
+              className={`min-h-[44px] shrink-0 rounded-t-md px-3 py-2 text-sm font-medium ${
                 tabActual === t.key ? "border-b-2 border-accent text-accent" : "text-ink-soft hover:text-ink"
               }`}
             >

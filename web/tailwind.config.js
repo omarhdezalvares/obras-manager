@@ -16,11 +16,14 @@ export default {
           soft: "#F1DED7",
         },
         ok: { DEFAULT: "#276749", soft: "#E4F1EA" },
-        warn: { DEFAULT: "#9C6B15", soft: "#F6EBD4" },
+        // warn oscurecido de #9C6B15 (3.9:1 sobre warn-soft) a 5.35:1 (WCAG AA).
+        warn: { DEFAULT: "#82570E", soft: "#F6EBD4" },
         crit: { DEFAULT: "#A63B31", soft: "#F5E2DF" },
         ink: "#20211D",
         "ink-soft": "#5C5A52",
       },
+      // Texto secundario minimo de 13px (antes 12px) para lectura en campo.
+      fontSize: { xs: ["0.8125rem", { lineHeight: "1.125rem" }] },
     },
   },
   plugins: [],

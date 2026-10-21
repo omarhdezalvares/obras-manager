@@ -44,7 +44,7 @@ export function Personas() {
                 type="button"
                 aria-pressed={tipo === t}
                 onClick={() => setTipo(t)}
-                className={`min-h-[40px] rounded-full border px-3 text-sm ${tipo === t ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
+                className={`min-h-[44px] rounded-full border px-3 text-sm ${tipo === t ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
               >
                 {t === "todos" ? "Todos" : t === "campo" ? "Campo" : "Oficina"}
               </button>

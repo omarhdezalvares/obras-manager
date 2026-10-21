@@ -60,7 +60,7 @@ export function Layout() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-2">
             <LogoMark className="h-6 w-6 shrink-0 text-accent" />
             <MenuDesplegable
               alinear="left"
@@ -68,7 +68,7 @@ export function Layout() {
               className="min-w-0 text-left"
               etiqueta={
                 <span className="min-w-0">
-                  <span className="block truncate font-mono text-[11px] uppercase tracking-widest text-ink-soft">Bitácora · {usuario.tenantNombre}</span>
+                  <span className="block truncate font-mono text-xs uppercase tracking-widest text-ink-soft">Bitácora · {usuario.tenantNombre}</span>
                   <span className="block truncate text-sm font-medium text-ink">
                     {usuario.personaNombre ?? usuario.email} <span className="text-ink-soft">· {usuario.rol} ▾</span>
                   </span>

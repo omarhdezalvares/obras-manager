@@ -5,6 +5,7 @@ import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
+import { MenuDesplegable } from "../../components/MenuDesplegable";
 import { agruparPorDia, horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
 import { fechaCorta, horaLocal, hoyLocal } from "../../lib/fechas";
 
@@ -82,22 +83,21 @@ export function AsistenciasTab({
                   {a.observaciones && <p className="text-xs text-ink-soft">{a.observaciones}</p>}
                 </div>
                 {puedeEditar && (
-                  <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setEditandoId(a.id)}>
-                      Editar
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className="text-crit"
-                      disabled={eliminar.isPending}
-                      onClick={() => {
-                        if (confirm(`¿Eliminar la asistencia de ${a.persona?.nombreCompleto} del ${fechaCorta(a.fecha)}? Se quitara su costo de mano de obra y sus fotos.`))
-                          eliminar.mutate(a.id);
-                      }}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
+                  <MenuDesplegable
+                    ariaLabel={`Acciones de ${a.persona?.nombreCompleto}`}
+                    etiqueta={<span className="text-xl leading-none text-ink-soft">⋯</span>}
+                    items={[
+                      { label: "Editar", onClick: () => setEditandoId(a.id) },
+                      {
+                        label: "Eliminar",
+                        peligro: true,
+                        onClick: () => {
+                          if (confirm(`¿Eliminar la asistencia de ${a.persona?.nombreCompleto} del ${fechaCorta(a.fecha)}? Se quitara su costo de mano de obra y sus fotos.`))
+                            eliminar.mutate(a.id);
+                        },
+                      },
+                    ]}
+                  />
                 )}
               </div>
               )}

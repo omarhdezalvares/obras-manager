@@ -159,7 +159,7 @@ export function AvancesTab({
                       <button
                         type="button"
                         onClick={() => setEditandoId(a.id)}
-                        className="text-xs text-accent hover:underline"
+                        className="min-h-[44px] rounded-md px-3 text-sm text-accent hover:bg-accent-soft"
                       >
                         Editar
                       </button>

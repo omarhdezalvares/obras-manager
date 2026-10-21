@@ -91,23 +91,23 @@ export function Empresa() {
           </div>
           <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
             <div>
-              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">RFC</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">RFC</dt>
               <dd className="text-ink">{empresa.rfc ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Teléfono</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Teléfono</dt>
               <dd className="text-ink">{empresa.telefono ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Correo de contacto</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Correo de contacto</dt>
               <dd className="text-ink">{empresa.correoContacto ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Dirección</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Dirección</dt>
               <dd className="text-ink">{empresa.direccion ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-[11px] uppercase tracking-wide text-ink-soft">Color de reportes</dt>
+              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Color de reportes</dt>
               <dd className="flex items-center gap-2 text-ink">
                 {empresa.colorPrimario ? (
                   <>

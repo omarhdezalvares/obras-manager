@@ -121,9 +121,9 @@ export function EvidenciaWizard() {
                       type="button"
                       aria-label="Quitar foto"
                       onClick={() => quitar(f)}
-                      className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-crit shadow-sm"
+                      className="absolute -right-4 -top-4 flex h-11 w-11 items-center justify-center"
                     >
-                      ×
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-crit shadow-sm">×</span>
                     </button>
                   </div>
                 ))}
