@@ -127,7 +127,13 @@ export function ObraDetail() {
           <PersonasTab obraId={id} obraPersonas={obra.obraPersonas} puedeGestionar={!!esGestion} verFinanciero={verPresupuesto} />
         )}
         {tab === "asistencias" && (
-          <AsistenciasTab obraId={id} obraPersonas={obra.obraPersonas} puedeOperar={!!esOperativo} verFinanciero={verPresupuesto} />
+          <AsistenciasTab
+            obraId={id}
+            obraPersonas={obra.obraPersonas}
+            puedeOperar={!!esOperativo}
+            puedeEditar={!!esGestion}
+            verFinanciero={verPresupuesto}
+          />
         )}
         {tab === "avances" && (
           <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={["Administrador", "Finanzas"].includes(usuario?.rol ?? "")} />

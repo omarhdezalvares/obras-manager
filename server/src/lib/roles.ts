@@ -29,6 +29,10 @@ export const ASISTENCIA_AVANCE_OPERATIVO: RoleName[] = [
   ROLES.FINANZAS,
 ];
 
+// Roles que pueden corregir o eliminar asistencias ya registradas (ajuste
+// solicitado por la operacion: solo administrativos, no captura de campo).
+export const ASISTENCIA_EDICION: RoleName[] = [ROLES.ADMIN, ROLES.FINANZAS, ROLES.GERENTE];
+
 // Roles que pueden crear/editar presupuesto y partidas. Gerente de Proyecto
 // y Oficial quedan fuera: no deben ver ni administrar nada financiero.
 export const PRESUPUESTO_GESTION: RoleName[] = [ROLES.ADMIN, ROLES.FINANZAS];

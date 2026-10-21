@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
-import { Button, Card, EmptyState, Input } from "../../components/ui";
+import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { horasRegistradasEnFecha } from "../../lib/asistencias";
 
@@ -19,16 +19,26 @@ export function AsistenciasTab({
   obraId,
   obraPersonas,
   puedeOperar,
+  puedeEditar,
   verFinanciero,
 }: {
   obraId: string;
   obraPersonas: ObraPersona[];
   puedeOperar: boolean;
+  puedeEditar: boolean;
   verFinanciero: boolean;
 }) {
+  const qc = useQueryClient();
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["asistencias", obraId],
     queryFn: () => api.get<Asistencia[]>(`/obras/${obraId}/asistencias`).then((r) => r.data),
+  });
+
+  const eliminar = useMutation({
+    mutationFn: (id: string) => api.delete(`/obras/${obraId}/asistencias/${id}`),
+    onSuccess: () => invalidarAsistencias(qc, obraId),
+    onError: (err) => alert(apiErrorMessage(err)),
   });
 
   return (
@@ -43,15 +53,38 @@ export function AsistenciasTab({
         <div className="space-y-2">
           {query.data?.map((a) => (
             <Card key={a.id}>
-              <div className="flex items-center justify-between">
+              {editandoId === a.id ? (
+                <EditarAsistenciaForm obraId={obraId} asistencia={a} onDone={() => setEditandoId(null)} />
+              ) : (
+              <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-ink">{a.persona?.nombreCompleto}</p>
                   <p className="text-xs text-ink-soft">
                     {a.fecha.slice(0, 10)} · llegada {a.horaLlegada}
                     {verFinanciero && a.transaccion && ` · costo aplicado $${a.transaccion.monto.toLocaleString("es-MX")}`}
                   </p>
+                  {a.observaciones && <p className="text-xs text-ink-soft">{a.observaciones}</p>}
                 </div>
+                {puedeEditar && (
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => setEditandoId(a.id)}>
+                      Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-crit"
+                      disabled={eliminar.isPending}
+                      onClick={() => {
+                        if (confirm(`¿Eliminar la asistencia de ${a.persona?.nombreCompleto} del ${a.fecha.slice(0, 10)}? Se quitara su costo de mano de obra y sus fotos.`))
+                          eliminar.mutate(a.id);
+                      }}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                )}
               </div>
+              )}
               <div className="mt-2">
                 <EvidenceUploader entidadTipo="asistencia" entidadId={a.id} compact />
               </div>
@@ -60,6 +93,67 @@ export function AsistenciasTab({
         </div>
       </div>
     </div>
+  );
+}
+
+// Una asistencia arrastra su costo de mano de obra: refrescar tambien
+// transacciones y el detalle de obra (presupuesto consumido).
+function invalidarAsistencias(qc: ReturnType<typeof useQueryClient>, obraId: string) {
+  qc.invalidateQueries({ queryKey: ["asistencias", obraId] });
+  qc.invalidateQueries({ queryKey: ["transacciones", obraId] });
+  qc.invalidateQueries({ queryKey: ["obra", obraId] });
+}
+
+function EditarAsistenciaForm({ obraId, asistencia, onDone }: { obraId: string; asistencia: Asistencia; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [fecha, setFecha] = useState(asistencia.fecha.slice(0, 10));
+  const [horaLlegada, setHora] = useState(asistencia.horaLlegada);
+  const [observaciones, setObservaciones] = useState(asistencia.observaciones ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: () => api.patch(`/obras/${obraId}/asistencias/${asistencia.id}`, { fecha, horaLlegada, observaciones }),
+    onSuccess: () => {
+      invalidarAsistencias(qc, obraId);
+      onDone();
+    },
+    onError: (err) => setError(apiErrorMessage(err)),
+  });
+
+  return (
+    <form
+      onSubmit={(e: FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        mutation.mutate();
+      }}
+      className="space-y-3"
+    >
+      <p className="font-medium text-ink">Editar asistencia · {asistencia.persona?.nombreCompleto}</p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div>
+          <Label>Fecha</Label>
+          <Input type="date" required max={hoyISO()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+        </div>
+        <div>
+          <Label>Hora de llegada</Label>
+          <Input type="time" required value={horaLlegada} onChange={(e) => setHora(e.target.value)} />
+        </div>
+        <div>
+          <Label>Observaciones</Label>
+          <Input value={observaciones} onChange={(e) => setObservaciones(e.target.value)} />
+        </div>
+      </div>
+      {error && <p className="text-sm text-crit">{error}</p>}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={mutation.isPending}>
+          {mutation.isPending ? "Guardando…" : "Guardar cambios"}
+        </Button>
+        <Button type="button" variant="secondary" onClick={onDone}>
+          Cancelar
+        </Button>
+      </div>
+    </form>
   );
 }
 

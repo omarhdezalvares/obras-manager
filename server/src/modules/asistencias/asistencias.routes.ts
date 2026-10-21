@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
@@ -5,9 +7,12 @@ import { requireAuth, requireRole, HttpError } from "../../middleware/auth";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { assertObraVisible } from "../../lib/obraScope";
 import { resolveDefaultPartida } from "../../lib/defaultPartida";
-import { ASISTENCIA_AVANCE_OPERATIVO } from "../../lib/roles";
+import { ASISTENCIA_AVANCE_OPERATIVO, ASISTENCIA_EDICION } from "../../lib/roles";
+import { writeAuditLog } from "../../lib/audit";
+import { env } from "../../env";
 import { notify } from "../../lib/notify";
 import { startOfDay } from "../../lib/dates";
+import { COSTO_TIPOS } from "../../lib/finance";
 
 export const asistenciasRouter = Router({ mergeParams: true });
 asistenciasRouter.use(requireAuth);
@@ -123,7 +128,7 @@ async function checkSobreconsumo(tenantId: string, obraId: string, partidaId: st
   const partida = await prisma.partidaPresupuestal.findUnique({ where: { id: partidaId } });
   if (!partida) return;
   const suma = await prisma.transaccion.aggregate({
-    where: { obraId, partidaId, tipo: { in: ["costo_mano_obra", "costo_material", "otro_costo"] } },
+    where: { obraId, partidaId, tipo: { in: COSTO_TIPOS } },
     _sum: { monto: true },
   });
   const presupuesto = partida.presupuestoActualizado || partida.presupuestoInicial;
@@ -164,5 +169,106 @@ asistenciasRouter.get(
     });
 
     res.json(asistencias);
+  })
+);
+
+async function asistenciaDeObra(req: { params: Record<string, string>; user?: { tenantId: string } }) {
+  const asistencia = await prisma.asistencia.findFirst({
+    where: { id: req.params.asistenciaId, obraId: req.params.obraId, tenantId: req.user!.tenantId },
+    include: { persona: true, transaccion: true },
+  });
+  if (!asistencia) throw new HttpError(404, "Asistencia no encontrada");
+  return asistencia;
+}
+
+const editarSchema = z.object({
+  fecha: z.string().min(1).optional(),
+  horaLlegada: z.string().min(1).optional(),
+  observaciones: z.string().optional(),
+});
+
+asistenciasRouter.patch(
+  "/:asistenciaId",
+  requireRole(...ASISTENCIA_EDICION),
+  asyncHandler(async (req, res) => {
+    await assertObraVisible(req.user!, req.params.obraId);
+    const body = editarSchema.parse(req.body);
+    const antes = await asistenciaDeObra(req);
+    const fecha = body.fecha ? startOfDay(body.fecha) : undefined;
+
+    // Cambiar a una fecha ya ocupada viola (obra, persona, fecha) -> P2002 -> 409.
+    const asistencia = await prisma.$transaction(async (tx) => {
+      const actualizada = await tx.asistencia.update({
+        where: { id: antes.id },
+        data: { fecha, horaLlegada: body.horaLlegada, observaciones: body.observaciones },
+      });
+      if (body.fecha && antes.transaccion) {
+        await tx.transaccion.update({
+          where: { id: antes.transaccion.id },
+          data: { descripcion: `Costo de mano de obra - ${antes.persona.nombreCompleto} - ${body.fecha}` },
+        });
+      }
+      return actualizada;
+    });
+
+    await writeAuditLog({
+      tenantId: req.user!.tenantId,
+      usuarioId: req.user!.sub,
+      entidadTipo: "asistencia",
+      entidadId: asistencia.id,
+      accion: "actualizar",
+      cambios: {
+        antes: { fecha: antes.fecha, horaLlegada: antes.horaLlegada, observaciones: antes.observaciones },
+        despues: body,
+      },
+    });
+
+    res.json(asistencia);
+  })
+);
+
+// Eliminar quita tambien su costo de mano de obra, sus evidencias y su
+// vinculo con avances (el avance se conserva sin esa persona).
+asistenciasRouter.delete(
+  "/:asistenciaId",
+  requireRole(...ASISTENCIA_EDICION),
+  asyncHandler(async (req, res) => {
+    await assertObraVisible(req.user!, req.params.obraId);
+    const asistencia = await asistenciaDeObra(req);
+
+    const evidencias = await prisma.evidencia.findMany({
+      where: { tenantId: req.user!.tenantId, entidadTipo: "asistencia", entidadId: asistencia.id },
+    });
+
+    await prisma.$transaction([
+      prisma.avancePersona.deleteMany({ where: { asistenciaId: asistencia.id } }),
+      prisma.transaccion.deleteMany({ where: { asistenciaId: asistencia.id } }),
+      prisma.evidencia.deleteMany({ where: { id: { in: evidencias.map((e) => e.id) } } }),
+      prisma.asistencia.delete({ where: { id: asistencia.id } }),
+    ]);
+
+    for (const ev of evidencias) {
+      if (ev.bucket === "local") fs.unlink(path.join(env.uploadDir, ev.objectKey), () => {});
+    }
+
+    await writeAuditLog({
+      tenantId: req.user!.tenantId,
+      usuarioId: req.user!.sub,
+      entidadTipo: "asistencia",
+      entidadId: asistencia.id,
+      accion: "eliminar",
+      cambios: {
+        antes: {
+          personaId: asistencia.personaId,
+          persona: asistencia.persona.nombreCompleto,
+          fecha: asistencia.fecha,
+          horaLlegada: asistencia.horaLlegada,
+          costoEliminado: asistencia.transaccion?.monto ?? 0,
+          evidenciasEliminadas: evidencias.length,
+        },
+      },
+    });
+
+    res.status(204).send();
   })
 );
