@@ -5,13 +5,8 @@ import { api, apiErrorMessage } from "../lib/api";
 import { Obra } from "../lib/types";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
+import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../components/ui";
-
-function pctTone(pct: number): "ok" | "warn" | "crit" {
-  if (pct >= 100) return "crit";
-  if (pct >= 90) return "warn";
-  return "ok";
-}
 
 const ESTADOS: Record<Obra["estado"], string> = {
   planeada: "Planeada",
@@ -66,7 +61,9 @@ export function Obras() {
                 <div className="flex flex-col items-end gap-1">
                   <Pill>{ESTADOS[o.estado]}</Pill>
                   {verFinanciero && o.porcentajeConsumido != null && (
-                    <Pill tone={pctTone(o.porcentajeConsumido)}>{o.porcentajeConsumido.toFixed(0)}%</Pill>
+                    <div className="w-40">
+                      <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
+                    </div>
                   )}
                 </div>
               </div>

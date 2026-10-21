@@ -34,6 +34,7 @@ export interface Obra {
   fechaFinEstimada: string | null;
   consumidoTotal?: number;
   porcentajeConsumido?: number;
+  alertaPartida?: AlertaPartida | null;
 }
 
 export interface Persona {
@@ -76,6 +77,13 @@ export interface ResumenFinanciero {
   consumidoTotal: number;
   disponibleTotal: number;
   porcentajeConsumido: number;
+  alertaPartida: AlertaPartida | null;
+}
+
+export interface AlertaPartida {
+  partidaId: string;
+  nombre: string;
+  porcentaje: number;
 }
 
 export interface Asistencia {

@@ -74,6 +74,15 @@ export async function partidasConSaldo(obraId: string): Promise<PartidaConSaldo[
   });
 }
 
+// La partida mas consumida si llega al 90%: el % global de la obra puede
+// verse sano aunque una partida ya este rebasada.
+export function alertaPartida(partidas: PartidaConSaldo[]): { partidaId: string; nombre: string; porcentaje: number } | null {
+  const conPresupuesto = partidas.filter((p) => (p.presupuestoActualizado || p.presupuestoInicial) > 0);
+  const peor = conPresupuesto.reduce<PartidaConSaldo | null>((max, p) => (!max || p.porcentajeConsumido > max.porcentajeConsumido ? p : max), null);
+  if (!peor || peor.porcentajeConsumido < 90) return null;
+  return { partidaId: peor.id, nombre: peor.nombre, porcentaje: Math.round(peor.porcentajeConsumido) };
+}
+
 export async function resumenFinancieroObra(obraId: string) {
   const partidas = await partidasConSaldo(obraId);
   const presupuestoTotal = partidas.reduce((acc, p) => acc + (p.presupuestoActualizado || p.presupuestoInicial), 0);
@@ -84,5 +93,6 @@ export async function resumenFinancieroObra(obraId: string) {
     consumidoTotal,
     disponibleTotal: presupuestoTotal - consumidoTotal,
     porcentajeConsumido: presupuestoTotal > 0 ? (consumidoTotal / presupuestoTotal) * 100 : 0,
+    alertaPartida: alertaPartida(partidas),
   };
 }

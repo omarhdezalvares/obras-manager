@@ -1,11 +1,12 @@
 import { FormEvent, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { puedeVerPresupuesto, puedeVerTransacciones, useAuth } from "../lib/auth";
 import { HerramientaAsignacion, Obra, ObraPersona, ResumenFinanciero } from "../lib/types";
 import { Button, Card, Input, Label, Pill, Textarea } from "../components/ui";
 import { AsistenciasTab } from "./obra/AsistenciasTab";
+import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { AvancesTab } from "./obra/AvancesTab";
 import { PersonasTab } from "./obra/PersonasTab";
 import { PresupuestoTab } from "./obra/PresupuestoTab";
@@ -17,12 +18,6 @@ interface ObraDetalle extends Obra {
   obraPersonas: ObraPersona[];
   financiero?: ResumenFinanciero;
   herramientaAsignaciones: HerramientaAsignacion[];
-}
-
-function pctTone(pct: number): "ok" | "warn" | "crit" {
-  if (pct >= 100) return "crit";
-  if (pct >= 90) return "warn";
-  return "ok";
 }
 
 type TabKey =
@@ -38,7 +33,8 @@ type TabKey =
 export function ObraDetail() {
   const { id } = useParams<{ id: string }>();
   const { usuario } = useAuth();
-  const [tab, setTab] = useState<TabKey>("resumen");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<TabKey>((searchParams.get("tab") as TabKey | null) ?? "resumen");
   const [editando, setEditando] = useState(false);
 
   const query = useQuery({
@@ -70,6 +66,8 @@ export function ObraDetail() {
     { key: "remisiones", label: "Remisiones", visible: !!usuario },
     { key: "herramientas", label: "Herramientas", visible: true },
   ];
+  // ?tab= puede pedir una pestana que el rol no ve: entonces se abre el Resumen.
+  const tabActual: TabKey = tabs.some((t) => t.visible && t.key === tab) ? tab : "resumen";
 
   return (
     <div className="space-y-4">
@@ -101,7 +99,13 @@ export function ObraDetail() {
             <p className="text-xs uppercase text-ink-soft">Disponible</p>
             <p className="font-semibold">${obra.financiero.disponibleTotal.toLocaleString("es-MX", { maximumFractionDigits: 0 })}</p>
           </div>
-          <Pill tone={pctTone(obra.financiero.porcentajeConsumido)}>{obra.financiero.porcentajeConsumido.toFixed(0)}% consumido</Pill>
+          <div className="min-w-[220px] flex-1">
+            <BarraPresupuesto
+              porcentaje={obra.financiero.porcentajeConsumido}
+              alerta={obra.financiero.alertaPartida}
+              alertaTo={`/obras/${obra.id}?tab=presupuesto`}
+            />
+          </div>
         </Card>
       )}
 
@@ -113,7 +117,7 @@ export function ObraDetail() {
               key={t.key}
               onClick={() => setTab(t.key)}
               className={`shrink-0 rounded-t-md px-3 py-2 text-sm font-medium ${
-                tab === t.key ? "border-b-2 border-accent text-accent" : "text-ink-soft hover:text-ink"
+                tabActual === t.key ? "border-b-2 border-accent text-accent" : "text-ink-soft hover:text-ink"
               }`}
             >
               {t.label}
@@ -122,11 +126,11 @@ export function ObraDetail() {
       </div>
 
       <div>
-        {tab === "resumen" && <ResumenTab obra={obra} esOperativo={!!esOperativo} verPresupuesto={verPresupuesto} />}
-        {tab === "personas" && (
+        {tabActual === "resumen" && <ResumenTab obra={obra} esOperativo={!!esOperativo} verPresupuesto={verPresupuesto} />}
+        {tabActual === "personas" && (
           <PersonasTab obraId={id} obraPersonas={obra.obraPersonas} puedeGestionar={!!esGestion} verFinanciero={verPresupuesto} />
         )}
-        {tab === "asistencias" && (
+        {tabActual === "asistencias" && (
           <AsistenciasTab
             obraId={id}
             obraPersonas={obra.obraPersonas}
@@ -135,13 +139,13 @@ export function ObraDetail() {
             verFinanciero={verPresupuesto}
           />
         )}
-        {tab === "avances" && (
+        {tabActual === "avances" && (
           <AvancesTab obraId={id} obraNombre={obra.nombre} puedeOperar={!!esOperativo} esAdmin={["Administrador", "Finanzas"].includes(usuario?.rol ?? "")} />
         )}
-        {tab === "presupuesto" && obra.financiero && (
+        {tabActual === "presupuesto" && obra.financiero && (
           <PresupuestoTab obraId={id} partidas={obra.financiero.partidas} puedeGestionar={!!esFinanzas} />
         )}
-        {tab === "transacciones" && (
+        {tabActual === "transacciones" && (
           <TransaccionesTab
             obraId={id}
             puedeEditar={!!esFinanzas}
@@ -149,8 +153,8 @@ export function ObraDetail() {
             partidas={obra.financiero?.partidas ?? []}
           />
         )}
-        {tab === "remisiones" && <RemisionesTab obraId={id} partidas={obra.financiero?.partidas ?? []} />}
-        {tab === "herramientas" && <HerramientasTab obraId={id} asignaciones={obra.herramientaAsignaciones ?? []} />}
+        {tabActual === "remisiones" && <RemisionesTab obraId={id} partidas={obra.financiero?.partidas ?? []} />}
+        {tabActual === "herramientas" && <HerramientasTab obraId={id} asignaciones={obra.herramientaAsignaciones ?? []} />}
       </div>
     </div>
   );

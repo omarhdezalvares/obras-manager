@@ -2,14 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
+import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { Notificaciones, Obra } from "../lib/types";
 import { Card, EmptyState, Pill } from "../components/ui";
-
-function pctTone(pct: number): "ok" | "warn" | "crit" {
-  if (pct >= 100) return "crit";
-  if (pct >= 90) return "warn";
-  return "ok";
-}
 
 export function Dashboard() {
   const { usuario } = useAuth();
@@ -75,8 +70,8 @@ export function Dashboard() {
                     <p className="text-xs text-ink-soft">{o.cliente} · {o.ubicacion}</p>
                   </div>
                   {verFinanciero && o.porcentajeConsumido != null && (
-                    <div className="text-right">
-                      <Pill tone={pctTone(o.porcentajeConsumido)}>{o.porcentajeConsumido.toFixed(0)}% consumido</Pill>
+                    <div className="w-48 text-right">
+                      <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
                       <p className="mt-1 text-xs text-ink-soft">
                         ${(o.consumidoTotal ?? 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })} / $
                         {(o.presupuestoTotal ?? 0).toLocaleString("es-MX")}

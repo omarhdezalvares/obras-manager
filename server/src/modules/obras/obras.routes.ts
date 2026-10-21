@@ -55,6 +55,7 @@ obrasRouter.get(
               presupuestoTotal: resumenes![i].presupuestoTotal,
               consumidoTotal: resumenes![i].consumidoTotal,
               porcentajeConsumido: resumenes![i].porcentajeConsumido,
+              alertaPartida: resumenes![i].alertaPartida,
             }
           : {}),
       }))
