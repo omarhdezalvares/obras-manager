@@ -39,10 +39,39 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
   const [lineas, setLineas] = useState<Linea[]>([{ materialId: "", cantidad: "", costoUnitario: "" }]);
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
+  // Con editandoId el mismo formulario edita (PATCH, motivo obligatorio).
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState("");
+
+  function limpiarForm() {
+    setShowForm(false);
+    setEditandoId(null);
+    setMotivo("");
+    setProveedor("");
+    setFolio("");
+    setFecha(hoyISO());
+    setLineas([{ materialId: "", cantidad: "", costoUnitario: "" }]);
+    setError(null);
+  }
+
+  function editar(r: Remision) {
+    setEditandoId(r.id);
+    setPartidaId(r.partidaId);
+    setProveedor(r.proveedor);
+    setFolio(r.folio ?? "");
+    setFecha(r.fecha.slice(0, 10));
+    setLineas(
+      r.materiales.map((m) => ({ materialId: m.material.id, cantidad: String(m.cantidad), costoUnitario: String(m.costoUnitario) }))
+    );
+    setMotivo("");
+    setError(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   const mutation = useMutation({
-    mutationFn: () =>
-      api.post(`/obras/${obraId}/remisiones`, {
+    mutationFn: () => {
+      const payload = {
         partidaId,
         proveedor,
         folio: folio || undefined,
@@ -50,16 +79,17 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
         materiales: lineas
           .filter((l) => l.materialId && l.cantidad && l.costoUnitario)
           .map((l) => ({ materialId: l.materialId, cantidad: Number(l.cantidad), costoUnitario: Number(l.costoUnitario) })),
-      }),
+      };
+      return editandoId
+        ? api.patch(`/obras/${obraId}/remisiones/${editandoId}`, { ...payload, motivo })
+        : api.post(`/obras/${obraId}/remisiones`, payload);
+    },
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["remisiones", obraId] });
       qc.invalidateQueries({ queryKey: ["obra", obraId] });
-      setUltimoId(res.data.id);
-      setShowForm(false);
-      setProveedor("");
-      setFolio("");
-      setFecha(hoyISO());
-      setLineas([{ materialId: "", cantidad: "", costoUnitario: "" }]);
+      qc.invalidateQueries({ queryKey: ["transacciones", obraId] });
+      if (!editandoId) setUltimoId(res.data.id);
+      limpiarForm();
     },
     onError: (err) => setError(apiErrorMessage(err)),
   });
@@ -68,7 +98,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
     <div className="space-y-4">
       {puedeCrear && (
         <>
-          <Button variant="secondary" onClick={() => setShowForm((v) => !v)}>
+          <Button variant="secondary" onClick={() => (showForm ? limpiarForm() : setShowForm(true))}>
             {showForm ? "Cancelar" : "+ Nueva remision"}
           </Button>
           {showForm && (
@@ -81,6 +111,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                 }}
                 className="space-y-3"
               >
+                {editandoId && <h2 className="font-semibold text-ink">Editar remision</h2>}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
                   <div>
                     <Label>Partida</Label>
@@ -159,9 +190,15 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   </Button>
                 </div>
 
+                {editandoId && (
+                  <div>
+                    <Label>Motivo del cambio</Label>
+                    <Input required value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej. error en cantidad capturada" />
+                  </div>
+                )}
                 {error && <p className="text-sm text-crit">{error}</p>}
                 <Button type="submit" disabled={mutation.isPending}>
-                  {mutation.isPending ? "Guardando…" : "Guardar remision"}
+                  {mutation.isPending ? "Guardando…" : editandoId ? "Guardar cambios" : "Guardar remision"}
                 </Button>
               </form>
             </Card>
@@ -186,6 +223,11 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   <p className="font-medium text-ink">{r.proveedor} {r.folio && `· folio ${r.folio}`}</p>
                   <p className="text-xs text-ink-soft">{r.fecha.slice(0, 10)} · ${r.costoTotal.toLocaleString("es-MX")}</p>
                 </div>
+                {puedeCrear && (
+                  <Button variant="ghost" onClick={() => editar(r)}>
+                    Editar
+                  </Button>
+                )}
               </div>
               <ul className="mt-2 space-y-0.5 text-xs text-ink-soft">
                 {r.materiales.map((m) => (
