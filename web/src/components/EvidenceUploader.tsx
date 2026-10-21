@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -30,6 +30,7 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
   const camaraRef = useRef<HTMLInputElement>(null);
   const galeriaRef = useRef<HTMLInputElement>(null);
   const key = ["evidencias", entidadTipo, entidadId];
+  const [progreso, setProgreso] = useState<{ actual: number; total: number } | null>(null);
 
   const query = useQuery({
     queryKey: key,
@@ -45,8 +46,26 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
       return api.post("/evidencias", form, { headers: { "Content-Type": "multipart/form-data" } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
-    onError: (err) => alert(apiErrorMessage(err)),
   });
+
+  // Galeria permite elegir varias fotos: se suben una por una y un archivo
+  // rechazado no detiene a los demas.
+  async function subirVarios(files: File[]) {
+    const fallidos: string[] = [];
+    for (const [i, file] of files.entries()) {
+      setProgreso({ actual: i + 1, total: files.length });
+      try {
+        await upload.mutateAsync(file);
+      } catch (err) {
+        fallidos.push(`${file.name}: ${apiErrorMessage(err)}`);
+      }
+    }
+    setProgreso(null);
+    if (fallidos.length) alert(`No se pudieron subir:\n${fallidos.join("\n")}`);
+  }
+
+  const ocupado = upload.isPending || progreso !== null;
+  const etiquetaSubiendo = progreso && progreso.total > 1 ? `${progreso.actual}/${progreso.total}` : "Subiendo…";
 
   const eliminar = useMutation({
     mutationFn: (id: string) => api.delete(`/evidencias/${id}`),
@@ -86,20 +105,20 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
         <button
           type="button"
           onClick={() => camaraRef.current?.click()}
-          disabled={upload.isPending}
+          disabled={ocupado}
           className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
         >
           <span className="text-lg">📷</span>
-          <span className="text-[10px]">{upload.isPending ? "Subiendo…" : "Cámara"}</span>
+          <span className="text-[10px]">{ocupado ? etiquetaSubiendo : "Cámara"}</span>
         </button>
         <button
           type="button"
           onClick={() => galeriaRef.current?.click()}
-          disabled={upload.isPending}
+          disabled={ocupado}
           className="flex h-16 w-16 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft hover:border-accent hover:text-accent"
         >
           <span className="text-lg">🖼️</span>
-          <span className="text-[10px]">{upload.isPending ? "Subiendo…" : "Galería"}</span>
+          <span className="text-[10px]">{ocupado ? etiquetaSubiendo : "Galería"}</span>
         </button>
         <input
           ref={camaraRef}
@@ -109,7 +128,7 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) upload.mutate(file);
+            if (file) subirVarios([file]);
             e.target.value = "";
           }}
         />
@@ -117,11 +136,12 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
           ref={galeriaRef}
           type="file"
           accept="image/*,application/pdf"
+          multiple
           className="hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) upload.mutate(file);
+            const files = Array.from(e.target.files ?? []);
             e.target.value = "";
+            if (files.length) subirVarios(files);
           }}
         />
       </div>
