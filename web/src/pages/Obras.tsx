@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api, apiErrorMessage } from "../lib/api";
 import { Obra } from "../lib/types";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
+import { coincideBusqueda } from "../lib/busqueda";
 import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../components/ui";
 
 function pctTone(pct: number): "ok" | "warn" | "crit" {
@@ -23,7 +24,9 @@ const ESTADOS: Record<Obra["estado"], string> = {
 export function Obras() {
   const { usuario } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
   const obrasQuery = useQuery({ queryKey: ["obras"], queryFn: () => api.get<Obra[]>("/obras").then((r) => r.data) });
+  const filtradas = obrasQuery.data?.filter((o) => coincideBusqueda(busqueda, [o.nombre, o.cliente, o.ubicacion]));
 
   const puedeCrear = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
   const verFinanciero = puedeVerFinanciero(usuario?.rol);
@@ -45,8 +48,13 @@ export function Obras() {
       {obrasQuery.isLoading && <p className="text-sm text-ink-soft">Cargando obras…</p>}
       {obrasQuery.data && obrasQuery.data.length === 0 && <EmptyState>Aun no hay obras registradas.</EmptyState>}
 
+      {!!obrasQuery.data?.length && (
+        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, cliente o ubicacion…" />
+      )}
+      {!!obrasQuery.data?.length && filtradas?.length === 0 && <EmptyState>Sin resultados para «{busqueda}».</EmptyState>}
+
       <div className="space-y-2">
-        {obrasQuery.data?.map((o) => (
+        {filtradas?.map((o) => (
           <Link key={o.id} to={`/obras/${o.id}`}>
             <Card className="hover:border-accent/50">
               <div className="flex items-start justify-between gap-3">

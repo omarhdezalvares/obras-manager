@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { Herramienta, Obra } from "../lib/types";
 import { useAuth } from "../lib/auth";
+import { coincideBusqueda } from "../lib/busqueda";
 import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../components/ui";
 
 export function Herramientas() {
@@ -13,11 +14,23 @@ export function Herramientas() {
   const [showForm, setShowForm] = useState(false);
   const [asignando, setAsignando] = useState<Herramienta | null>(null);
   const [editando, setEditando] = useState<Herramienta | null>(null);
+  const [busqueda, setBusqueda] = useState("");
 
   const query = useQuery({
     queryKey: ["herramientas"],
     queryFn: () => api.get<Herramienta[]>("/herramientas").then((r) => r.data),
   });
+
+  const filtradas = query.data?.filter((h) =>
+    coincideBusqueda(busqueda, [
+      h.codigo,
+      h.nombre,
+      h.marca,
+      h.asignacionVigente?.custodioNombre,
+      h.asignacionVigente?.persona?.nombreCompleto,
+      h.asignacionVigente?.obra?.nombre,
+    ])
+  );
 
   const devolver = useMutation({
     mutationFn: (h: Herramienta) =>
@@ -49,8 +62,13 @@ export function Herramientas() {
 
       {query.data?.length === 0 && <EmptyState>Aun no hay herramientas registradas.</EmptyState>}
 
+      {!!query.data?.length && (
+        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por codigo, nombre, marca, responsable u obra…" />
+      )}
+      {!!query.data?.length && filtradas?.length === 0 && <EmptyState>Sin resultados para «{busqueda}».</EmptyState>}
+
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {query.data?.map((h) => (
+        {filtradas?.map((h) => (
           <Card key={h.id}>
             <div className="flex items-start justify-between">
               <div>
