@@ -92,7 +92,7 @@ reportesRouter.post(
     workbook.creator = "OBRA/OS";
     workbook.created = new Date();
 
-    await construirHoja(workbook, tipo, filtros, obraIdsPermitidas, VER_PRESUPUESTO.includes(rol));
+    await construirHoja(workbook, tipo, filtros, req.user!.tenantId, obraIdsPermitidas, VER_PRESUPUESTO.includes(rol));
 
     const buffer = await workbook.xlsx.writeBuffer();
     const nombreArchivo = `${tipo}-${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -106,15 +106,19 @@ async function construirHoja(
   workbook: ExcelJS.Workbook,
   tipo: (typeof TIPOS)[number],
   filtros: z.infer<typeof filtrosSchema>,
+  tenantId: string,
   obraIdsPermitidas: string[] | undefined,
   puedeVerFinanciero: boolean
 ): Promise<void> {
-  const obraWhere = obraIdsPermitidas ? { id: { in: obraIdsPermitidas } } : {};
-  const obraFk = filtros.obra_id
-    ? { obraId: filtros.obra_id }
-    : obraIdsPermitidas
-      ? { obraId: { in: obraIdsPermitidas } }
-      : {};
+  const obraWhere = { tenantId, ...(obraIdsPermitidas ? { id: { in: obraIdsPermitidas } } : {}) };
+  const obraFk = {
+    tenantId,
+    ...(filtros.obra_id
+      ? { obraId: filtros.obra_id }
+      : obraIdsPermitidas
+        ? { obraId: { in: obraIdsPermitidas } }
+        : {}),
+  };
   const rangoFecha = {
     gte: toDate(filtros.fecha_desde),
     lte: toDate(filtros.fecha_hasta),
@@ -276,7 +280,7 @@ async function construirHoja(
       { header: "Fecha devolucion", key: "fecha_dev", width: 16 },
     ];
     const asignaciones = await prisma.herramientaAsignacion.findMany({
-      where: filtros.obra_id ? { obraId: filtros.obra_id } : {},
+      where: { tenantId, ...(filtros.obra_id ? { obraId: filtros.obra_id } : {}) },
       include: { herramienta: true, obra: true, persona: true },
       orderBy: { fechaAsignacion: "desc" },
     });
@@ -284,7 +288,7 @@ async function construirHoja(
       sheet.addRow({
         codigo: a.herramienta.codigo,
         nombre: a.herramienta.nombre,
-        custodio: a.persona?.nombreCompleto ?? "",
+        custodio: a.persona?.nombreCompleto ?? a.custodioNombre ?? "",
         obra: a.obra?.nombre ?? "",
         fecha_asig: a.fechaAsignacion.toISOString().slice(0, 10),
         fecha_dev: a.fechaDevolucion ? a.fechaDevolucion.toISOString().slice(0, 10) : "",
