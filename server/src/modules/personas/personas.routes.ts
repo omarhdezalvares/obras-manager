@@ -29,10 +29,18 @@ personasRouter.get(
       res.json(propia.map(sinCosto));
       return;
     }
-    const personas = await prisma.persona.findMany({
+    const registros = await prisma.persona.findMany({
       where: { tenantId: req.user!.tenantId, deletedAt: null },
       orderBy: { nombreCompleto: "asc" },
+      // Obras vigentes donde esta asignada, para ubicar a cada quien desde el catalogo.
+      include: {
+        obraPersonas: {
+          where: { activo: true, obra: { deletedAt: null, estado: { notIn: ["cerrada", "cancelada"] } } },
+          include: { obra: { select: { id: true, nombre: true } } },
+        },
+      },
     });
+    const personas = registros.map(({ obraPersonas, ...p }) => ({ ...p, obras: obraPersonas.map((op) => op.obra) }));
     res.json(puedeVerFinanciero(req.user!.rol) ? personas : personas.map(sinCosto));
   })
 );

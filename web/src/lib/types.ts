@@ -48,6 +48,8 @@ export interface Persona {
   // Omitido por el backend para roles sin acceso financiero.
   costoDiario?: number;
   activo: boolean;
+  // Solo en GET /personas (catalogo): obras vigentes donde esta asignada.
+  obras?: { id: string; nombre: string }[];
 }
 
 export interface ObraPersona {

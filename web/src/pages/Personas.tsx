@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from "../lib/api";
 import { Persona } from "../lib/types";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../components/ui";
+import { coincideBusqueda } from "../lib/busqueda";
 
 export function Personas() {
   const { usuario } = useAuth();
@@ -12,6 +13,11 @@ export function Personas() {
   const query = useQuery({ queryKey: ["personas"], queryFn: () => api.get<Persona[]>("/personas").then((r) => r.data) });
   const puedeGestionar = usuario && ["Administrador", "Gerente de Proyecto", "Finanzas"].includes(usuario.rol);
   const verFinanciero = puedeVerFinanciero(usuario?.rol);
+  const [busqueda, setBusqueda] = useState("");
+  const [tipo, setTipo] = useState<"todos" | "campo" | "oficina">("todos");
+  const filtradas = (query.data ?? []).filter(
+    (p) => (tipo === "todos" || p.tipoTrabajador === tipo) && coincideBusqueda(busqueda, [p.nombreCompleto, p.puesto])
+  );
 
   return (
     <div className="space-y-4">
@@ -28,12 +34,35 @@ export function Personas() {
 
       {query.data?.length === 0 && <EmptyState>Aun no hay personas registradas.</EmptyState>}
 
+      {!!query.data?.length && (
+        <div className="flex flex-col gap-2 md:flex-row md:items-center">
+          <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre o puesto…" />
+          <div className="flex gap-2" role="group" aria-label="Filtrar por tipo">
+            {(["todos", "campo", "oficina"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={tipo === t}
+                onClick={() => setTipo(t)}
+                className={`min-h-[40px] rounded-full border px-3 text-sm ${tipo === t ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
+              >
+                {t === "todos" ? "Todos" : t === "campo" ? "Campo" : "Oficina"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {!!query.data?.length && filtradas.length === 0 && <EmptyState>Sin resultados.</EmptyState>}
+
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        {query.data?.map((p) => (
+        {filtradas.map((p) => (
           <Card key={p.id} className="flex items-start justify-between gap-3">
             <div>
               <p className="font-medium text-ink">{p.nombreCompleto}</p>
               <p className="text-xs text-ink-soft">{p.puesto ?? "Sin puesto"} · {p.tipoTrabajador ?? "—"}</p>
+              <p className="mt-1 text-[13px] text-ink-soft">
+                {p.obras?.length ? `Obras: ${p.obras.map((o) => o.nombre).join(", ")}` : "Sin obra asignada"}
+              </p>
               {verFinanciero && p.costoDiario != null && (
                 <p className="mt-1 text-sm text-ink-soft">
                   Costo diario base: <span className="font-medium text-ink">${p.costoDiario.toLocaleString("es-MX")}</span>
