@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
-import { Herramienta, Obra } from "../lib/types";
+import { Herramienta, Obra, Persona } from "../lib/types";
 import { useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
 import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../components/ui";
@@ -115,10 +115,26 @@ function NuevaHerramientaForm({ onDone }: { onDone: () => void }) {
   const [nombre, setNombre] = useState("");
   const [marca, setMarca] = useState("");
   const [modelo, setModelo] = useState("");
+  const [responsable, setResponsable] = useState<Responsable>(RESPONSABLE_VACIO);
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
-    mutationFn: () => api.post("/herramientas", { codigo, nombre, marca: marca || undefined, modelo: modelo || undefined }),
+    mutationFn: async () => {
+      const { data } = await api.post<Herramienta>("/herramientas", {
+        codigo,
+        nombre,
+        marca: marca || undefined,
+        modelo: modelo || undefined,
+      });
+      if (tieneResponsable(responsable)) {
+        try {
+          await api.post(`/herramientas/${data.id}/asignaciones`, responsablePayload(responsable));
+        } catch (err) {
+          qc.invalidateQueries({ queryKey: ["herramientas"] });
+          throw new Error(`La herramienta se creo, pero no se pudo asignar: ${apiErrorMessage(err)}. Asignala desde la lista.`);
+        }
+      }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["herramientas"] });
       onDone();
@@ -154,6 +170,8 @@ function NuevaHerramientaForm({ onDone }: { onDone: () => void }) {
             <Input value={modelo} onChange={(e) => setModelo(e.target.value)} />
           </div>
         </div>
+        <p className="text-xs text-ink-soft">Asignacion (opcional): a un trabajador y/o a una obra.</p>
+        <ResponsableCampos value={responsable} onChange={setResponsable} />
         {error && <p className="text-sm text-crit">{error}</p>}
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Guardando…" : "Guardar herramienta"}
@@ -240,20 +258,79 @@ function EditarHerramientaForm({ herramienta, onDone }: { herramienta: Herramien
   );
 }
 
+const OTRO = "__otro";
+
+interface Responsable {
+  obraId: string;
+  personaId: string; // OTRO = nombre libre en custodioNombre
+  custodioNombre: string;
+}
+
+const RESPONSABLE_VACIO: Responsable = { obraId: "", personaId: "", custodioNombre: "" };
+
+function responsablePayload(r: Responsable) {
+  return {
+    obraId: r.obraId || undefined,
+    personaId: r.personaId && r.personaId !== OTRO ? r.personaId : undefined,
+    custodioNombre: r.personaId === OTRO && r.custodioNombre.trim() ? r.custodioNombre.trim() : undefined,
+  };
+}
+
+function tieneResponsable(r: Responsable): boolean {
+  const p = responsablePayload(r);
+  return !!(p.obraId || p.personaId || p.custodioNombre);
+}
+
+function ResponsableCampos({ value, onChange }: { value: Responsable; onChange: (r: Responsable) => void }) {
+  const obrasQuery = useQuery({ queryKey: ["obras"], queryFn: () => api.get<Obra[]>("/obras").then((r) => r.data) });
+  const personasQuery = useQuery({ queryKey: ["personas"], queryFn: () => api.get<Persona[]>("/personas").then((r) => r.data) });
+
+  return (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div>
+        <Label>Trabajador</Label>
+        <Select value={value.personaId} onChange={(e) => onChange({ ...value, personaId: e.target.value })}>
+          <option value="">— Ninguno —</option>
+          {personasQuery.data
+            ?.filter((p) => p.activo)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombreCompleto}
+              </option>
+            ))}
+          <option value={OTRO}>Otro (escribir nombre)…</option>
+        </Select>
+        {value.personaId === OTRO && (
+          <Input
+            className="mt-2"
+            value={value.custodioNombre}
+            onChange={(e) => onChange({ ...value, custodioNombre: e.target.value })}
+            placeholder="Nombre de quien se hace cargo"
+          />
+        )}
+      </div>
+      <div>
+        <Label>Obra</Label>
+        <Select value={value.obraId} onChange={(e) => onChange({ ...value, obraId: e.target.value })}>
+          <option value="">— Ninguna —</option>
+          {obrasQuery.data?.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.nombre}
+            </option>
+          ))}
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 function AsignarForm({ herramienta, onDone }: { herramienta: Herramienta; onDone: () => void }) {
   const qc = useQueryClient();
-  const [obraId, setObraId] = useState("");
-  const [custodioNombre, setCustodioNombre] = useState("");
+  const [responsable, setResponsable] = useState<Responsable>(RESPONSABLE_VACIO);
   const [error, setError] = useState<string | null>(null);
 
-  const obrasQuery = useQuery({ queryKey: ["obras"], queryFn: () => api.get<Obra[]>("/obras").then((r) => r.data) });
-
   const mutation = useMutation({
-    mutationFn: () =>
-      api.post(`/herramientas/${herramienta.id}/asignaciones`, {
-        obraId: obraId || undefined,
-        custodioNombre: custodioNombre || undefined,
-      }),
+    mutationFn: () => api.post(`/herramientas/${herramienta.id}/asignaciones`, responsablePayload(responsable)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["herramientas"] });
       onDone();
@@ -272,29 +349,11 @@ function AsignarForm({ herramienta, onDone }: { herramienta: Herramienta; onDone
         }}
         className="space-y-3"
       >
-        <div>
-          <Label>Nombre del responsable</Label>
-          <Input
-            value={custodioNombre}
-            onChange={(e) => setCustodioNombre(e.target.value)}
-            placeholder="Escribe el nombre de quien se hace cargo"
-          />
-        </div>
-        <div>
-          <Label>Obra</Label>
-          <Select value={obraId} onChange={(e) => setObraId(e.target.value)}>
-            <option value="">— Ninguna —</option>
-            {obrasQuery.data?.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.nombre}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <ResponsableCampos value={responsable} onChange={setResponsable} />
         <p className="text-xs text-ink-soft">Indica al menos uno. Asignar cierra automaticamente la asignacion vigente anterior.</p>
         {error && <p className="text-sm text-crit">{error}</p>}
         <div className="flex gap-2">
-          <Button type="submit" disabled={(!obraId && !custodioNombre) || mutation.isPending}>
+          <Button type="submit" disabled={!tieneResponsable(responsable) || mutation.isPending}>
             {mutation.isPending ? "Asignando…" : "Confirmar"}
           </Button>
           <Button type="button" variant="secondary" onClick={onDone}>

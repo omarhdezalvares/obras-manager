@@ -104,16 +104,19 @@ herramientasRouter.patch(
   })
 );
 
-// El custodio se captura como nombre libre (en vez de un combo limitado al
-// catalogo de Personas registradas): en campo el responsable de una
-// herramienta a veces no es una Persona dada de alta en el sistema.
+// El custodio puede ser un trabajador registrado (personaId) o un nombre
+// libre: en campo el responsable de una herramienta a veces no es una
+// Persona dada de alta en el sistema.
 const asignarSchema = z
   .object({
     obraId: z.string().optional(),
+    personaId: z.string().optional(),
     custodioNombre: z.string().min(1).optional(),
     observaciones: z.string().optional(),
   })
-  .refine((d) => d.obraId || d.custodioNombre, { message: "Debe indicar una obra y/o el nombre del custodio" });
+  .refine((d) => d.obraId || d.personaId || d.custodioNombre, {
+    message: "Debe indicar una obra, un trabajador y/o el nombre del custodio",
+  });
 
 // Flujo 10 (seccion 08): asignar cierra automaticamente la asignacion
 // anterior - una herramienta tiene un unico responsable vigente.
@@ -126,6 +129,16 @@ herramientasRouter.post(
       where: { id: req.params.id, tenantId: req.user!.tenantId, deletedAt: null },
     });
     if (!herramienta) throw new HttpError(404, "Herramienta no encontrada");
+    if (body.personaId) {
+      const persona = await prisma.persona.findFirst({
+        where: { id: body.personaId, tenantId: req.user!.tenantId, deletedAt: null },
+      });
+      if (!persona) throw new HttpError(404, "Trabajador no encontrado");
+    }
+    if (body.obraId) {
+      const obra = await prisma.obra.findFirst({ where: { id: body.obraId, tenantId: req.user!.tenantId, deletedAt: null } });
+      if (!obra) throw new HttpError(404, "Obra no encontrada");
+    }
 
     const asignacion = await prisma.$transaction(async (tx) => {
       await tx.herramientaAsignacion.updateMany({
@@ -138,6 +151,7 @@ herramientasRouter.post(
           tenantId: req.user!.tenantId,
           herramientaId: herramienta.id,
           obraId: body.obraId,
+          personaId: body.personaId,
           custodioNombre: body.custodioNombre,
           observaciones: body.observaciones,
         },
