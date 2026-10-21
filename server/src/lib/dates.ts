@@ -1,3 +1,6 @@
+// Formato que esperan startOfDay y los <input type="date">.
+export const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
 // Construye medianoche LOCAL directamente desde los componentes "YYYY-MM-DD"
 // en vez de `new Date(dateStr)` (que parsea como UTC) seguido de
 // `setHours(0,0,0,0)` (que ajusta en hora local): esa combinacion desplaza

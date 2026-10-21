@@ -10,9 +10,9 @@ import { resolveDefaultPartida } from "../../lib/defaultPartida";
 import { ASISTENCIA_AVANCE_OPERATIVO, ASISTENCIA_EDICION } from "../../lib/roles";
 import { writeAuditLog } from "../../lib/audit";
 import { env } from "../../env";
-import { notify } from "../../lib/notify";
 import { startOfDay } from "../../lib/dates";
-import { COSTO_TIPOS } from "../../lib/finance";
+import { checkSobreconsumo } from "../../lib/sobreconsumo";
+import { FECHA_ISO } from "../../lib/dates";
 
 export const asistenciasRouter = Router({ mergeParams: true });
 asistenciasRouter.use(requireAuth);
@@ -25,7 +25,7 @@ const registroSchema = z.object({
 });
 
 const createSchema = z.object({
-  fecha: z.string().min(1),
+  fecha: z.string().regex(FECHA_ISO, "Fecha invalida, usa AAAA-MM-DD"),
   registros: z.array(registroSchema).min(1),
 });
 
@@ -124,22 +124,6 @@ asistenciasRouter.post(
   })
 );
 
-async function checkSobreconsumo(tenantId: string, obraId: string, partidaId: string): Promise<void> {
-  const partida = await prisma.partidaPresupuestal.findUnique({ where: { id: partidaId } });
-  if (!partida) return;
-  const suma = await prisma.transaccion.aggregate({
-    where: { obraId, partidaId, tipo: { in: COSTO_TIPOS } },
-    _sum: { monto: true },
-  });
-  const presupuesto = partida.presupuestoActualizado || partida.presupuestoInicial;
-  if (presupuesto <= 0) return;
-  const pct = ((suma._sum.monto ?? 0) / presupuesto) * 100;
-  if (pct >= 100) {
-    await notify({ tenantId, tipo: "sobreconsumo_100", obraId, mensaje: `La partida "${partida.nombre}" supero el 100% de su presupuesto` });
-  } else if (pct >= 90) {
-    await notify({ tenantId, tipo: "sobreconsumo_90", obraId, mensaje: `La partida "${partida.nombre}" alcanzo el ${pct.toFixed(0)}% de su presupuesto` });
-  }
-}
 
 const querySchema = z.object({
   fecha_desde: z.string().optional(),
@@ -182,7 +166,7 @@ async function asistenciaDeObra(req: { params: Record<string, string>; user?: { 
 }
 
 const editarSchema = z.object({
-  fecha: z.string().min(1).optional(),
+  fecha: z.string().regex(FECHA_ISO, "Fecha invalida, usa AAAA-MM-DD").optional(),
   horaLlegada: z.string().min(1).optional(),
   observaciones: z.string().optional(),
 });

@@ -9,7 +9,7 @@ import { resumenFinancieroObra } from "../../lib/finance";
 import { REPORTE_EXPORT, REPORTE_EXPORT_FINANCIERO, ROLES, VER_PRESUPUESTO } from "../../lib/roles";
 import { startOfDay } from "../../lib/dates";
 import { montoConSigno } from "../../lib/finance";
-import { colorExcelArgb } from "../../lib/marca";
+import { colorExcelArgb, textoSobre } from "../../lib/marca";
 
 export const reportesRouter = Router();
 reportesRouter.use(requireAuth);
@@ -102,7 +102,7 @@ reportesRouter.post(
       workbook.eachSheet((sheet) => {
         sheet.getRow(1).eachCell((cell) => {
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb } };
-          cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+          cell.font = { bold: true, color: { argb: colorExcelArgb(textoSobre(tenant?.colorPrimario)) } };
         });
       });
     }
@@ -212,6 +212,21 @@ async function construirHoja(
         actual.count += 1;
         actual.costo += a.transaccion?.monto ?? 0;
         porPersona.set(a.personaId, actual);
+      }
+      // Bonos y comisiones asignados al trabajador tambien son su costo.
+      const bonos = await prisma.transaccion.findMany({
+        where: {
+          obraId: obra.id,
+          tipo: { in: ["bono", "comision"] },
+          personaId: { not: null },
+          createdAt: rangoFecha.gte || rangoFecha.lte ? rangoFecha : undefined,
+        },
+        include: { persona: true },
+      });
+      for (const b of bonos) {
+        const actual = porPersona.get(b.personaId!) ?? { nombre: b.persona!.nombreCompleto, count: 0, costo: 0 };
+        actual.costo += b.monto;
+        porPersona.set(b.personaId!, actual);
       }
       for (const p of porPersona.values()) {
         sheet.addRow({ obra: obra.nombre, persona: p.nombre, asistencias: p.count, ...(puedeVerFinanciero ? { costo: p.costo } : {}) });

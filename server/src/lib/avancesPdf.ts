@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
 import { env } from "../env";
-import { COLOR_HEX } from "./marca";
+import { COLOR_HEX, textoSobre } from "./marca";
 
 const ACCENT = "#5C4632";
 const INK = "#2A2622";
@@ -121,11 +121,14 @@ export async function generarReporteAvancesPdf(params: {
         // logo faltante o ilegible: el reporte sale sin logo en vez de fallar
       }
     }
-    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(18).text(params.tenant.nombre, MARGIN, 26);
+    const texto = textoSobre(acento);
+    // El nombre no invade el espacio del logo (64px + separacion).
+    const anchoTexto = doc.page.width - MARGIN * 2 - (params.tenant.logoKey ? 76 : 0);
+    doc.fillColor(texto).font("Helvetica-Bold").fontSize(18).text(params.tenant.nombre, MARGIN, 26, { width: anchoTexto, height: 22, ellipsis: true });
     const contacto = [params.tenant.direccion, params.tenant.telefono, params.tenant.correoContacto].filter(Boolean).join("   ·   ");
-    doc.font("Helvetica").fontSize(9).fillColor(FONDO_SUAVE);
-    if (contacto) doc.text(contacto, MARGIN, 50);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor("#FFFFFF").text("Reporte de evidencias de obra", MARGIN, 68);
+    doc.font("Helvetica").fontSize(9).fillColor(texto === "#FFFFFF" ? FONDO_SUAVE : INK);
+    if (contacto) doc.text(contacto, MARGIN, 50, { width: anchoTexto, height: 12, ellipsis: true });
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(texto).text("Reporte de evidencias de obra", MARGIN, 68);
 
     // Ficha de la obra.
     const fichaY = 116;

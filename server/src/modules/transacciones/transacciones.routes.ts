@@ -7,6 +7,7 @@ import { assertObraVisible } from "../../lib/obraScope";
 import { writeAuditLog } from "../../lib/audit";
 import { TRANSACCION_GESTION, VER_TRANSACCIONES } from "../../lib/roles";
 import { esGasto, montoConSigno } from "../../lib/finance";
+import { checkSobreconsumo } from "../../lib/sobreconsumo";
 
 export const transaccionesRouter = Router({ mergeParams: true });
 transaccionesRouter.use(requireAuth);
@@ -98,6 +99,8 @@ transaccionesRouter.post(
       accion: "crear",
       cambios: { despues: body },
     });
+
+    if (esGasto(body.tipo)) await checkSobreconsumo(req.user!.tenantId, obraId, body.partidaId);
 
     res.status(201).json(transaccion);
   })

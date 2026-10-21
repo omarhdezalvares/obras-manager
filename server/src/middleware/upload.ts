@@ -3,6 +3,7 @@ import multer from "multer";
 import path from "path";
 import { v4 as uuid } from "uuid";
 import { env } from "../env";
+import { HttpError } from "./auth";
 
 // Version de test: guarda evidencias en disco local en vez de S3. El
 // documento pide URL prefirmada + bucket; aqui se simula con una ruta
@@ -37,7 +38,7 @@ export const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"];
     if (!allowed.includes(file.mimetype)) {
-      cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`));
+      cb(new HttpError(400, `Tipo de archivo no permitido: ${file.mimetype}. Usa JPG, PNG, WEBP, HEIC o PDF`));
       return;
     }
     cb(null, true);

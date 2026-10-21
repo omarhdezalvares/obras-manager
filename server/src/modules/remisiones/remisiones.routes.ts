@@ -6,6 +6,7 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { assertObraVisible } from "../../lib/obraScope";
 import { REMISION_GESTION } from "../../lib/roles";
 import { writeAuditLog } from "../../lib/audit";
+import { checkSobreconsumo } from "../../lib/sobreconsumo";
 
 export const remisionesRouter = Router({ mergeParams: true });
 remisionesRouter.use(requireAuth);
@@ -34,6 +35,13 @@ function calcularCostoTotal(materiales: z.infer<typeof lineaSchema>[]): number {
   return materiales.reduce((acc, m) => acc + m.cantidad * m.costoUnitario, 0);
 }
 
+// Las lineas solo pueden usar materiales del catalogo del propio tenant.
+async function assertMaterialesDelTenant(tenantId: string, materiales: z.infer<typeof lineaSchema>[]): Promise<void> {
+  const ids = [...new Set(materiales.map((m) => m.materialId))];
+  const encontrados = await prisma.material.count({ where: { id: { in: ids }, tenantId } });
+  if (encontrados !== ids.length) throw new HttpError(404, "Material no encontrado en el catalogo");
+}
+
 function descripcionRemision(proveedor: string, folio?: string): string {
   return `Remision de material - proveedor ${proveedor}${folio ? ` - folio ${folio}` : ""}`;
 }
@@ -56,8 +64,9 @@ remisionesRouter.post(
     await assertObraVisible(req.user!, obraId);
     const body = createSchema.parse(req.body);
 
-    const partida = await prisma.partidaPresupuestal.findFirst({ where: { id: body.partidaId, obraId } });
+    const partida = await prisma.partidaPresupuestal.findFirst({ where: { id: body.partidaId, obraId, deletedAt: null } });
     if (!partida) throw new HttpError(404, "Partida no encontrada en esta obra");
+    await assertMaterialesDelTenant(req.user!.tenantId, body.materiales);
 
     const costoTotal = calcularCostoTotal(body.materiales);
 
@@ -101,6 +110,8 @@ remisionesRouter.post(
       return nueva;
     });
 
+    await checkSobreconsumo(req.user!.tenantId, obraId, body.partidaId);
+
     res.status(201).json(remision);
   })
 );
@@ -125,8 +136,9 @@ remisionesRouter.patch(
     });
     if (!antes) throw new HttpError(404, "Remision no encontrada");
 
-    const partida = await prisma.partidaPresupuestal.findFirst({ where: { id: body.partidaId, obraId } });
+    const partida = await prisma.partidaPresupuestal.findFirst({ where: { id: body.partidaId, obraId, deletedAt: null } });
     if (!partida) throw new HttpError(404, "Partida no encontrada en esta obra");
+    await assertMaterialesDelTenant(req.user!.tenantId, body.materiales);
 
     const costoTotal = calcularCostoTotal(body.materiales);
 
@@ -175,6 +187,8 @@ remisionesRouter.patch(
       accion: "actualizar",
       cambios: { antes, despues: body, motivo: body.motivo },
     });
+
+    await checkSobreconsumo(req.user!.tenantId, obraId, body.partidaId);
 
     res.json(remision);
   })
