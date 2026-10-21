@@ -36,6 +36,8 @@ export function AvancesTab({
   const [errorFotos, setErrorFotos] = useState<string | null>(null);
   const [descargandoFotos, setDescargandoFotos] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
+  const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarPdf, setMostrarPdf] = useState(false);
 
   const query = useQuery({
     queryKey: ["avances", obraId],
@@ -72,9 +74,28 @@ export function AvancesTab({
     }
   }
 
+  // Historial primero; capturar y el PDF se abren desde el encabezado.
   return (
     <div className="space-y-4">
-      {puedeOperar && (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
+        <div className="flex flex-wrap gap-2">
+          {puedeOperar && (
+            <Button onClick={() => setMostrarForm((v) => !v)}>{mostrarForm ? "Cancelar" : "+ Registrar evidencia"}</Button>
+          )}
+          {esAdmin && (
+            <Button variant="secondary" onClick={() => setMostrarPdf((v) => !v)}>
+              {mostrarPdf ? "Cerrar reporte" : "Descargar reporte PDF"}
+            </Button>
+          )}
+          <Button variant="secondary" onClick={descargarFotos} disabled={descargandoFotos}>
+            {descargandoFotos ? "Descargando…" : "Descargar todas las fotos"}
+          </Button>
+        </div>
+      </div>
+      {errorFotos && <p className="text-sm text-crit">{errorFotos}</p>}
+
+      {puedeOperar && (mostrarForm || ultimoId) && (
         <Card>
           <h2 className="mb-1 font-semibold text-ink">Registrar evidencia</h2>
           <p className="mb-3 text-xs text-ink-soft">
@@ -107,16 +128,9 @@ export function AvancesTab({
         </Card>
       )}
 
-      {esAdmin && <ReportePdfCard obraId={obraId} obraNombre={obraNombre} />}
+      {esAdmin && mostrarPdf && <ReportePdfCard obraId={obraId} obraNombre={obraNombre} />}
 
       <div>
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
-          <Button variant="secondary" onClick={descargarFotos} disabled={descargandoFotos}>
-            {descargandoFotos ? "Descargando…" : "Descargar todas las fotos"}
-          </Button>
-        </div>
-        {errorFotos && <p className="mb-2 text-sm text-crit">{errorFotos}</p>}
         {query.data?.length === 0 && <EmptyState>Aun no hay evidencias registradas en esta obra.</EmptyState>}
         <div className="space-y-2">
           {query.data?.map((a) =>
