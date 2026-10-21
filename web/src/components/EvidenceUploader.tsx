@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Evidencia } from "../lib/types";
+import { subirArchivos } from "../lib/evidencias";
 
 interface Props {
   entidadTipo: "asistencia" | "avance" | "remision" | "herramienta";
@@ -37,34 +38,16 @@ export function EvidenceUploader({ entidadTipo, entidadId, compact }: Props) {
     queryFn: () => api.get<Evidencia[]>("/evidencias", { params: { entidadTipo, entidadId } }).then((r) => r.data),
   });
 
-  const upload = useMutation({
-    mutationFn: (file: File) => {
-      const form = new FormData();
-      form.append("archivo", file);
-      form.append("entidadTipo", entidadTipo);
-      form.append("entidadId", entidadId);
-      return api.post("/evidencias", form, { headers: { "Content-Type": "multipart/form-data" } });
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
-  });
-
   // Galeria permite elegir varias fotos: se suben una por una y un archivo
   // rechazado no detiene a los demas.
   async function subirVarios(files: File[]) {
-    const fallidos: string[] = [];
-    for (const [i, file] of files.entries()) {
-      setProgreso({ actual: i + 1, total: files.length });
-      try {
-        await upload.mutateAsync(file);
-      } catch (err) {
-        fallidos.push(`${file.name}: ${apiErrorMessage(err)}`);
-      }
-    }
+    const fallidos = await subirArchivos(entidadTipo, entidadId, files, (actual, total) => setProgreso({ actual, total }));
+    qc.invalidateQueries({ queryKey: key });
     setProgreso(null);
     if (fallidos.length) alert(`No se pudieron subir:\n${fallidos.join("\n")}`);
   }
 
-  const ocupado = upload.isPending || progreso !== null;
+  const ocupado = progreso !== null;
   const etiquetaSubiendo = progreso && progreso.total > 1 ? `${progreso.actual}/${progreso.total}` : "Subiendo…";
 
   const eliminar = useMutation({

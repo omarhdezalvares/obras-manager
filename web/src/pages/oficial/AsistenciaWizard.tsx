@@ -7,6 +7,7 @@ import { useAuth } from "../../lib/auth";
 import { Button, Card, Input } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { Confirmacion } from "../../components/Confirmacion";
+import { FechaHoy } from "../../components/FechaHoy";
 import { useObrasHoy } from "../../lib/obrasHoy";
 import { hoyLocal, horaLocal } from "../../lib/fechas";
 import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
@@ -95,8 +96,8 @@ export function AsistenciaWizard() {
         <Card>
           <p className="mb-3 text-sm text-ink-soft">Marca quiénes llegaron y la fecha. La hora se precarga pero puedes ajustarla.</p>
 
-          <div className="mb-3 max-w-[200px]">
-            <Input type="date" max={hoyLocal()} value={fecha} onChange={(e) => setFecha(e.target.value)} />
+          <div className="mb-3">
+            <FechaHoy value={fecha} onChange={setFecha} />
           </div>
 
           {obraPersonas.length === 0 ? (
