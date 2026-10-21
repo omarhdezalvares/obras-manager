@@ -5,6 +5,7 @@ import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
+import { horasRegistradasEnFecha } from "../../lib/asistencias";
 
 function hoyISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -32,7 +33,9 @@ export function AsistenciasTab({
 
   return (
     <div className="space-y-4">
-      {puedeOperar && <RegistrarAsistencia obraId={obraId} obraPersonas={obraPersonas} verFinanciero={verFinanciero} />}
+      {puedeOperar && (
+        <RegistrarAsistencia obraId={obraId} obraPersonas={obraPersonas} verFinanciero={verFinanciero} asistencias={query.data} />
+      )}
 
       <div>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Historial</h2>
@@ -64,10 +67,12 @@ function RegistrarAsistencia({
   obraId,
   obraPersonas,
   verFinanciero,
+  asistencias,
 }: {
   obraId: string;
   obraPersonas: ObraPersona[];
   verFinanciero: boolean;
+  asistencias: Asistencia[] | undefined;
 }) {
   const { usuario } = useAuth();
   const qc = useQueryClient();
@@ -77,11 +82,16 @@ function RegistrarAsistencia({
   const [resultado, setResultado] = useState<{ personaId: string; ok: boolean; motivo?: string }[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const yaRegistradas = horasRegistradasEnFecha(asistencias, fecha);
+  // Quien ya tiene asistencia ese dia no se envia aunque haya quedado
+  // seleccionado (p. ej. la preseleccion del propio usuario o un cambio de fecha).
+  const aEnviar = Array.from(seleccion).filter((id) => !yaRegistradas.has(id));
+
   const mutation = useMutation({
     mutationFn: () =>
       api.post(`/obras/${obraId}/asistencias`, {
         fecha,
-        registros: Array.from(seleccion).map((personaId) => ({
+        registros: aEnviar.map((personaId) => ({
           personaId,
           horaLlegada: horas[personaId] ?? ahoraHHmm(),
         })),
@@ -117,18 +127,22 @@ function RegistrarAsistencia({
         <p className="text-sm text-ink-soft">No hay personas asignadas a esta obra todavia.</p>
       ) : (
         <div className="space-y-2">
-          {obraPersonas.map((op) => (
+          {obraPersonas.map((op) => {
+            const horaRegistrada = yaRegistradas.get(op.personaId);
+            const marcado = !horaRegistrada && seleccion.has(op.personaId);
+            return (
             <label
               key={op.id}
               className={`flex min-h-[44px] items-center justify-between gap-3 rounded-md border px-3 py-2 ${
-                seleccion.has(op.personaId) ? "border-accent bg-accent-soft" : "border-black/10"
+                horaRegistrada ? "border-black/10 bg-black/5 opacity-60" : marcado ? "border-accent bg-accent-soft" : "border-black/10"
               }`}
             >
               <span className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   className="h-5 w-5"
-                  checked={seleccion.has(op.personaId)}
+                  checked={marcado}
+                  disabled={!!horaRegistrada}
                   onChange={() => toggle(op.personaId)}
                 />
                 <span>
@@ -136,9 +150,10 @@ function RegistrarAsistencia({
                   {verFinanciero && op.costoDiarioObra != null && (
                     <span className="ml-1 text-xs text-copper">· costo por proyecto ${op.costoDiarioObra}</span>
                   )}
+                  {horaRegistrada && <span className="ml-1 text-xs text-ink-soft">· Ya registrada (llegada {horaRegistrada})</span>}
                 </span>
               </span>
-              {seleccion.has(op.personaId) && (
+              {marcado && (
                 <Input
                   type="time"
                   className="w-28"
@@ -147,7 +162,8 @@ function RegistrarAsistencia({
                 />
               )}
             </label>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -166,8 +182,8 @@ function RegistrarAsistencia({
         </div>
       )}
 
-      <Button className="mt-3" disabled={seleccion.size === 0 || mutation.isPending} onClick={() => mutation.mutate()}>
-        {mutation.isPending ? "Guardando…" : `Guardar asistencia (${seleccion.size})`}
+      <Button className="mt-3" disabled={aEnviar.length === 0 || mutation.isPending} onClick={() => mutation.mutate()}>
+        {mutation.isPending ? "Guardando…" : `Guardar asistencia (${aEnviar.length})`}
       </Button>
     </Card>
   );
