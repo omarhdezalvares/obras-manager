@@ -146,6 +146,7 @@ function NuevaHerramientaForm({ onDone }: { onDone: () => void }) {
 
 function EditarHerramientaForm({ herramienta, onDone }: { herramienta: Herramienta; onDone: () => void }) {
   const qc = useQueryClient();
+  const [codigo, setCodigo] = useState(herramienta.codigo);
   const [nombre, setNombre] = useState(herramienta.nombre);
   const [marca, setMarca] = useState(herramienta.marca ?? "");
   const [modelo, setModelo] = useState(herramienta.modelo ?? "");
@@ -155,6 +156,7 @@ function EditarHerramientaForm({ herramienta, onDone }: { herramienta: Herramien
   const mutation = useMutation({
     mutationFn: () =>
       api.patch(`/herramientas/${herramienta.id}`, {
+        codigo,
         nombre,
         marca: marca || undefined,
         modelo: modelo || undefined,
@@ -179,6 +181,10 @@ function EditarHerramientaForm({ herramienta, onDone }: { herramienta: Herramien
         className="space-y-3"
       >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div>
+            <Label>Codigo</Label>
+            <Input required value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} />
+          </div>
           <div>
             <Label>Nombre</Label>
             <Input required value={nombre} onChange={(e) => setNombre(e.target.value)} />

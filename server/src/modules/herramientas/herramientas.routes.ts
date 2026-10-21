@@ -81,6 +81,7 @@ herramientasRouter.post(
 );
 
 const updateSchema = z.object({
+  codigo: z.string().min(1).optional(),
   nombre: z.string().min(1).optional(),
   descripcion: z.string().optional(),
   marca: z.string().optional(),
