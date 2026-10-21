@@ -6,7 +6,7 @@ import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
-import { hoyLocal, horaLocal } from "../../lib/fechas";
+import { fechaCorta, horaLocal, hoyLocal } from "../../lib/fechas";
 
 export function AsistenciasTab({
   obraId,
@@ -53,7 +53,7 @@ export function AsistenciasTab({
                 <div>
                   <p className="font-medium text-ink">{a.persona?.nombreCompleto}</p>
                   <p className="text-xs text-ink-soft">
-                    {a.fecha.slice(0, 10)} · llegada {a.horaLlegada}
+                    {fechaCorta(a.fecha)} · llegada {a.horaLlegada}
                     {verFinanciero && a.transaccion && ` · costo aplicado $${a.transaccion.monto.toLocaleString("es-MX")}`}
                   </p>
                   {a.observaciones && <p className="text-xs text-ink-soft">{a.observaciones}</p>}
@@ -68,7 +68,7 @@ export function AsistenciasTab({
                       className="text-crit"
                       disabled={eliminar.isPending}
                       onClick={() => {
-                        if (confirm(`¿Eliminar la asistencia de ${a.persona?.nombreCompleto} del ${a.fecha.slice(0, 10)}? Se quitara su costo de mano de obra y sus fotos.`))
+                        if (confirm(`¿Eliminar la asistencia de ${a.persona?.nombreCompleto} del ${fechaCorta(a.fecha)}? Se quitara su costo de mano de obra y sus fotos.`))
                           eliminar.mutate(a.id);
                       }}
                     >

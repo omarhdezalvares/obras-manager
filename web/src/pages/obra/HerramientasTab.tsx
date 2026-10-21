@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { HerramientaAsignacion } from "../../lib/types";
 import { Card, EmptyState } from "../../components/ui";
+import { fechaCortaDe } from "../../lib/fechas";
 
 export function HerramientasTab({ asignaciones }: { obraId: string; asignaciones: HerramientaAsignacion[] }) {
   return (
@@ -22,7 +23,7 @@ export function HerramientasTab({ asignaciones }: { obraId: string; asignaciones
                 Codigo {a.herramienta?.codigo} · Custodio: {a.custodioNombre ?? a.persona?.nombreCompleto ?? "obra completa"}
               </p>
             </div>
-            <p className="text-xs text-ink-soft">Desde {a.fechaAsignacion.slice(0, 10)}</p>
+            <p className="text-xs text-ink-soft">Desde {fechaCortaDe(a.fechaAsignacion)}</p>
           </Card>
         ))}
       </div>

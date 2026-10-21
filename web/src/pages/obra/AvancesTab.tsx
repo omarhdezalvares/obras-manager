@@ -4,7 +4,7 @@ import { api, apiErrorMessage } from "../../lib/api";
 import { Avance } from "../../lib/types";
 import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-import { hoyLocal } from "../../lib/fechas";
+import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
 function descargarBlob(data: BlobPart, tipo: string, nombreArchivo: string): void {
   const url = URL.createObjectURL(new Blob([data], { type: tipo }));
@@ -131,7 +131,7 @@ export function AvancesTab({
               <Card key={a.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs text-ink-soft">{a.fecha.slice(0, 10)}</p>
+                    <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)}</p>
                     <p className="text-sm text-ink">{a.descripcion}</p>
                     {a.avancePersonas.length > 0 && (
                       <p className="mt-1 text-xs text-ink-soft">

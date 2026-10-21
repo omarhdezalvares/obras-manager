@@ -5,7 +5,7 @@ import { Material, PartidaConSaldo, Remision } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label, Select } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
-import { hoyLocal } from "../../lib/fechas";
+import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
 interface Linea {
   materialId: string;
@@ -218,7 +218,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-ink">{r.proveedor} {r.folio && `· folio ${r.folio}`}</p>
-                  <p className="text-xs text-ink-soft">{r.fecha.slice(0, 10)} · ${r.costoTotal.toLocaleString("es-MX")}</p>
+                  <p className="text-xs text-ink-soft">{fechaCorta(r.fecha)} · ${r.costoTotal.toLocaleString("es-MX")}</p>
                 </div>
                 {puedeCrear && (
                   <Button variant="ghost" onClick={() => editar(r)}>

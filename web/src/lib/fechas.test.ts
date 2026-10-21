@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { fechaCorta, fechaLarga, horaLocal, hoyLocal } from "./fechas";
+import { fechaCorta, fechaCortaDe, fechaLarga, horaLocal, hoyLocal } from "./fechas";
 
 test("hoyLocal a las 23:30 locales sigue siendo el mismo dia", () =>
   assert.equal(hoyLocal(new Date(2026, 9, 21, 23, 30)), "2026-10-21"));
@@ -9,3 +9,7 @@ test("fechaCorta", () => assert.equal(fechaCorta("2026-10-20"), "mar 20 oct"));
 test("fechaCorta ignora la hora del ISO", () => assert.equal(fechaCorta("2026-10-20T06:00:00.000Z"), "mar 20 oct"));
 test("fechaLarga", () => assert.equal(fechaLarga("2026-10-20"), "martes 20 de octubre"));
 test("horaLocal", () => assert.equal(horaLocal(new Date(2026, 9, 21, 7, 5)), "07:05"));
+test("fechaCortaDe usa el dia local del momento", () => {
+  const momento = new Date(2026, 9, 20, 23, 0).toISOString(); // 23:00 local = dia siguiente en UTC (Mexico)
+  assert.equal(fechaCortaDe(momento), "mar 20 oct");
+});

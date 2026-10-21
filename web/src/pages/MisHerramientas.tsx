@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { HerramientaAsignacion } from "../lib/types";
 import { Card, EmptyState } from "../components/ui";
+import { fechaCortaDe } from "../lib/fechas";
 
 // Pantalla "Ver herramientas asignadas" (seccion 11): lista simple con
 // estado, sin acciones de edicion para el rol Oficial.
@@ -26,7 +27,7 @@ export function MisHerramientas() {
             <p className="font-medium text-ink">{a.herramienta?.nombre}</p>
             <p className="text-xs text-ink-soft">Codigo {a.herramienta?.codigo}</p>
             <p className="mt-1 text-sm text-ink-soft">
-              {a.personaId ? "En mi poder" : `En la obra: ${a.obra?.nombre}`} · desde {a.fechaAsignacion.slice(0, 10)}
+              {a.personaId ? "En mi poder" : `En la obra: ${a.obra?.nombre}`} · desde {fechaCortaDe(a.fechaAsignacion)}
             </p>
           </Card>
         ))}

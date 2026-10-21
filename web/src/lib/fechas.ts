@@ -30,3 +30,8 @@ export function fechaLarga(iso: string): string {
   const f = aFecha(iso);
   return `${DIAS[f.getDay()]} ${f.getDate()} de ${MESES[f.getMonth()]}`;
 }
+
+// Para momentos guardados en UTC (createdAt, fechaAsignacion): primero al dia local.
+export function fechaCortaDe(momento: string): string {
+  return fechaCorta(hoyLocal(new Date(momento)));
+}

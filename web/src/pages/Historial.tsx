@@ -4,7 +4,7 @@ import { api, apiErrorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Asistencia, Avance } from "../lib/types";
 import { Button, Card, EmptyState, Input, Label, Textarea } from "../components/ui";
-import { hoyLocal } from "../lib/fechas";
+import { fechaCorta, hoyLocal } from "../lib/fechas";
 
 export function Historial() {
   const { usuario } = useAuth();
@@ -30,7 +30,7 @@ export function Historial() {
             <Card key={a.id} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-ink">{a.obra?.nombre}</p>
-                <p className="text-xs text-ink-soft">{a.fecha.slice(0, 10)} · llegada {a.horaLlegada}</p>
+                <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)} · llegada {a.horaLlegada}</p>
               </div>
             </Card>
           ))}
@@ -48,7 +48,7 @@ export function Historial() {
               <Card key={a.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs text-ink-soft">{a.fecha.slice(0, 10)}</p>
+                    <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)}</p>
                     <p className="text-sm text-ink">{a.descripcion}</p>
                   </div>
                   {a.registradoPor === usuario?.id && (
