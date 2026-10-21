@@ -32,8 +32,12 @@ export async function visibleObraIds(user: AccessTokenClaims): Promise<string[] 
 
 export async function assertObraVisible(user: AccessTokenClaims, obraId: string): Promise<void> {
   const scope = await visibleObraIds(user);
-  if (scope === "ALL") return;
-  if (!scope.includes(obraId)) {
+  // "ALL" es todo el tenant, no todos los tenants: la obra debe ser de la empresa del usuario.
+  const visible =
+    scope === "ALL"
+      ? (await prisma.obra.count({ where: { id: obraId, tenantId: user.tenantId } })) > 0
+      : scope.includes(obraId);
+  if (!visible) {
     const { HttpError } = await import("../middleware/auth");
     throw new HttpError(403, "No tienes acceso a esta obra");
   }
