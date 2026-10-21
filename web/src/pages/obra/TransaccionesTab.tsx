@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { esGasto, ObraPersona, PartidaConSaldo, Transaccion } from "../../lib/types";
+import { fechaTransaccion, grupoDeTipo, GRUPOS_TIPO, GrupoTipo } from "../../lib/transacciones";
+import { fechaCorta } from "../../lib/fechas";
 import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../../components/ui";
 
 const TIPO_LABEL: Record<string, string> = {
@@ -31,10 +33,17 @@ export function TransaccionesTab({
 }) {
   const [editando, setEditando] = useState<Transaccion | null>(null);
   const [nuevoBono, setNuevoBono] = useState(false);
+  const [filtro, setFiltro] = useState<GrupoTipo | "todos">("todos");
   const query = useQuery({
     queryKey: ["transacciones", obraId],
     queryFn: () => api.get<Transaccion[]>(`/obras/${obraId}/transacciones`).then((r) => r.data),
   });
+  const signo = (t: Transaccion) => t.montoConSigno ?? (esGasto(t.tipo) ? -Math.abs(t.monto) : t.monto);
+  const visibles = (query.data ?? [])
+    .filter((t) => filtro === "todos" || grupoDeTipo(t.tipo) === filtro)
+    .map((t) => ({ t, fecha: fechaTransaccion(t) }))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const total = visibles.reduce((acc, v) => acc + signo(v.t), 0);
 
   return (
     <div className="space-y-3">
@@ -56,15 +65,40 @@ export function TransaccionesTab({
 
       {query.data?.length === 0 && <EmptyState>Sin transacciones todavia.</EmptyState>}
 
+      {!!query.data?.length && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por tipo">
+            {(["todos", ...Object.keys(GRUPOS_TIPO)] as (GrupoTipo | "todos")[]).map((g) => (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={filtro === g}
+                onClick={() => setFiltro(g)}
+                className={`min-h-[36px] rounded-full border px-3 text-sm ${filtro === g ? "border-accent bg-accent-soft text-accent-ink" : "border-black/10 text-ink-soft"}`}
+              >
+                {g === "todos" ? "Todos" : GRUPOS_TIPO[g]}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-ink-soft">
+            {visibles.length} movimientos · total{" "}
+            <span className={`font-semibold ${total < 0 ? "text-crit" : "text-ok"}`}>
+              {total < 0 ? "−" : "+"}${Math.abs(total).toLocaleString("es-MX", { maximumFractionDigits: 2 })}
+            </span>
+          </p>
+        </div>
+      )}
+
       <div className="space-y-2">
-        {query.data?.map((t) => {
+        {visibles.map(({ t, fecha }) => {
           const gasto = esGasto(t.tipo);
-          const conSigno = t.montoConSigno ?? (gasto ? -Math.abs(t.monto) : t.monto);
+          const conSigno = signo(t);
           const resta = conSigno < 0;
           return (
             <Card key={t.id}>
               <div className="flex items-start justify-between gap-3">
                 <div>
+                  <p className="text-[13px] text-ink-soft">{fechaCorta(fecha)}</p>
                   <p className="font-medium text-ink">
                     {TIPO_LABEL[t.tipo] ?? t.tipo}
                     {TIPOS_CON_PERSONA.includes(t.tipo) && t.persona && (

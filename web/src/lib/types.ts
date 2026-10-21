@@ -136,6 +136,8 @@ export interface Transaccion {
   updatedAt: string;
   partida?: PartidaConSaldo;
   persona?: Persona | null;
+  asistencia?: { fecha: string } | null;
+  remision?: { fecha: string } | null;
 }
 
 const TIPOS_GASTO = ["costo_mano_obra", "costo_material", "otro_costo", "bono", "comision"];
