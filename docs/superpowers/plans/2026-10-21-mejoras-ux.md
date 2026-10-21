@@ -129,7 +129,7 @@ test("sin persona", () => assert.equal(seleccionInicial(null, [{ personaId: "b" 
 - [ ] **Step 4:** Tests PASS, `tsc`, `ux-check`: obra "Red WiFi" (sin personas) → botón muestra "(0)" y está deshabilitado.
 - [ ] **Step 5: Commit** `fix(asistencias): preseleccion valida y bloqueo en asistente del oficial`
 
-### Task 5: Navegación — Configuración (Personas, Empresa, Seguridad), perfil y barra inferior (E6 + C1 + O8)
+### Task 5: Navegación — Configuración (Personas, Herramientas, Empresa, Seguridad), perfil y barra inferior (E6 + C1 + O8)
 
 **Files:**
 - Modify: `web/src/components/Layout.tsx`
@@ -138,9 +138,9 @@ test("sin persona", () => assert.equal(seleccionInicial(null, [{ personaId: "b" 
 **Interfaces:**
 - Produces: `<MenuDesplegable etiqueta={ReactNode} items={{ label: string; to?: string; onClick?: () => void }[]} />` — botón que abre una lista; cierra con clic fuera y con `Escape`; botones de 44px mínimo; `aria-expanded`.
 
-- [ ] **Step 1:** Barra principal (escritorio y móvil) para roles de gestión: Dashboard, Obras, Herramientas, Reportes (quitar Personas de `NAV_GESTION` y eliminar `NAV_ADMIN_EXTRA`). Oficial sin cambios (3).
-- [ ] **Step 2:** Cabecera: `MenuDesplegable` "Configuración" (icono engrane, solo roles de gestión) con "Personas" (todos los de gestión), "Empresa" y "Seguridad" (solo Administrador). El bloque nombre/rol se vuelve otro `MenuDesplegable` con "Salir"; el botón "Salir" suelto desaparece. La ruta `/personas` no cambia.
-- [ ] **Step 3:** `tsc`; `ux-check`: móvil admin → barra inferior con 4 enlaces, sin "Personas" ni "Seguridad"; menú Configuración contiene "Personas", "Empresa", "Seguridad"; lucia (Gerente) → Configuración contiene "Personas" y no "Empresa"; ivan (Oficial) → sin menú Configuración, perfil contiene "Salir".
+- [ ] **Step 1:** Barra principal (escritorio y móvil) para roles de gestión: Dashboard, Obras, Reportes (quitar Personas y Herramientas de `NAV_GESTION` y eliminar `NAV_ADMIN_EXTRA`). Oficial sin cambios (Mis obras, Herramientas = `/mis-herramientas`, Historial).
+- [ ] **Step 2:** Cabecera: `MenuDesplegable` "Configuración" (icono engrane, solo roles de gestión) con "Personas" y "Herramientas" (todos los de gestión), "Empresa" y "Seguridad" (solo Administrador). El bloque nombre/rol se vuelve otro `MenuDesplegable` con "Salir"; el botón "Salir" suelto desaparece. Las rutas `/personas` y `/herramientas` no cambian; el `NavLink` activo de Configuración se marca cuando la ruta es una de las cuatro.
+- [ ] **Step 3:** `tsc`; `ux-check`: móvil admin → barra inferior con 3 enlaces, sin "Personas", "Herramientas" ni "Seguridad"; menú Configuración contiene "Personas", "Herramientas", "Empresa", "Seguridad"; lucia (Gerente) → Configuración contiene "Personas" y "Herramientas" y no "Empresa"; ivan (Oficial) → sin menú Configuración, perfil contiene "Salir".
 - [ ] **Step 4: Commit** `feat(nav): menu de perfil con configuracion y salir`
 
 ---

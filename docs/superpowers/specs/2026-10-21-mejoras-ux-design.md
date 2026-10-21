@@ -68,7 +68,7 @@ Meta: que cada rol entienda en segundos qué pasa y qué le toca hacer, con meno
 
 | ID | Mejora | Criterio de aceptación |
 |---|---|---|
-| C1 | **Menú Configuración.** | Los catálogos maestros salen de la barra principal a un menú "Configuración" (icono engrane) en la cabecera, en escritorio y en celular: **Personas** (*decisión del usuario*; visible para los mismos roles que hoy la ven en la barra), Empresa y Seguridad (solo Administrador). La barra queda en Dashboard, Obras, Herramientas y Reportes. Resuelve E6. |
+| C1 | **Menú Configuración.** | Los catálogos maestros salen de la barra principal a un menú "Configuración" (icono engrane) en la cabecera, en escritorio y en celular: **Personas** y **Herramientas** (*decisión del usuario*; visibles para los mismos roles que hoy las ven en la barra), Empresa y Seguridad (solo Administrador). La barra queda en Dashboard, Obras y Reportes. El oficial conserva su acceso "Herramientas" (Mis herramientas), que no es el catálogo. Resuelve E6. |
 | C2 | **Dashboard accionable.** | Bloque "Para hoy" arriba con contadores clicables: obras activas sin asistencia hoy, evidencias sin foto (últimos 7 días), partidas ≥ 90%. Cada uno navega a la obra/pestaña correspondiente. Las alertas existentes se vuelven enlaces. |
 | C3 | **Avance visual de presupuesto.** | La pill "0% consumido" se reemplaza por barra de progreso con color por umbral (verde < 90, ámbar ≥ 90, rojo ≥ 100) en Dashboard, lista de Obras y cabecera de obra. |
 | C4 | **Resumen de obra útil.** | La pestaña Resumen muestra: asistencia de hoy (quién llegó), última evidencia (fecha, texto, nº fotos), alertas de la obra (E3) y partidas con barra. |
@@ -110,7 +110,7 @@ Todo cálculo de "hoy" que haga el server (O1, C2, C4) usa una fecha `YYYY-MM-DD
 
 ## Decisiones
 
-- **Del usuario:** Personas es catálogo maestro y va en Configuración (C1); número oficial de presupuesto = suma de partidas (E2); no se renombran términos (C9); la reorganización de pestañas se valida con maqueta antes de construir (E).
+- **Del usuario:** Personas y Herramientas son catálogos maestros y van en Configuración (C1); número oficial de presupuesto = suma de partidas (E2); no se renombran términos (C9); la reorganización de pestañas se valida con maqueta antes de construir (E).
 - **Mías (revisables):** E2 conserva `presupuestoAutorizado` como dato informativo; E1 sin migración de datos; O1 "evidencia de hoy" = avance de cualquier persona; O3 oculto si no está asignado y con costo normal; C5 7 días con el más reciente abierto; C6 fecha según asistencia/remisión; "hoy" lo manda el cliente; nombre "Bitácora" para la 2ª pestaña de E; rama desde `ajustes-bitacora`.
 
 ## Lo que se deja al constructor
