@@ -6,6 +6,8 @@ import { Asistencia, ObraPersona, Obra } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, Input } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
+import { Confirmacion } from "../../components/Confirmacion";
+import { useObrasHoy } from "../../lib/obrasHoy";
 import { hoyLocal, horaLocal } from "../../lib/fechas";
 import { horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
 
@@ -59,6 +61,7 @@ export function AsistenciaWizard() {
     onSuccess: (res) => {
       setResultado(res.data.resultados);
       setPaso("listo");
+      qc.invalidateQueries({ queryKey: ["obras", "hoy"] });
       qc.invalidateQueries({ queryKey: ["asistencias", obraId] });
       qc.invalidateQueries({ queryKey: ["mi-historial"] });
     },
@@ -76,6 +79,8 @@ export function AsistenciaWizard() {
   }
 
   const misAsistenciasOk = resultado?.filter((r) => r.ok) ?? [];
+  const obrasHoy = useObrasHoy();
+  const faltaEvidencia = obrasHoy.data?.find((o) => o.id === obraId)?.hoy?.avances === 0;
 
   return (
     <div className="space-y-4">
@@ -145,17 +150,20 @@ export function AsistenciaWizard() {
 
       {paso === "listo" && (
         <div className="space-y-3">
-          <Card className="border-ok/40 bg-ok-soft/40">
-            <p className="font-medium text-ink">Asistencia guardada</p>
-            {resultado?.map((r) => {
+          <Confirmacion
+            titulo={misAsistenciasOk.length > 0 ? `Asistencia guardada (${misAsistenciasOk.length})` : "No se guardó ninguna asistencia"}
+            detalle={resultado?.map((r) => {
               const persona = obraPersonas.find((op) => op.personaId === r.personaId)?.persona;
+              const hora = horas[r.personaId];
               return (
-                <p key={r.personaId} className={`text-sm ${r.ok ? "text-ok" : "text-crit"}`}>
-                  {r.ok ? "✓" : "✗"} {persona?.nombreCompleto}: {r.ok ? "registrada" : r.motivo}
+                <p key={r.personaId} className={r.ok ? "text-ok" : "text-crit"}>
+                  {r.ok ? "✓" : "✗"} {persona?.nombreCompleto}
+                  {r.ok ? (hora ? ` · ${hora}` : "") : `: ${r.motivo}`}
                 </p>
               );
             })}
-          </Card>
+            accion={faltaEvidencia ? { label: "Registrar evidencia de hoy", to: `/mis-obras/${obraId}/evidencia` } : undefined}
+          />
 
           {misAsistenciasOk.length > 0 && (
             <Card>
