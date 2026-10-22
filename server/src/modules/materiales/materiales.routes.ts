@@ -30,7 +30,13 @@ materialesRouter.post(
   requireRole(...REMISION_GESTION),
   asyncHandler(async (req, res) => {
     const body = createSchema.parse(req.body);
-    const material = await prisma.material.create({ data: { tenantId: req.user!.tenantId, ...body } });
+    const nombre = body.nombre.trim().replace(/\s+/g, " ");
+    // Si ya existe con otro uso de mayusculas/acentos se devuelve el mismo: evita duplicados al agregar desde la remision.
+    const clave = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
+    const existentes = await prisma.material.findMany({ where: { tenantId: req.user!.tenantId } });
+    const existente = existentes.find((m) => clave(m.nombre) === clave(nombre));
+    if (existente) return void res.json(existente);
+    const material = await prisma.material.create({ data: { tenantId: req.user!.tenantId, ...body, nombre } });
     res.status(201).json(material);
   })
 );

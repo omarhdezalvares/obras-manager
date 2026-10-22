@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from "../../lib/api";
 import { Material, PartidaConSaldo, Remision } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
 import { Button, Card, EmptyState, Input, Label, Select, ListaCard } from "../../components/ui";
+import { SelectorMaterial } from "../../components/SelectorMaterial";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
@@ -136,19 +137,12 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   <Label>Materiales</Label>
                   {lineas.map((l, i) => (
                     <div key={i} className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr_1fr_auto]">
-                      <Select
+                      <SelectorMaterial
+                        key={`${editandoId ?? "nueva"}-${i}`}
+                        materiales={materialesQuery.data ?? []}
                         value={l.materialId}
-                        onChange={(e) =>
-                          setLineas((prev) => prev.map((x, xi) => (xi === i ? { ...x, materialId: e.target.value } : x)))
-                        }
-                      >
-                        <option value="">Material…</option>
-                        {materialesQuery.data?.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.nombre} ({m.unidad})
-                          </option>
-                        ))}
-                      </Select>
+                        onChange={(materialId) => setLineas((prev) => prev.map((x, xi) => (xi === i ? { ...x, materialId } : x)))}
+                      />
                       <Input
                         type="number"
                         step="0.001"
