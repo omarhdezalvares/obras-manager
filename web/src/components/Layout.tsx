@@ -53,74 +53,85 @@ export function Layout() {
   const config = esOficial ? [] : [...CONFIG_GESTION, ...(usuario.rol === "Administrador" ? CONFIG_ADMIN : [])];
   const enConfig = config.some((c) => pathname.startsWith(c.to));
 
+  const nombre = usuario.personaNombre ?? usuario.email;
+  const iniciales = nombre.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+
   return (
     <div className="flex min-h-screen flex-col bg-ground">
-      <header
-        className="sticky top-0 z-10 border-b border-black/10 bg-white"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
-      >
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-2">
-            <LogoMark className="h-6 w-6 shrink-0 text-accent" />
+      <header className="sticky top-0 z-10 bg-graphite text-white" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="mx-auto flex min-h-[60px] max-w-[1240px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent-mark">
+              <LogoMark className="h-5 w-5 text-graphite" />
+            </span>
+            <span className="min-w-0 leading-tight">
+              <span className="block font-bold">Bitácora</span>
+              <span className="block truncate text-xs text-[#B9BEC6]">{usuario.tenantNombre}</span>
+            </span>
+          </div>
+          <nav aria-label="Principal" className="ml-4 hidden self-stretch md:flex">
+            {items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === "/"}
+                className={({ isActive }) =>
+                  `flex items-center gap-1.5 border-b-[3px] px-3.5 text-sm ${isActive ? "border-accent-mark font-semibold text-white" : "border-transparent text-[#C9CDD3] hover:text-white"}`
+                }
+              >
+                <item.Icon className="h-4 w-4" />
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            {config.length > 0 && (
+              <MenuDesplegable
+                ariaLabel="Configuración"
+                className={`hover:bg-white/10 ${enConfig ? "text-white" : "text-[#C9CDD3]"}`}
+                etiqueta={
+                  <>
+                    <IconConfiguracion className="h-5 w-5" />
+                    <span className="hidden text-sm sm:inline">Configuración</span>
+                  </>
+                }
+                items={config}
+              />
+            )}
             <MenuDesplegable
-              alinear="left"
               ariaLabel="Menu de perfil"
-              className="min-w-0 text-left"
+              className="hover:bg-white/10"
               etiqueta={
-                <span className="min-w-0">
-                  <span className="block truncate font-mono text-xs uppercase tracking-widest text-ink-soft">Bitácora · {usuario.tenantNombre}</span>
-                  <span className="block truncate text-sm font-medium text-ink">
-                    {usuario.personaNombre ?? usuario.email} <span className="text-ink-soft">· {usuario.rol} ▾</span>
+                <>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-graphite-soft text-xs font-semibold">{iniciales}</span>
+                  <span className="hidden max-w-[160px] text-left leading-tight lg:block">
+                    <span className="block truncate text-sm">{nombre}</span>
+                    <span className="block text-xs text-[#B9BEC6]">{usuario.rol}</span>
                   </span>
-                </span>
+                </>
               }
               items={[{ label: "Salir", onClick: logout, peligro: true }]}
             />
           </div>
-          {config.length > 0 && (
-            <MenuDesplegable
-              ariaLabel="Configuración"
-              className={enConfig ? "bg-accent-soft text-accent-ink" : "text-ink-soft"}
-              etiqueta={
-                <>
-                  <IconConfiguracion className="h-5 w-5" />
-                  <span className="hidden text-sm font-medium sm:inline">Configuración</span>
-                </>
-              }
-              items={config}
-            />
-          )}
         </div>
-        <nav className="mx-auto hidden max-w-5xl gap-1 px-4 pb-2 md:flex">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium ${isActive ? "bg-accent-soft text-accent-ink" : "text-ink-soft hover:bg-slate-50"}`
-              }
-            >
-              <item.Icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4 pb-24 md:pb-6">
+      <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-5 pb-24 sm:px-6 md:py-7 md:pb-10 lg:px-8">
         <Outlet />
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 grid border-t border-black/10 bg-white md:hidden"
+        aria-label="Principal"
+        className="fixed inset-x-0 bottom-0 z-10 grid border-t border-line bg-white md:hidden"
         style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)`, paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            end={item.to === "/"}
             className={({ isActive }) =>
-              `flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-xs ${isActive ? "text-accent" : "text-ink-soft"}`
+              `flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-xs ${isActive ? "font-semibold text-accent" : "text-ink-soft"}`
             }
           >
             <item.Icon className="h-5 w-5" />

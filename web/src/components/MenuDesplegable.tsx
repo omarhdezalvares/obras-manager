@@ -50,7 +50,7 @@ export function MenuDesplegable({
         aria-expanded={abierto}
         aria-label={ariaLabel}
         onClick={() => setAbierto((v) => !v)}
-        className={`flex min-h-[44px] min-w-[44px] max-w-full items-center gap-1.5 rounded-md px-2 hover:bg-accent-soft ${className}`}
+        className={`flex min-h-[44px] min-w-[44px] max-w-full items-center gap-1.5 rounded-md px-2 ${className}`}
       >
         {etiqueta}
       </button>
