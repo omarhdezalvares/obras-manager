@@ -247,6 +247,9 @@ export async function generarReporteAvancesPdf(params: {
       doc.font("Helvetica-Bold").fontSize(18).fillColor(INK).text(String(avance.fecha.getDate()), MARGIN, y0, { width: 44, align: "center" });
       const mesDia = avance.fecha.toLocaleDateString("es-MX", { month: "short", weekday: "short" }).replace(/\./g, "").toUpperCase();
       doc.font("Helvetica-Bold").fontSize(6.5).fillColor(INK_SOFT).text(mesDia, MARGIN, y0 + 21, { width: 44, align: "center" });
+      // La barra va junto a la fecha, en la pagina donde empieza el registro.
+      doc.rect(MARGIN + 50, y0, 2, 34).fill(acento === ACCENT ? NARANJA : acento);
+      const paginaInicio = doc.bufferedPageRange().count;
 
       const imagenes = avance.fotos.filter((f) => esImagen(f.tipoMime)).length;
       const tag = imagenes ? `${imagenes} ${imagenes === 1 ? "FOTO" : "FOTOS"}` : "SIN FOTOS";
@@ -264,10 +267,9 @@ export async function generarReporteAvancesPdf(params: {
         doc.y += 8;
         dibujarFotos(doc, avance.fotos, idx + 1, xDer2, anchoDer2);
       }
-      const fin = Math.max(doc.y, y0 + 34) + 10;
-      // Barra vertical solo si el registro quedo en la misma pagina.
-      if (fin > top) doc.rect(MARGIN + 50, y0, 2, Math.min(fin - y0 - 10, 40)).fill(acento === ACCENT ? NARANJA : acento);
-      doc.y = fin;
+      // Si el registro siguio en otra pagina, y0 ya no aplica: solo se deja el espacio entre registros.
+      const mismaPagina = doc.bufferedPageRange().count === paginaInicio;
+      doc.y = (mismaPagina ? Math.max(doc.y, y0 + 34) : doc.y) + 10;
     });
 
     // Firmas de validacion.
