@@ -113,7 +113,7 @@ avancesRouter.get(
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: req.user!.tenantId },
-      select: { nombre: true, direccion: true, telefono: true, correoContacto: true, logoKey: true, colorPrimario: true },
+      select: { nombre: true, rfc: true, direccion: true, telefono: true, correoContacto: true, logoKey: true, colorPrimario: true },
     });
     if (!tenant) throw new HttpError(404, "Empresa no encontrada");
 
@@ -135,15 +135,24 @@ avancesRouter.get(
             orderBy: { createdAt: "asc" },
           })
         : [];
-    const fotosPorAvance = new Map<string, { objectKey: string; tipoMime: string | null }[]>();
+    const fotosPorAvance = new Map<string, { objectKey: string; tipoMime: string | null; creado: Date }[]>();
     for (const ev of evidencias) {
       const lista = fotosPorAvance.get(ev.entidadId) ?? [];
-      lista.push({ objectKey: ev.objectKey, tipoMime: ev.tipoMime });
+      lista.push({ objectKey: ev.objectKey, tipoMime: ev.tipoMime, creado: ev.createdAt });
       fotosPorAvance.set(ev.entidadId, lista);
     }
 
+    const asistencias = await prisma.asistencia.findMany({
+      where: { obraId, fecha: { gte: desde ? startOfDay(desde) : undefined, lte: hasta ? startOfDay(hasta) : undefined } },
+      select: { personaId: true },
+    });
+
     const buffer = await generarReporteAvancesPdf({
+      obraId,
+      asistencias,
       obra: {
+        estado: obra.estado,
+        fechaInicio: obra.fechaInicio,
         nombre: obra.nombre,
         cliente: obra.cliente,
         ubicacion: obra.ubicacion,
