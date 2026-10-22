@@ -6,6 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./env";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
+import { requireUploadFirmado } from "./lib/uploadUrl";
 
 import { authRouter } from "./modules/auth/auth.routes";
 import { obrasRouter } from "./modules/obras/obras.routes";
@@ -30,8 +31,8 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
 
-// Evidencias servidas como estaticos locales (ver middleware/upload.ts).
-app.use("/uploads", express.static(env.uploadDir));
+// Evidencias servidas como estaticos locales (ver middleware/upload.ts), solo con link firmado.
+app.use("/uploads", requireUploadFirmado, express.static(env.uploadDir));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "bitacora-api" }));
 

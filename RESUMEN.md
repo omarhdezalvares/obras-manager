@@ -147,6 +147,9 @@ resolver de Fly: `DATABASE_URL` está en texto plano en `fly.toml` en vez de com
 
 ## Cosas a tener en cuenta si vas a seguir trabajando aquí
 
+- **Camino a SaaS**: el pendiente para venderla como SaaS está en `docs/SAAS-CHECKLIST.md`. Revísalo
+  al empezar y marca los puntos que se completen.
+
 - El componente `EvidenceUploader.tsx` es compartido por todos los flujos que suben/borran fotos
   (asistencia, evidencia/avance, remisión, herramienta) — cualquier cambio ahí impacta todo a la vez.
 - `assertObraVisible` + `visibleObraIds` (`server/src/lib/obraScope.ts`) son el mecanismo central de

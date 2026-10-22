@@ -18,11 +18,11 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
 
-    const usuario = await prisma.usuario.findFirst({
-      where: { email, activo: true, deletedAt: null },
+    const usuario = await prisma.usuario.findUnique({
+      where: { email },
       include: { rol: true, persona: true, tenant: true },
     });
-    if (!usuario) throw new HttpError(401, "Credenciales invalidas");
+    if (!usuario || !usuario.activo || usuario.deletedAt) throw new HttpError(401, "Credenciales invalidas");
 
     const ok = await verifyPassword(password, usuario.passwordHash);
     if (!ok) throw new HttpError(401, "Credenciales invalidas");

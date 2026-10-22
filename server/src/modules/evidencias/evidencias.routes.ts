@@ -10,6 +10,7 @@ import { assertObraVisible } from "../../lib/obraScope";
 import { writeAuditLog } from "../../lib/audit";
 import { ROLES } from "../../lib/roles";
 import { env } from "../../env";
+import { urlFirmada } from "../../lib/uploadUrl";
 
 export const evidenciasRouter = Router();
 evidenciasRouter.use(requireAuth);
@@ -52,7 +53,7 @@ evidenciasRouter.post(
       },
     });
 
-    res.status(201).json({ ...evidencia, url: `/uploads/${req.file.filename}` });
+    res.status(201).json({ ...evidencia, url: urlFirmada(req.file.filename) });
   })
 );
 
@@ -85,7 +86,7 @@ evidenciasRouter.get(
       where: { tenantId: req.user!.tenantId, entidadTipo: q.entidadTipo, entidadId: q.entidadId },
       orderBy: { createdAt: "desc" },
     });
-    res.json(evidencias.map((e) => ({ ...e, url: `/uploads/${e.objectKey}` })));
+    res.json(evidencias.map((e) => ({ ...e, url: urlFirmada(e.objectKey) })));
   })
 );
 

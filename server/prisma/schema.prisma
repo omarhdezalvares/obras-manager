@@ -50,7 +50,7 @@ model Rol {
 model Usuario {
   id            String    @id @default(uuid())
   tenantId      String
-  email         String
+  email         String    @unique // global: el login no pide empresa
   passwordHash  String
   rolId         String
   personaId     String?   @unique
@@ -64,8 +64,6 @@ model Usuario {
   rol           Rol            @relation(fields: [rolId], references: [id])
   persona       Persona?       @relation(fields: [personaId], references: [id])
   refreshTokens RefreshToken[]
-
-  @@unique([tenantId, email])
 }
 
 model RefreshToken {

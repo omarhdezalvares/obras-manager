@@ -9,6 +9,7 @@ import { EMPRESA_GESTION } from "../../lib/roles";
 import { COLOR_HEX } from "../../lib/marca";
 import { upload } from "../../middleware/upload";
 import { env } from "../../env";
+import { urlFirmada } from "../../lib/uploadUrl";
 
 export const empresaRouter = Router();
 empresaRouter.use(requireAuth);
@@ -26,7 +27,7 @@ const empresaSelect = {
 } as const;
 
 function conLogoUrl<T extends { logoKey: string | null }>({ logoKey, ...tenant }: T) {
-  return { ...tenant, logoUrl: logoKey ? `/uploads/${logoKey}` : null };
+  return { ...tenant, logoUrl: logoKey ? urlFirmada(logoKey) : null };
 }
 
 empresaRouter.get(

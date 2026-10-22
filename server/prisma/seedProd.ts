@@ -38,8 +38,14 @@ async function main() {
   }
   const rolAdminId = roles.get("Administrador")!;
 
+  // El email es unico global: sin esto el upsert le daria Administrador a un usuario de otra empresa.
+  const ajeno = await prisma.usuario.findUnique({ where: { email } });
+  if (ajeno && ajeno.tenantId !== tenant.id) {
+    throw new Error(`El email ${email} ya pertenece a otra empresa`);
+  }
+
   const usuario = await prisma.usuario.upsert({
-    where: { tenantId_email: { tenantId: tenant.id, email } },
+    where: { email },
     update: { passwordHash, rolId: rolAdminId, activo: true },
     create: { tenantId: tenant.id, email, passwordHash, rolId: rolAdminId },
   });
