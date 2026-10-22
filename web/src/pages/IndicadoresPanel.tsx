@@ -50,9 +50,9 @@ export function IndicadoresPanel() {
             <Input type="date" aria-label="Hasta" value={hastaOtro} max={hoy} onChange={(e) => setHastaOtro(e.target.value)} className="!w-auto" />
           </span>
         )}
-        <label htmlFor="ind-obra" className="ml-auto flex items-center gap-2 text-sm text-ink-soft">
+        <label htmlFor="ind-obra" className="flex w-full min-w-0 items-center gap-2 text-sm text-ink-soft sm:ml-auto sm:w-auto">
           Obra
-          <select id="ind-obra" aria-label="Obra" value={obraId} onChange={(e) => setObraId(e.target.value)} className="min-h-[44px] rounded-md border border-[#CFCFCA] bg-white px-3 text-sm text-ink">
+          <select id="ind-obra" aria-label="Obra" value={obraId} onChange={(e) => setObraId(e.target.value)} className="min-h-[44px] w-full min-w-0 max-w-full rounded-md border border-[#CFCFCA] bg-white px-3 text-sm text-ink sm:w-64">
             <option value="">Todas</option>
             {obras.data?.map((o) => <option key={o.id} value={o.id}>{o.nombre}</option>)}
           </select>

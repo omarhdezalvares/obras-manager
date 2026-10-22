@@ -73,18 +73,20 @@ export function EmptyState({ children }: { children: ReactNode }) {
 export function Kpi({ label, valor, nota, tono = "neutral" }: { label: string; valor: ReactNode; nota?: ReactNode; tono?: "neutral" | "ok" | "warn" | "crit" }) {
   const tonos = { neutral: "text-ink-soft", ok: "text-ok", warn: "text-warn", crit: "text-crit" };
   return (
-    <div className="flex min-w-[150px] flex-1 shrink-0 snap-start flex-col gap-1 rounded-lg border border-line bg-white px-4 py-3 sm:min-w-0">
+    <div className="flex min-w-[168px] flex-1 shrink-0 snap-start flex-col gap-1 rounded-lg border border-line bg-white px-4 py-3 lg:min-w-0">
       <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-soft">{label}</span>
-      <span className="num text-2xl font-semibold leading-tight text-ink">{valor}</span>
+      {/* La cifra baja de tamano en 1024-1279px, donde caben 5-6 tarjetas en una fila. */}
+      <span className="num whitespace-nowrap text-xl font-semibold leading-tight text-ink lg:text-lg xl:text-2xl">{valor}</span>
       {nota && <span className={`text-xs ${tonos[tono]}`}>{nota}</span>}
     </div>
   );
 }
 
-// Fila de indicadores: una sola fila; en celular se desliza de lado sin mover la pagina.
+// Fila de indicadores: una sola fila. Hasta 1024px se desliza de lado (las
+// tarjetas no caben a lo ancho); desde ahi es una cuadricula de columnas iguales.
 export function FilaKpis({ children }: { children: ReactNode }) {
   return (
-    <section aria-label="Indicadores" className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:auto-cols-fr sm:grid-flow-col sm:gap-4 sm:overflow-visible sm:px-0">
+    <section aria-label="Indicadores" className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:auto-cols-fr lg:grid-flow-col lg:gap-4 lg:overflow-visible lg:px-0">
       {children}
     </section>
   );
