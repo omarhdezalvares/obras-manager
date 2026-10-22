@@ -2,11 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
-import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { Notificaciones } from "../lib/types";
 import { useObrasHoy } from "../lib/obrasHoy";
-import { fechaCorta, hoyLocal } from "../lib/fechas";
-import { Card, EmptyState, Pill } from "../components/ui";
+import { fechaCorta, fechaLarga, hoyLocal } from "../lib/fechas";
+import { etiquetaEstadoObra } from "../lib/etiquetas";
+import { haceDias, pesos, pesosCorto, useIndicadores } from "../lib/indicadores";
+import { EmptyState, Encabezado, FilaKpis, Kpi, ListaCard, Pill, Tabla, td, th } from "../components/ui";
+import { BarraConsumo, ColumnasApiladas, Leyenda, MapaCalor, SERIE } from "../components/graficas";
+
+interface Pendiente {
+  titulo: string;
+  detalle: string;
+  to: string;
+  accion: string;
+  gravedad: "crit" | "warn" | "info";
+}
+
+const PUNTO = { crit: "bg-crit", warn: "bg-warn-mark", info: "bg-[#6B7079]" };
 
 export function Dashboard() {
   const { usuario } = useAuth();
@@ -16,170 +28,190 @@ export function Dashboard() {
     queryKey: ["notificaciones"],
     queryFn: () => api.get<Notificaciones>("/notificaciones").then((r) => r.data),
   });
+  const hoy = hoyLocal();
+  const ind = useIndicadores(haceDias(13), hoy).data;
 
   const obras = obrasQuery.data ?? [];
   const activas = obras.filter((o) => o.estado === "en_ejecucion");
   const presupuestoTotal = obras.reduce((a, o) => a + (o.presupuestoTotal ?? 0), 0);
   const consumidoTotal = obras.reduce((a, o) => a + (o.consumidoTotal ?? 0), 0);
+  const pctTotal = presupuestoTotal > 0 ? (consumidoTotal / presupuestoTotal) * 100 : 0;
 
-  // Las alertas de sobreconsumo son informacion financiera; se ocultan para
-  // roles sin acceso financiero (Gerente de Proyecto).
-  const guardadas = (notifQuery.data?.guardadas ?? []).filter((n) => verFinanciero || !n.tipo.startsWith("sobreconsumo"));
-
-  // "Para hoy": lo que hay que resolver, cada pendiente lleva a donde se resuelve.
-  const hace7 = hoyLocal(new Date(Date.now() - 7 * 864e5));
-  const sinAsistencia = activas.filter((o) => o.hoy?.asistencias === 0).map((o) => ({ label: o.nombre, to: `/obras/${o.id}?tab=hoy` }));
-  const sinFoto = (notifQuery.data?.avancesIncompletos ?? [])
-    .filter((a) => a.fecha >= hace7)
-    .map((a) => ({ label: `${a.obraNombre} · ${fechaCorta(a.fecha)}`, to: `/obras/${a.obraId}?tab=bitacora` }));
-  const partidasAlerta = obras
-    .filter((o) => o.alertaPartida)
-    .map((o) => ({ label: `${o.nombre} · ${o.alertaPartida!.nombre} al ${o.alertaPartida!.porcentaje}%`, to: `/obras/${o.id}?tab=dinero` }));
+  // Pendientes de hoy: lo que hay que resolver, de lo mas grave a lo menos,
+  // cada uno lleva a donde se resuelve. Une los antiguos "Para hoy" y "Alertas".
+  const hace7 = haceDias(7);
+  const sinFoto = (notifQuery.data?.avancesIncompletos ?? []).filter((a) => a.fecha >= hace7);
+  const porObra = new Map<string, { nombre: string; id: string; fechas: string[] }>();
+  for (const a of sinFoto) {
+    const g = porObra.get(a.obraId) ?? { nombre: a.obraNombre, id: a.obraId, fechas: [] };
+    g.fechas.push(fechaCorta(a.fecha));
+    porObra.set(a.obraId, g);
+  }
+  const gruposSinFoto = [...porObra.values()];
+  const pendientes: Pendiente[] = [
+    ...(verFinanciero
+      ? obras
+          .filter((o) => o.alertaPartida)
+          .map((o): Pendiente => ({
+            titulo: o.alertaPartida!.porcentaje > 100 ? "Partida sobregirada" : "Partida casi agotada",
+            detalle: `${o.nombre} · ${o.alertaPartida!.nombre} al ${o.alertaPartida!.porcentaje}%`,
+            to: `/obras/${o.id}?tab=dinero`,
+            accion: "Revisar",
+            gravedad: "crit",
+          }))
+      : []),
+    ...activas
+      .filter((o) => o.hoy?.asistencias === 0)
+      .map((o): Pendiente => ({ titulo: "Sin asistencia hoy", detalle: o.nombre, to: `/obras/${o.id}?tab=hoy`, accion: "Registrar", gravedad: "warn" })),
+    ...(notifQuery.data?.sinActividad ?? []).map((n): Pendiente => ({ titulo: "Obra sin actividad", detalle: n.mensaje, to: `/obras/${n.obraId}?tab=hoy`, accion: "Ver", gravedad: "warn" })),
+    // Las de sobreconsumo ya salen arriba como partida; aqui solo otros avisos guardados.
+    ...(notifQuery.data?.guardadas ?? [])
+      .filter((n) => !n.tipo.startsWith("sobreconsumo"))
+      .map((n): Pendiente => ({ titulo: "Aviso", detalle: n.mensaje, to: n.obraId ? `/obras/${n.obraId}` : "/", accion: "Ver", gravedad: "info" })),
+    ...(gruposSinFoto.length
+      ? [
+          {
+            titulo: `${sinFoto.length} ${sinFoto.length === 1 ? "evidencia" : "evidencias"} sin fotos`,
+            detalle: gruposSinFoto.map((g) => `${g.nombre} · ${g.fechas.join(", ")}`).join(" — "),
+            to: `/obras/${gruposSinFoto[0].id}?tab=bitacora`,
+            accion: "Ver",
+            gravedad: "info" as const,
+          },
+        ]
+      : []),
+  ];
+  const sobregiradas = pendientes.filter((p) => p.gravedad === "crit").length;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">Dashboard</h1>
-        <p className="text-sm text-ink-soft">
-          {verFinanciero ? "Presupuesto vs. real, siempre calculado desde transacciones." : "Estado operativo de las obras."}
-        </p>
-      </div>
+      <Encabezado titulo="Dashboard" subtitulo={`${fechaLarga(hoy)} · ${obras.length} ${obras.length === 1 ? "obra" : "obras"}`} />
 
-      <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Para hoy</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Pendiente titulo="Obras sin asistencia hoy" items={sinAsistencia} />
-          <Pendiente titulo="Evidencias sin foto (7 días)" items={sinFoto} />
-          {verFinanciero && <Pendiente titulo="Partidas al 90% o más" items={partidasAlerta} />}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card>
-          <p className="text-xs uppercase text-ink-soft">Obras activas</p>
-          <p className="mt-1 text-2xl font-semibold">{activas.length}</p>
-        </Card>
-        <Card>
-          <p className="text-xs uppercase text-ink-soft">Total de obras</p>
-          <p className="mt-1 text-2xl font-semibold">{obras.length}</p>
-        </Card>
-        {verFinanciero && (
+      <FilaKpis>
+        <Kpi label="Obras activas" valor={activas.length} nota={`de ${obras.length} obras`} />
+        {verFinanciero ? (
           <>
-            <Card>
-              <p className="text-xs uppercase text-ink-soft">Presupuesto</p>
-              <p className="mt-1 text-2xl font-semibold">${presupuestoTotal.toLocaleString("es-MX")}</p>
-            </Card>
-            <Card>
-              <p className="text-xs uppercase text-ink-soft">Consumido</p>
-              <p className="mt-1 text-2xl font-semibold">${consumidoTotal.toLocaleString("es-MX", { maximumFractionDigits: 0 })}</p>
-            </Card>
+            <Kpi label="Presupuesto" valor={pesos(presupuestoTotal)} nota="suma de partidas" />
+            <Kpi label="Consumido" valor={pesos(consumidoTotal)} nota={`${Math.round(pctTotal)}% del presupuesto`} />
+            <Kpi label="Disponible" valor={pesos(presupuestoTotal - consumidoTotal)} nota={`${Math.max(0, 100 - Math.round(pctTotal))}% restante`} tono="ok" />
+          </>
+        ) : (
+          <>
+            <Kpi label="Personal hoy" valor={ind ? `${ind.kpis.personalHoy.llegaron} / ${ind.kpis.personalHoy.asignados}` : "—"} nota="llegaron / asignados" />
+            <Kpi label="Días-hombre" valor={ind?.kpis.diasHombre ?? "—"} nota="últimos 14 días" />
+            <Kpi label="Bitácora al día" valor={ind ? `${ind.kpis.bitacoraAlDia.con} / ${ind.kpis.bitacoraAlDia.total}` : "—"} nota="días con evidencia con foto" />
           </>
         )}
-      </div>
+        <Kpi
+          label="Pendientes hoy"
+          valor={pendientes.length}
+          nota={sobregiradas ? `${sobregiradas} ${sobregiradas === 1 ? "partida en alerta" : "partidas en alerta"}` : pendientes.length ? "por resolver" : "todo al día"}
+          tono={sobregiradas ? "crit" : pendientes.length ? "neutral" : "ok"}
+        />
+      </FilaKpis>
 
-      <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Obras</h2>
-        {obras.length === 0 ? (
-          <EmptyState>Aun no hay obras. Crea la primera desde la seccion Obras.</EmptyState>
-        ) : (
-          <div className="space-y-2">
-            {obras.map((o) => (
-              <Link key={o.id} to={`/obras/${o.id}`}>
-                <Card className="flex items-center justify-between gap-3 hover:border-accent/50">
-                  <div>
-                    <p className="font-medium text-ink">{o.nombre}</p>
-                    <p className="text-xs text-ink-soft">{o.cliente} · {o.ubicacion}</p>
-                  </div>
-                  {verFinanciero && o.porcentajeConsumido != null && (
-                    <div className="w-48 text-right">
-                      <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
-                      <p className="mt-1 text-xs text-ink-soft">
-                        ${(o.consumidoTotal ?? 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })} / $
-                        {(o.presupuestoTotal ?? 0).toLocaleString("es-MX")}
-                      </p>
-                    </div>
-                  )}
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {notifQuery.data && (
-        <div>
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Alertas</h2>
-          <div className="space-y-2">
-            {guardadas.length === 0 &&
-              notifQuery.data.sinActividad.length === 0 &&
-              notifQuery.data.avancesIncompletos.length === 0 && <EmptyState>Sin alertas abiertas.</EmptyState>}
-            {guardadas.map((n) => (
-              <Alerta key={n.id} to={n.obraId ? `/obras/${n.obraId}?tab=dinero` : undefined} className="border-copper/40 bg-copper-soft/40">
-                {n.mensaje}
-              </Alerta>
-            ))}
-            {notifQuery.data.sinActividad.map((n, i) => (
-              <Alerta key={`sa-${i}`} to={`/obras/${n.obraId}?tab=hoy`} className="border-warn/40 bg-warn-soft/40">
-                {n.mensaje}
-              </Alerta>
-            ))}
-            {notifQuery.data.avancesIncompletos.map((n, i) => (
-              <Alerta key={`ai-${i}`} to={`/obras/${n.obraId}?tab=bitacora`} className="border-black/10">
-                Evidencia del {fechaCorta(n.fecha)} en "{n.obraNombre}" sin fotos adjuntas
-              </Alerta>
-            ))}
-          </div>
+      {verFinanciero && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ListaCard titulo="Consumo por obra" subtitulo="Consumido contra presupuesto (suma de partidas)">
+            <div className="space-y-4 p-4 sm:p-5">
+              {obras.length === 0 && <p className="text-sm text-ink-soft">Aún no hay obras.</p>}
+              {obras.map((o) => (
+                <BarraConsumo
+                  key={o.id}
+                  etiqueta={o.nombre}
+                  detalle={`${pesos(o.consumidoTotal ?? 0)} / ${pesos(o.presupuestoTotal ?? 0)}`}
+                  pct={o.porcentajeConsumido ?? 0}
+                  alerta={o.alertaPartida ? `${o.alertaPartida.nombre} al ${o.alertaPartida.porcentaje}%` : undefined}
+                />
+              ))}
+            </div>
+          </ListaCard>
+          <ListaCard
+            titulo="Gasto diario"
+            subtitulo="Últimos 14 días · todas las obras"
+            accion={<Leyenda items={[{ nombre: "Mano de obra", color: SERIE.azul }, { nombre: "Material", color: SERIE.naranja }, { nombre: "Otros", color: SERIE.morado }]} />}
+          >
+            <div className="p-4 sm:p-5">
+              {ind?.gastoDiario ? (
+                <ColumnasApiladas
+                  titulo="Gasto diario"
+                  dias={ind.dias}
+                  formato={pesosCorto}
+                  series={[
+                    { nombre: "Mano de obra", color: SERIE.azul, valores: ind.gastoDiario.map((g) => g.manoObra) },
+                    { nombre: "Material", color: SERIE.naranja, valores: ind.gastoDiario.map((g) => g.material) },
+                    { nombre: "Otros", color: SERIE.morado, valores: ind.gastoDiario.map((g) => g.otros) },
+                  ]}
+                />
+              ) : (
+                <p className="text-sm text-ink-soft">Cargando…</p>
+              )}
+            </div>
+          </ListaCard>
         </div>
       )}
-    </div>
-  );
-}
 
-function Alerta({ to, className, children }: { to?: string; className: string; children: React.ReactNode }) {
-  const card = (
-    <Card className={`${className} ${to ? "hover:border-accent/60" : ""}`}>
-      <p className="flex items-center justify-between gap-3 text-sm text-ink">
-        <span>{children}</span>
-        {to && <span className="shrink-0 text-accent">Ver →</span>}
-      </p>
-    </Card>
-  );
-  return to ? <Link to={to} className="block">{card}</Link> : card;
-}
+      <ListaCard titulo="Personal en obra por día" subtitulo="Personas con asistencia registrada · últimos 14 días">
+        <div className="p-4 sm:p-5">
+          {ind ? <MapaCalor dias={ind.dias} filas={ind.personalPorDia} unidad="personas" /> : <p className="text-sm text-ink-soft">Cargando…</p>}
+        </div>
+      </ListaCard>
 
-// Un pendiente con su conteo: con un solo caso la tarjeta lleva directo; con
-// varios, lista cada caso como enlace.
-function Pendiente({ titulo, items }: { titulo: string; items: { label: string; to: string }[] }) {
-  const tono = items.length === 0 ? "border-ok/30" : "border-warn/50 bg-warn-soft/40";
-  const cuerpo = (
-    <>
-      <p className="text-[13px] text-ink-soft">{titulo}</p>
-      <p className={`mt-1 text-2xl font-semibold ${items.length === 0 ? "text-ok" : "text-ink"}`}>{items.length === 0 ? "✓ 0" : items.length}</p>
-    </>
-  );
-  if (items.length === 1)
-    return (
-      <Link to={items[0].to} className="block">
-        <Card className={`${tono} hover:border-accent/60`}>
-          {cuerpo}
-          <p className="mt-1 text-[13px] text-accent">{items[0].label} →</p>
-        </Card>
-      </Link>
-    );
-  return (
-    <Card className={tono}>
-      {cuerpo}
-      {items.length > 1 && (
-        <ul className="mt-2 space-y-1">
-          {items.slice(0, 5).map((it) => (
-            <li key={it.to + it.label}>
-              <Link to={it.to} className="text-[13px] text-accent underline-offset-2 hover:underline">
-                {it.label} →
-              </Link>
-            </li>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        <ListaCard titulo="Obras" accion={<Link to="/obras" className="text-sm font-medium text-accent">Ver todas →</Link>} className="lg:col-span-2">
+          {obras.length === 0 ? (
+            <div className="p-4"><EmptyState>Aún no hay obras. Crea la primera desde la sección Obras.</EmptyState></div>
+          ) : (
+            <Tabla minWidth={560}>
+              <thead>
+                <tr>
+                  <th className={th}>Obra</th>
+                  <th className={th}>Estado</th>
+                  {verFinanciero ? <th className={th}>Consumo</th> : <th className={th}>Hoy</th>}
+                  {verFinanciero && <th className={`${th} text-right`}>Presupuesto</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {obras.map((o) => (
+                  <tr key={o.id} className="hover:bg-[#FAFAF8]">
+                    <td className={td}>
+                      <Link to={`/obras/${o.id}`} className="block font-semibold text-ink hover:text-accent">{o.nombre}</Link>
+                      <span className="text-xs text-ink-soft">{[o.cliente, o.ubicacion].filter(Boolean).join(" · ")}</span>
+                    </td>
+                    <td className={td}><Pill tone={o.estado === "en_ejecucion" ? "info" : "neutral"}>{etiquetaEstadoObra(o.estado)}</Pill></td>
+                    {verFinanciero ? (
+                      <td className={td}>
+                        <div className="flex items-center gap-2">
+                          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#ECECE8]">
+                            <span className="block h-full bg-steel" style={{ width: `${Math.min(100, o.porcentajeConsumido ?? 0)}%` }} />
+                          </span>
+                          <span className="num w-10 text-right text-xs">{Math.round(o.porcentajeConsumido ?? 0)}%</span>
+                        </div>
+                      </td>
+                    ) : (
+                      <td className={`${td} text-xs text-ink-soft`}>{o.hoy ? `${o.hoy.asistencias} asistencias · ${o.hoy.avances} evidencias` : "—"}</td>
+                    )}
+                    {verFinanciero && <td className={`${td} num text-right text-xs`}>{pesos(o.presupuestoTotal ?? 0)}</td>}
+                  </tr>
+                ))}
+              </tbody>
+            </Tabla>
+          )}
+        </ListaCard>
+
+        <ListaCard titulo="Pendientes de hoy" accion={<span className="num rounded-full bg-accent-soft px-2 text-xs font-semibold text-accent-ink">{pendientes.length}</span>}>
+          {pendientes.length === 0 && <p className="px-5 py-4 text-sm text-ok">✓ Todo al día.</p>}
+          {pendientes.map((p, i) => (
+            <Link key={i} to={p.to} className="flex min-h-[44px] items-start gap-3 px-4 py-3 hover:bg-[#FAFAF8] sm:px-5">
+              <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PUNTO[p.gravedad]}`} aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-ink">{p.titulo}</span>
+                <span className="block text-xs text-ink-soft">{p.detalle}</span>
+              </span>
+              <span className="shrink-0 text-xs font-medium text-accent">{p.accion} →</span>
+            </Link>
           ))}
-        </ul>
-      )}
-    </Card>
+        </ListaCard>
+      </div>
+    </div>
   );
 }

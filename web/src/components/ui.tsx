@@ -84,7 +84,7 @@ export function Kpi({ label, valor, nota, tono = "neutral" }: { label: string; v
 // Fila de indicadores: una sola fila; en celular se desliza de lado sin mover la pagina.
 export function FilaKpis({ children }: { children: ReactNode }) {
   return (
-    <section aria-label="Indicadores" className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:auto-cols-fr sm:grid-flow-col sm:gap-4 sm:overflow-visible sm:px-0">
+    <section aria-label="Indicadores" className="-mx-4 flex snap-x scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:auto-cols-fr sm:grid-flow-col sm:gap-4 sm:overflow-visible sm:px-0">
       {children}
     </section>
   );

@@ -223,3 +223,26 @@ export interface Notificaciones {
   sinActividad: { obraId: string; mensaje: string }[];
   avancesIncompletos: { obraId: string; obraNombre: string; fecha: string; mensaje: string }[];
 }
+
+// GET /reportes/indicadores (server/src/lib/indicadores.ts). Lo financiero
+// llega undefined para roles sin acceso a dinero.
+export interface Indicadores {
+  dias: string[];
+  kpis: {
+    diasHombre: number;
+    personalHoy: { llegaron: number; asignados: number };
+    llegadaPromedio: string | null;
+    bitacoraAlDia: { con: number; total: number };
+    herramientasEnUso: { asignadas: number; total: number };
+    costoDiaHombre?: number;
+  };
+  personalPorDia: { obraId: string; nombre: string; valores: number[] }[];
+  gastoDiario?: { fecha: string; manoObra: number; material: number; otros: number }[];
+  obrasPorPersona: { nombre: string; obras: string[] }[];
+  personasSinObra?: number;
+  herramientasPorObra: { obraId: string; nombre: string; herramientas: string[] }[];
+  inventario: Record<string, number>;
+  cumplimiento: { obraId: string; nombre: string; con: number; total: number }[];
+  diasHombre: { obraId: string; nombre: string; dias: number; costo?: number }[];
+  plazoGasto?: { obraId: string; nombre: string; pctTiempo: number; pctGasto: number }[];
+}
