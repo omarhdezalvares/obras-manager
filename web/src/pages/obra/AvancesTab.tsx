@@ -17,6 +17,9 @@ function descargarBlob(data: BlobPart, tipo: string, nombreArchivo: string): voi
   URL.revokeObjectURL(url);
 }
 
+// La lista crece con los meses: se muestran las mas recientes y el resto a peticion.
+const POR_PAGINA = 5;
+
 export function AvancesTab({
   obraId,
   obraNombre,
@@ -32,6 +35,7 @@ export function AvancesTab({
 }) {
   const qc = useQueryClient();
   const [fecha, setFecha] = useState(hoyLocal());
+  const [visibles, setVisibles] = useState(POR_PAGINA);
   const [descripcion, setDescripcion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
@@ -134,8 +138,8 @@ export function AvancesTab({
 
       <div>
         {query.data?.length === 0 && <EmptyState>Aun no hay evidencias registradas en esta obra.</EmptyState>}
-        <div className={lista}>
-          {query.data?.map((a) =>
+        <div className={lista} data-evidencias>
+          {query.data?.slice(0, visibles).map((a) =>
             editandoId === a.id ? (
               <EditarEvidenciaCard
                 key={a.id}
@@ -175,6 +179,13 @@ export function AvancesTab({
             )
           )}
         </div>
+        {(query.data?.length ?? 0) > visibles && (
+          <div className="mt-3 flex justify-center">
+            <Button variant="secondary" onClick={() => setVisibles((v) => v + POR_PAGINA)}>
+              Ver {Math.min(POR_PAGINA, query.data!.length - visibles)} {query.data!.length - visibles === 1 ? "evidencia" : "evidencias"} más (quedan {query.data!.length - visibles})
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
