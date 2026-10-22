@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Material, PartidaConSaldo, Remision } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
-import { Button, Card, EmptyState, Input, Label, Select } from "../../components/ui";
+import { Button, Card, EmptyState, Input, Label, Select, ListaCard } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
@@ -95,9 +95,6 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
     <div className="space-y-4">
       {puedeCrear && (
         <>
-          <Button variant="secondary" onClick={() => (showForm ? limpiarForm() : setShowForm(true))}>
-            {showForm ? "Cancelar" : "+ Nueva remision"}
-          </Button>
           {showForm && (
             <Card>
               <form
@@ -209,37 +206,43 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
         </>
       )}
 
-      <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Remisiones</h2>
-        {remisionesQuery.data?.length === 0 && <EmptyState>Sin remisiones registradas.</EmptyState>}
-        <div className="space-y-2">
-          {remisionesQuery.data?.map((r) => (
-            <Card key={r.id}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-ink">{r.proveedor} {r.folio && `· folio ${r.folio}`}</p>
-                  <p className="text-xs text-ink-soft">{fechaCorta(r.fecha)} · ${r.costoTotal.toLocaleString("es-MX")}</p>
-                </div>
-                {puedeCrear && (
-                  <Button variant="ghost" onClick={() => editar(r)}>
-                    Editar
-                  </Button>
-                )}
+      <ListaCard
+        titulo="Remisiones"
+        accion={
+          puedeCrear && (
+            <Button variant="secondary" onClick={() => (showForm ? limpiarForm() : setShowForm(true))}>
+              {showForm ? "Cancelar" : "+ Nueva remisión"}
+            </Button>
+          )
+        }
+      >
+        {remisionesQuery.data?.length === 0 && <p className="px-5 py-4 text-sm text-ink-soft">Sin remisiones registradas.</p>}
+        {remisionesQuery.data?.map((r) => (
+          <div key={r.id} className="space-y-2 px-4 py-3 sm:px-5">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-ink">{r.proveedor} {r.folio && `· folio ${r.folio}`}</p>
+                <p className="text-xs text-ink-soft">
+                  {fechaCorta(r.fecha)} · <span className="num">${r.costoTotal.toLocaleString("es-MX")}</span>
+                </p>
               </div>
-              <ul className="mt-2 space-y-0.5 text-xs text-ink-soft">
-                {r.materiales.map((m) => (
-                  <li key={m.id}>
-                    {m.material.nombre} · {m.cantidad} × ${m.costoUnitario} = ${m.costoTotal.toLocaleString("es-MX")}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-2">
-                <EvidenceUploader entidadTipo="remision" entidadId={r.id} compact plegado />
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+              {puedeCrear && (
+                <Button variant="ghost" onClick={() => editar(r)}>
+                  Editar
+                </Button>
+              )}
+            </div>
+            <ul className="space-y-0.5 text-xs text-ink-soft">
+              {r.materiales.map((m) => (
+                <li key={m.id}>
+                  {m.material.nombre} · {m.cantidad} × ${m.costoUnitario} = ${m.costoTotal.toLocaleString("es-MX")}
+                </li>
+              ))}
+            </ul>
+            <EvidenceUploader entidadTipo="remision" entidadId={r.id} compact plegado />
+          </div>
+        ))}
+      </ListaCard>
     </div>
   );
 }

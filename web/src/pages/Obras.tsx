@@ -7,7 +7,7 @@ import { puedeVerFinanciero, useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
 import { etiquetaEstadoObra } from "../lib/etiquetas";
 import { BarraPresupuesto } from "../components/BarraPresupuesto";
-import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../components/ui";
+import { Button, Card, EmptyState, Encabezado, Input, Label, ListaCard, Pill, Textarea } from "../components/ui";
 
 export function Obras() {
   const { usuario } = useAuth();
@@ -20,50 +20,42 @@ export function Obras() {
   const verFinanciero = puedeVerFinanciero(usuario?.rol);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-ink">Obras</h1>
-          <p className="text-sm text-ink-soft">Encabezado del proyecto: cliente, ubicacion y estado.</p>
-        </div>
-        {puedeCrear && (
-          <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancelar" : "+ Nueva obra"}</Button>
-        )}
-      </div>
+    <div className="space-y-6">
+      <Encabezado
+        titulo="Obras"
+        subtitulo="Cliente, ubicación, responsable y estado de cada obra."
+        accion={puedeCrear && <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancelar" : "+ Nueva obra"}</Button>}
+      />
 
       {showForm && <NuevaObraForm onDone={() => setShowForm(false)} verFinanciero={verFinanciero} />}
 
       {obrasQuery.isLoading && <p className="text-sm text-ink-soft">Cargando obras…</p>}
-      {obrasQuery.data && obrasQuery.data.length === 0 && <EmptyState>Aun no hay obras registradas.</EmptyState>}
+      {obrasQuery.data && obrasQuery.data.length === 0 && <EmptyState>Aún no hay obras registradas.</EmptyState>}
 
       {!!obrasQuery.data?.length && (
-        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, cliente o ubicacion…" />
+        <Input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, cliente o ubicación…" />
       )}
       {!!obrasQuery.data?.length && filtradas?.length === 0 && <EmptyState>Sin resultados para «{busqueda}».</EmptyState>}
 
-      <div className="space-y-2">
-        {filtradas?.map((o) => (
-          <Link key={o.id} to={`/obras/${o.id}`}>
-            <Card className="hover:border-accent/50">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-ink">{o.nombre}</p>
-                  <p className="text-xs text-ink-soft">{o.cliente} · {o.ubicacion}</p>
-                  <p className="mt-1 text-xs text-ink-soft">Responsable: {o.responsable ?? "—"} · {o.personasAsignadas} personas</p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <Pill>{etiquetaEstadoObra(o.estado)}</Pill>
-                  {verFinanciero && o.porcentajeConsumido != null && (
-                    <div className="w-40">
-                      <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
-                    </div>
-                  )}
-                </div>
+      {!!filtradas?.length && (
+        <ListaCard titulo={`${filtradas.length} ${filtradas.length === 1 ? "obra" : "obras"}`}>
+          {filtradas.map((o) => (
+            <Link key={o.id} to={`/obras/${o.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 hover:bg-[#FAFAF8] sm:px-5">
+              <div className="min-w-0 flex-1 basis-60">
+                <p className="font-semibold text-ink">{o.nombre}</p>
+                <p className="text-xs text-ink-soft">{[o.cliente, o.ubicacion].filter(Boolean).join(" · ")}</p>
+                <p className="text-xs text-ink-soft">Responsable: {o.responsable ?? "—"} · {o.personasAsignadas} personas</p>
               </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
+              <Pill tone={o.estado === "en_ejecucion" ? "info" : "neutral"}>{etiquetaEstadoObra(o.estado)}</Pill>
+              {verFinanciero && o.porcentajeConsumido != null && (
+                <div className="w-full sm:w-44">
+                  <BarraPresupuesto porcentaje={o.porcentajeConsumido} alerta={o.alertaPartida} />
+                </div>
+              )}
+            </Link>
+          ))}
+        </ListaCard>
+      )}
     </div>
   );
 }

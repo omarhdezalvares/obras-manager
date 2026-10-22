@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Avance } from "../../lib/types";
-import { Button, Card, EmptyState, Input, Label, Pill, Textarea } from "../../components/ui";
+import { Button, Card, EmptyState, Input, Label, Pill, Textarea, filaLista, lista } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
@@ -80,7 +80,7 @@ export function AvancesTab({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-soft">Evidencias</h2>
+        <h2 className="text-base font-semibold text-ink">Evidencias</h2>
         <div className="flex flex-wrap gap-2">
           {puedeOperar && (
             <Button onClick={() => setMostrarForm((v) => !v)}>{mostrarForm ? "Cancelar" : "+ Registrar evidencia"}</Button>
@@ -134,7 +134,7 @@ export function AvancesTab({
 
       <div>
         {query.data?.length === 0 && <EmptyState>Aun no hay evidencias registradas en esta obra.</EmptyState>}
-        <div className="space-y-2">
+        <div className={lista}>
           {query.data?.map((a) =>
             editandoId === a.id ? (
               <EditarEvidenciaCard
@@ -144,7 +144,7 @@ export function AvancesTab({
                 onDone={() => setEditandoId(null)}
               />
             ) : (
-              <Card key={a.id}>
+              <div key={a.id} className={filaLista}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)}</p>
@@ -171,7 +171,7 @@ export function AvancesTab({
                 <div className="mt-2">
                   <EvidenceUploader entidadTipo="avance" entidadId={a.id} compact />
                 </div>
-              </Card>
+              </div>
             )
           )}
         </div>

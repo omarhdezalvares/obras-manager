@@ -115,7 +115,8 @@ export function Fila({ children, className = "" }: { children: ReactNode; classN
 // Tabla ancha: se desplaza dentro de su tarjeta en celular, nunca la pagina.
 export function Tabla({ children, minWidth = 640 }: { children: ReactNode; minWidth?: number }) {
   return (
-    <div className="overflow-x-auto">
+    // relative: lo posicionado dentro (p.ej. sr-only) se queda en la caja con scroll y no ensancha la pagina.
+    <div className="relative overflow-x-auto">
       <table className="w-full border-collapse text-sm" style={{ minWidth }}>
         {children}
       </table>
@@ -137,3 +138,7 @@ export function Encabezado({ titulo, subtitulo, accion }: { titulo: ReactNode; s
     </div>
   );
 }
+
+// Para listas con contenido propio (no Fila): contenedor unico y filas divididas.
+export const lista = "divide-y divide-[#EDEDEA] overflow-hidden rounded-lg border border-line bg-white";
+export const filaLista = "px-4 py-3 sm:px-5";

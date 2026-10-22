@@ -5,7 +5,9 @@ import { api, apiErrorMessage } from "../lib/api";
 import { puedeVerPresupuesto, puedeVerTransacciones, useAuth } from "../lib/auth";
 import { Asistencia, Avance, HerramientaAsignacion, Obra, ObraPersona, ResumenFinanciero } from "../lib/types";
 import { fechaCorta, fechaLarga, hoyLocal } from "../lib/fechas";
-import { Button, Card, Input, Label, Pill, Textarea } from "../components/ui";
+import { Button, Card, FilaKpis, Input, Kpi, Label, Pill, Textarea } from "../components/ui";
+import { etiquetaEstadoObra } from "../lib/etiquetas";
+import { pesos } from "../lib/indicadores";
 import { AsistenciasTab } from "./obra/AsistenciasTab";
 import { BarraPresupuesto } from "../components/BarraPresupuesto";
 import { AvancesTab } from "./obra/AvancesTab";
@@ -53,6 +55,19 @@ export function ObraDetail() {
     enabled: !!id,
   });
 
+  const hoy = hoyLocal();
+  const deCampo = !!id && usuario?.rol !== "Oficial";
+  const asistHoy = useQuery({
+    queryKey: ["asistencias", id, hoy],
+    queryFn: () => api.get<Asistencia[]>(`/obras/${id}/asistencias`, { params: { fecha_desde: hoy, fecha_hasta: hoy } }).then((r) => r.data),
+    enabled: deCampo,
+  });
+  const avances = useQuery({
+    queryKey: ["avances", id],
+    queryFn: () => api.get<Avance[]>(`/obras/${id}/avances`).then((r) => r.data),
+    enabled: deCampo,
+  });
+
   if (!id) return null;
   // El Oficial usa el flujo simplificado de campo (Mis obras), no esta vista de gestion.
   if (usuario?.rol === "Oficial") return <Navigate to={`/mis-obras/${id}`} replace />;
@@ -75,12 +90,37 @@ export function ObraDetail() {
   ];
   const irA = (key: TabKey) => setSearchParams({ tab: key }, { replace: true });
 
+  const fin = verPresupuesto ? obra.financiero : undefined;
+  const asignados = obra.obraPersonas.filter((op) => op.activo).length;
+  const llegaron = new Set((asistHoy.data ?? []).map((x) => x.personaId)).size;
+  const ultima = avances.data?.[0];
+  const fotosUltima = ultima?.evidencias?.length ?? 0;
+  const alerta = fin?.alertaPartida;
+  const partidaAlerta = alerta && fin?.partidas.find((pp) => pp.id === alerta.partidaId);
+  const kpiHoy = (
+    <>
+      <Kpi label="Asistencia hoy" valor={`${llegaron} / ${asignados}`} nota={llegaron ? "llegaron / asignados" : "Nadie ha llegado"} tono={llegaron ? "neutral" : "warn"} />
+      <Kpi
+        label="Última evidencia"
+        valor={ultima ? fechaCorta(ultima.fecha).replace(/^\S+ /, "") : "—"}
+        nota={ultima ? (fotosUltima ? `${fotosUltima} ${fotosUltima === 1 ? "foto" : "fotos"}` : "Sin fotos") : "Aún no hay"}
+        tono={ultima && fotosUltima ? "neutral" : "warn"}
+      />
+    </>
+  );
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-ink">{obra.nombre}</h1>
-          <p className="text-sm text-ink-soft">{obra.cliente} · {obra.ubicacion}</p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link to="/obras" className="text-sm text-accent">← Obras</Link>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-ink">{obra.nombre}</h1>
+            <Pill tone={obra.estado === "en_ejecucion" ? "info" : "neutral"}>{etiquetaEstadoObra(obra.estado)}</Pill>
+          </div>
+          <p className="mt-0.5 text-sm text-ink-soft">
+            {[obra.cliente, obra.ubicacion, obra.responsable && `Responsable: ${typeof obra.responsable === "string" ? obra.responsable : (obra.responsable as { nombreCompleto: string }).nombreCompleto}`].filter(Boolean).join(" · ")}
+          </p>
         </div>
         {esGestion && (
           <Button variant="secondary" onClick={() => setEditando((v) => !v)}>
@@ -91,28 +131,36 @@ export function ObraDetail() {
 
       {editando && <EditarObraForm obra={obra} onDone={() => setEditando(false)} />}
 
-      {verPresupuesto && obra.financiero && (
-        <Card className="flex flex-wrap items-center gap-4">
-          <div>
-            <p className="text-xs uppercase text-ink-soft">Presupuesto</p>
-            <p className="font-semibold">${obra.financiero.presupuestoTotal.toLocaleString("es-MX")}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-ink-soft">Consumido</p>
-            <p className="font-semibold">${obra.financiero.consumidoTotal.toLocaleString("es-MX", { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase text-ink-soft">Disponible</p>
-            <p className="font-semibold">${obra.financiero.disponibleTotal.toLocaleString("es-MX", { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div className="min-w-[220px] flex-1">
-            <BarraPresupuesto
-              porcentaje={obra.financiero.porcentajeConsumido}
-              alerta={obra.financiero.alertaPartida}
-              alertaTo={`/obras/${obra.id}?tab=dinero`}
-            />
-          </div>
-        </Card>
+      <FilaKpis>
+        {fin ? (
+          <>
+            <Kpi label="Presupuesto" valor={pesos(fin.presupuestoTotal)} nota={`${fin.partidas.length} ${fin.partidas.length === 1 ? "partida" : "partidas"}`} />
+            <Kpi label="Consumido" valor={pesos(fin.consumidoTotal)} nota={`${Math.round(fin.porcentajeConsumido)}% del presupuesto`} />
+            <Kpi label="Disponible" valor={pesos(fin.disponibleTotal)} nota={`${Math.max(0, 100 - Math.round(fin.porcentajeConsumido))}% restante`} tono={fin.disponibleTotal < 0 ? "crit" : "ok"} />
+          </>
+        ) : (
+          <>
+            <Kpi label="Personas asignadas" valor={asignados} />
+            <Kpi label="Herramientas" valor={obra.herramientaAsignaciones?.length ?? 0} nota="en la obra" />
+            <Kpi label="Inicio" valor={obra.fechaInicio ? fechaCorta(obra.fechaInicio.slice(0, 10)).replace(/^\S+ /, "") : "—"} />
+          </>
+        )}
+        {kpiHoy}
+      </FilaKpis>
+
+      {alerta && (
+        <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[#F3C7C2] bg-crit-soft px-4 py-3 text-sm text-[#7A1A12]">
+          <span aria-hidden="true">▲</span>
+          <Link to={`/obras/${obra.id}?tab=dinero`} className="font-semibold underline underline-offset-2">
+            {alerta.nombre} al {alerta.porcentaje}%
+          </Link>
+          {partidaAlerta && (
+            <span>
+              Se consumieron <span className="num">{pesos(partidaAlerta.consumido)}</span> de{" "}
+              <span className="num">{pesos(partidaAlerta.presupuestoActualizado || partidaAlerta.presupuestoInicial)}</span>.
+            </span>
+          )}
+        </div>
       )}
 
       <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-black/10 pb-px">

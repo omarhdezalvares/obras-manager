@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Asistencia, ObraPersona } from "../../lib/types";
 import { useAuth } from "../../lib/auth";
-import { Button, Card, EmptyState, Input, Label } from "../../components/ui";
+import { Button, Card, EmptyState, Input, Label, filaLista, lista } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { MenuDesplegable } from "../../components/MenuDesplegable";
 import { agruparPorDia, horasRegistradasEnFecha, seleccionInicial } from "../../lib/asistencias";
@@ -53,13 +53,13 @@ export function AsistenciasTab({
       )}
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Asistencias</h2>
+        <h2 className="mb-2 text-base font-semibold text-ink">Asistencias</h2>
         {query.data?.length === 0 && <EmptyState>Aun no hay asistencias registradas en esta obra.</EmptyState>}
-        <div className="space-y-2">
+        <div className={lista}>
           {dias.slice(0, diasVisibles).map((d, idx) => {
             const abierto = abiertos[d.fecha] ?? idx === 0;
             return (
-              <Card key={d.fecha}>
+              <div key={d.fecha} className={filaLista}>
                 <button
                   type="button"
                   aria-expanded={abierto}
@@ -114,7 +114,7 @@ export function AsistenciasTab({
                     ))}
                   </div>
                 )}
-              </Card>
+              </div>
             );
           })}
           {dias.length > diasVisibles && (

@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { PartidaConSaldo } from "../../lib/types";
-import { Button, Card, Input, Label, Pill, Select } from "../../components/ui";
+import { Button, Card, Input, Label, Pill, Select, ListaCard, Tabla, td, th } from "../../components/ui";
 import { etiquetaTipoPartida } from "../../lib/etiquetas";
 
 function tone(pct: number): "ok" | "warn" | "crit" {
@@ -23,50 +23,65 @@ export function PresupuestoTab({
   const [showForm, setShowForm] = useState(false);
   const [editando, setEditando] = useState<PartidaConSaldo | null>(null);
 
+  const pesos = (n: number) => `${n < 0 ? "−" : ""}$${Math.abs(Math.round(n)).toLocaleString("es-MX")}`;
   return (
     <div className="space-y-4">
-      {puedeGestionar && (
-        <Button variant="secondary" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? "Cancelar" : "+ Nueva partida"}
-        </Button>
-      )}
       {showForm && <NuevaPartidaForm obraId={obraId} onDone={() => setShowForm(false)} />}
-
       {editando && <EditarPartidaForm obraId={obraId} partida={editando} onDone={() => setEditando(null)} />}
 
-      <div className="space-y-2">
-        {partidas.map((p) => (
-          <Card key={p.id}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-ink">{p.codigo} · {p.nombre}</p>
-                <p className="text-xs text-ink-soft">
-                  Tipo: {etiquetaTipoPartida(p.tipo)} · Presupuesto: ${(p.presupuestoActualizado || p.presupuestoInicial).toLocaleString("es-MX")}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Pill tone={tone(p.porcentajeConsumido)}>{p.porcentajeConsumido.toFixed(0)}%</Pill>
-                {puedeGestionar && (
-                  <Button variant="ghost" onClick={() => { setEditando(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-                    Editar
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className={`h-full ${p.porcentajeConsumido >= 100 ? "bg-crit" : p.porcentajeConsumido >= 90 ? "bg-warn" : "bg-ok"}`}
-                style={{ width: `${Math.min(100, p.porcentajeConsumido)}%` }}
-              />
-            </div>
-            <p className="mt-1 text-xs text-ink-soft">
-              Consumido ${p.consumido.toLocaleString("es-MX", { maximumFractionDigits: 0 })} · Disponible $
-              {p.disponible.toLocaleString("es-MX", { maximumFractionDigits: 0 })}
-            </p>
-          </Card>
-        ))}
-      </div>
-
+      <ListaCard
+        titulo="Partidas"
+        accion={
+          puedeGestionar && (
+            <Button variant="secondary" onClick={() => setShowForm((v) => !v)}>
+              {showForm ? "Cancelar" : "+ Nueva partida"}
+            </Button>
+          )
+        }
+      >
+        <Tabla minWidth={640}>
+          <thead>
+            <tr>
+              <th className={th}>Partida</th>
+              <th className={th}>Consumo</th>
+              <th className={`${th} text-right`}>Presupuesto</th>
+              <th className={`${th} text-right`}>Disponible</th>
+              {puedeGestionar && <th className={th}><span className="sr-only">Acciones</span></th>}
+            </tr>
+          </thead>
+          <tbody>
+            {partidas.map((p) => {
+              const pct = p.porcentajeConsumido;
+              return (
+                <tr key={p.id}>
+                  <td className={td}>
+                    <span className="num mr-1.5 text-xs text-ink-soft">{p.codigo}</span>
+                    <span className="font-semibold text-ink">{p.nombre}</span>
+                    <span className="block text-xs text-ink-soft">{etiquetaTipoPartida(p.tipo)}</span>
+                  </td>
+                  <td className={td}>
+                    <div className="flex items-center gap-2" title={`${pesos(p.consumido)} consumido`}>
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-[#ECECE8]">
+                        <span className={`block h-full rounded-full ${pct >= 100 ? "bg-crit" : pct >= 90 ? "bg-warn-mark" : "bg-steel"}`} style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                      </span>
+                      <Pill tone={tone(pct)}>{pct.toFixed(0)}%</Pill>
+                    </div>
+                  </td>
+                  <td className={`${td} num text-right text-xs`}>{pesos(p.presupuestoActualizado || p.presupuestoInicial)}</td>
+                  <td className={`${td} num text-right text-xs ${p.disponible < 0 ? "font-semibold text-crit" : ""}`}>{pesos(p.disponible)}</td>
+                  {puedeGestionar && (
+                    <td className={`${td} text-right`}>
+                      <Button variant="ghost" onClick={() => { setEditando(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+                        Editar
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </Tabla>
+      </ListaCard>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { ObraPersona, Persona } from "../../lib/types";
-import { Button, Card, EmptyState, Input, Label, Select } from "../../components/ui";
+import { Button, Card, EmptyState, Input, Label, Select, filaLista, lista } from "../../components/ui";
 
 export function PersonasTab({
   obraId,
@@ -104,11 +104,11 @@ export function PersonasTab({
       )}
 
       <div>
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Personas asignadas</h2>
+        <h2 className="mb-2 text-base font-semibold text-ink">Personas asignadas</h2>
         {obraPersonas.length === 0 && <EmptyState>Ninguna persona asignada todavia.</EmptyState>}
-        <div className="space-y-2">
+        <div className={lista}>
           {obraPersonas.map((op) => (
-            <Card key={op.id} className="flex items-center justify-between">
+            <div key={op.id} className={`${filaLista} flex items-center justify-between`}>
               <div>
                 <p className="font-medium text-ink">{op.persona.nombreCompleto}</p>
                 <p className="text-xs text-ink-soft">
@@ -127,7 +127,7 @@ export function PersonasTab({
                   Quitar
                 </Button>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       </div>
