@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { Persona } from "../lib/types";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
-import { Button, Card, EmptyState, Input, Label } from "../components/ui";
+import { Button, Card, EmptyState, Input, Label, filaLista, lista } from "../components/ui";
 import { coincideBusqueda } from "../lib/busqueda";
 
 export function Personas() {
@@ -20,10 +20,10 @@ export function Personas() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Personas</h1>
+          <h1 className="text-2xl font-bold text-ink">Personas</h1>
           <p className="text-sm text-ink-soft">Catalogo de trabajadores de campo.</p>
         </div>
         {puedeGestionar && <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancelar" : "+ Nueva persona"}</Button>}
@@ -54,9 +54,9 @@ export function Personas() {
       )}
       {!!query.data?.length && filtradas.length === 0 && <EmptyState>Sin resultados.</EmptyState>}
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className={filtradas.length ? lista : ""}>
         {filtradas.map((p) => (
-          <Card key={p.id} className="flex items-start justify-between gap-3">
+          <div key={p.id} className={`${filaLista} flex items-start justify-between gap-3`}>
             <div>
               <p className="font-medium text-ink">{p.nombreCompleto}</p>
               <p className="text-xs text-ink-soft">{p.puesto ?? "Sin puesto"} · {p.tipoTrabajador ?? "—"}</p>
@@ -74,7 +74,7 @@ export function Personas() {
                 Editar
               </Button>
             )}
-          </Card>
+          </div>
         ))}
       </div>
     </div>

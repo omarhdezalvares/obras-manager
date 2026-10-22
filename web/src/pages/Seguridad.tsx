@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { Persona, RolOption, UsuarioAdmin } from "../lib/types";
 import { useAuth } from "../lib/auth";
-import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../components/ui";
+import { Button, Card, EmptyState, Input, Label, Pill, Select, filaLista, lista } from "../components/ui";
 import { IconSeguridad } from "../components/Icons";
 
 export function Seguridad() {
@@ -32,12 +32,12 @@ export function Seguridad() {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconSeguridad className="h-6 w-6 text-accent" />
           <div>
-            <h1 className="text-xl font-semibold text-ink">Seguridad</h1>
+            <h1 className="text-2xl font-bold text-ink">Seguridad</h1>
             <p className="text-sm text-ink-soft">Usuarios con acceso a Bitácora: alta, edición, activación y contraseña.</p>
           </div>
         </div>
@@ -61,9 +61,9 @@ export function Seguridad() {
 
       {usuarios.data?.length === 0 && <EmptyState>Aún no hay usuarios registrados.</EmptyState>}
 
-      <div className="space-y-2">
+      <div className={lista}>
         {usuarios.data?.map((u) => (
-          <Card key={u.id} className="flex flex-wrap items-center justify-between gap-3">
+          <div key={u.id} className={`${filaLista} flex flex-wrap items-center justify-between gap-3`}>
             <div>
               <div className="flex items-center gap-2">
                 <p className="font-medium text-ink">{u.email}</p>
@@ -91,7 +91,7 @@ export function Seguridad() {
                 {u.activo ? "Desactivar" : "Activar"}
               </Button>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
     </div>

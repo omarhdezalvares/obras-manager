@@ -5,7 +5,7 @@ import { Herramienta, Obra, Persona } from "../lib/types";
 import { useAuth } from "../lib/auth";
 import { coincideBusqueda } from "../lib/busqueda";
 import { etiquetaEstadoHerramienta } from "../lib/etiquetas";
-import { Button, Card, EmptyState, Input, Label, Pill, Select } from "../components/ui";
+import { Button, Card, EmptyState, Input, Label, Pill, Select, filaLista, lista } from "../components/ui";
 
 export function Herramientas() {
   const { usuario } = useAuth();
@@ -48,10 +48,10 @@ export function Herramientas() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Herramientas</h1>
+          <h1 className="text-2xl font-bold text-ink">Herramientas</h1>
           <p className="text-sm text-ink-soft">Activos controlados: un unico responsable vigente por herramienta.</p>
         </div>
         {puedeGestionar && <Button onClick={() => setShowForm((v) => !v)}>{showForm ? "Cancelar" : "+ Nueva herramienta"}</Button>}
@@ -69,9 +69,9 @@ export function Herramientas() {
       )}
       {!!query.data?.length && filtradas?.length === 0 && <EmptyState>Sin resultados para «{busqueda}».</EmptyState>}
 
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      <div className={filtradas?.length ? lista : ""}>
         {filtradas?.map((h) => (
-          <Card key={h.id}>
+          <div key={h.id} className={filaLista}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-medium text-ink">{h.nombre}</p>
@@ -103,7 +103,7 @@ export function Herramientas() {
                 </Button>
               </div>
             )}
-          </Card>
+          </div>
         ))}
       </div>
 

@@ -70,12 +70,12 @@ export function Empresa() {
   if (!empresa) return <p className="text-sm text-ink-soft">Cargando…</p>;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <IconEmpresa className="h-6 w-6 text-accent" />
           <div>
-            <h1 className="text-xl font-semibold text-ink">Empresa</h1>
+            <h1 className="text-2xl font-bold text-ink">Empresa</h1>
             <p className="text-sm text-ink-soft">Perfil de la compañía registrada en Bitácora.</p>
           </div>
         </div>
@@ -91,23 +91,23 @@ export function Empresa() {
           </div>
           <dl className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
             <div>
-              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">RFC</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">RFC</dt>
               <dd className="text-ink">{empresa.rfc ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Teléfono</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Teléfono</dt>
               <dd className="text-ink">{empresa.telefono ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Correo de contacto</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Correo de contacto</dt>
               <dd className="text-ink">{empresa.correoContacto ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Dirección</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Dirección</dt>
               <dd className="text-ink">{empresa.direccion ?? "—"}</dd>
             </div>
             <div>
-              <dt className="font-mono text-xs uppercase tracking-wide text-ink-soft">Color de reportes</dt>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-ink-soft">Color de reportes</dt>
               <dd className="flex items-center gap-2 text-ink">
                 {empresa.colorPrimario ? (
                   <>
