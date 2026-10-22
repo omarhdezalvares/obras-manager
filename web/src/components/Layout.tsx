@@ -54,7 +54,7 @@ export function Layout() {
   const enConfig = config.some((c) => pathname.startsWith(c.to));
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F1EEE7]">
+    <div className="flex min-h-screen flex-col bg-ground">
       <header
         className="sticky top-0 z-10 border-b border-black/10 bg-white"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}

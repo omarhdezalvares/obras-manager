@@ -9,8 +9,7 @@ body,
 }
 
 body {
-  @apply bg-[#F1EEE7] text-ink antialiased;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  @apply bg-ground font-sans text-ink antialiased;
 }
 
 /* Tap targets grandes para campo (seccion 11 del documento). */
@@ -20,4 +19,10 @@ input,
 select,
 textarea {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Cifras alineadas en columnas (montos, horas, conteos). */
+.num {
+  @apply font-mono;
+  font-variant-numeric: tabular-nums;
 }

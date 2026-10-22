@@ -25,7 +25,7 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F1EEE7] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-ground px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
           <LogoMark className="mx-auto h-9 w-9 text-accent" />
