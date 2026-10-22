@@ -6,8 +6,9 @@ import { requireAuth, HttpError } from "../../middleware/auth";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { assertObraVisible, visibleObraIds } from "../../lib/obraScope";
 import { resumenFinancieroObra } from "../../lib/finance";
-import { REPORTE_EXPORT, REPORTE_EXPORT_FINANCIERO, ROLES, VER_PRESUPUESTO } from "../../lib/roles";
-import { startOfDay } from "../../lib/dates";
+import { REPORTE_EXPORT, REPORTE_EXPORT_FINANCIERO, ROLES, SIN_ACCESO_FINANCIERO, VER_PRESUPUESTO } from "../../lib/roles";
+import { FECHA_ISO, isoLocal, startOfDay } from "../../lib/dates";
+import { calcularIndicadores } from "../../lib/indicadores";
 import { montoConSigno } from "../../lib/finance";
 import { colorExcelArgb, textoSobre } from "../../lib/marca";
 
@@ -27,6 +28,95 @@ reportesRouter.get(
     if (!obraId) throw new HttpError(400, "Falta obra_id");
     await assertObraVisible(req.user!, obraId);
     res.json(await resumenFinancieroObra(obraId));
+  })
+);
+
+const indicadoresSchema = z.object({
+  desde: z.string().regex(FECHA_ISO),
+  hasta: z.string().regex(FECHA_ISO),
+  hoy: z.string().regex(FECHA_ISO),
+  obra_id: z.string().optional(),
+});
+
+// Indicadores de operacion para Dashboard y Reportes > Indicadores. Respeta el
+// alcance de obras del usuario y oculta montos a quien no ve finanzas.
+reportesRouter.get(
+  "/indicadores",
+  asyncHandler(async (req, res) => {
+    const user = req.user!;
+    if (user.rol === ROLES.OFICIAL) throw new HttpError(403, "Rol no autorizado");
+    const q = indicadoresSchema.parse(req.query);
+    if (q.desde > q.hasta) throw new HttpError(400, "Rango de fechas invalido");
+    const verFinanciero = !SIN_ACCESO_FINANCIERO.includes(user.rol as (typeof SIN_ACCESO_FINANCIERO)[number]);
+    const scope = await visibleObraIds(user);
+    if (q.obra_id) await assertObraVisible(user, q.obra_id);
+
+    const obras = await prisma.obra.findMany({
+      where: {
+        tenantId: user.tenantId,
+        deletedAt: null,
+        ...(q.obra_id ? { id: q.obra_id } : scope === "ALL" ? {} : { id: { in: scope } }),
+      },
+      orderBy: { createdAt: "asc" },
+    });
+    const ids = obras.map((o) => o.id);
+    const hastaConHoy = q.hoy > q.hasta ? q.hoy : q.hasta;
+    const rangoFecha = { gte: startOfDay(q.desde), lte: startOfDay(hastaConHoy) };
+
+    const [asistencias, avances, obraPersonas, herramientas, asignaciones, personas, transacciones] = await Promise.all([
+      prisma.asistencia.findMany({ where: { obraId: { in: ids }, fecha: rangoFecha }, select: { obraId: true, personaId: true, fecha: true, horaLlegada: true } }),
+      prisma.avance.findMany({ where: { obraId: { in: ids }, deletedAt: null, fecha: rangoFecha }, select: { id: true, obraId: true, fecha: true } }),
+      prisma.obraPersona.findMany({
+        where: { obraId: { in: ids }, activo: true, persona: { activo: true, deletedAt: null } },
+        select: { obraId: true, personaId: true, persona: { select: { nombreCompleto: true } } },
+      }),
+      prisma.herramienta.findMany({ where: { tenantId: user.tenantId, deletedAt: null }, select: { estado: true } }),
+      prisma.herramientaAsignacion.findMany({ where: { obraId: { in: ids }, fechaDevolucion: null }, select: { obraId: true, herramienta: { select: { nombre: true } } } }),
+      scope === "ALL" && !q.obra_id ? prisma.persona.findMany({ where: { tenantId: user.tenantId, activo: true, deletedAt: null }, select: { id: true } }) : Promise.resolve(undefined),
+      // shortcut: trae todas las transacciones de las obras y filtra por fecha en memoria; mover el filtro a SQL si una obra pasa de miles de movimientos.
+      verFinanciero
+        ? prisma.transaccion.findMany({
+            where: { obraId: { in: ids } },
+            select: { obraId: true, tipo: true, monto: true, createdAt: true, asistencia: { select: { fecha: true } }, remision: { select: { fecha: true } } },
+          })
+        : Promise.resolve([]),
+    ]);
+    const fotos = avances.length
+      ? await prisma.evidencia.groupBy({
+          by: ["entidadId"],
+          where: { entidadTipo: "avance", entidadId: { in: avances.map((a) => a.id) }, tipoMime: { startsWith: "image/" } },
+          _count: true,
+        })
+      : [];
+    const financieros = verFinanciero ? await Promise.all(obras.map((o) => resumenFinancieroObra(o.id))) : [];
+
+    res.json(
+      calcularIndicadores(
+        {
+          obras: obras.map((o, i) => ({
+            id: o.id,
+            nombre: o.nombre,
+            presupuesto: financieros[i]?.presupuestoTotal ?? 0,
+            consumido: financieros[i]?.consumidoTotal ?? 0,
+            fechaInicio: o.fechaInicio ? isoLocal(o.fechaInicio) : null,
+            fechaFinEstimada: o.fechaFinEstimada ? isoLocal(o.fechaFinEstimada) : null,
+          })),
+          asistencias: asistencias.map((a) => ({ ...a, fecha: isoLocal(a.fecha) })),
+          avances: avances.map((a) => ({ obraId: a.obraId, fecha: isoLocal(a.fecha), fotos: fotos.find((f) => f.entidadId === a.id)?._count ?? 0 })),
+          transacciones: transacciones.map((t) => ({
+            obraId: t.obraId,
+            tipo: t.tipo,
+            monto: t.monto,
+            fecha: isoLocal(t.asistencia?.fecha ?? t.remision?.fecha ?? t.createdAt),
+          })),
+          obraPersonas: obraPersonas.map((op) => ({ obraId: op.obraId, personaId: op.personaId, nombre: op.persona.nombreCompleto })),
+          personasActivas: personas,
+          herramientas,
+          asignaciones: asignaciones.filter((a) => a.obraId).map((a) => ({ obraId: a.obraId!, nombre: a.herramienta.nombre })),
+        },
+        { desde: q.desde, hasta: q.hasta, hoy: q.hoy, verFinanciero }
+      )
+    );
   })
 );
 
