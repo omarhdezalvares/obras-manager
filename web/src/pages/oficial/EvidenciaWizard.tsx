@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Obra } from "../../lib/types";
-import { Button, Card, Label, Textarea } from "../../components/ui";
+import { Button, Card, Textarea } from "../../components/ui";
 import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { Confirmacion } from "../../components/Confirmacion";
 import { FechaHoy } from "../../components/FechaHoy";
@@ -77,10 +77,10 @@ export function EvidenciaWizard() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/mis-obras/${obraId}`} className="text-sm text-accent">
+        <Link to={`/mis-obras/${obraId}`} className="inline-flex min-h-[44px] items-center text-sm text-accent">
           ← {obraQuery.data?.nombre ?? "Regresar"}
         </Link>
-        <h1 className="mt-1 text-xl font-semibold text-ink">Registrar evidencia</h1>
+        <h1 className="text-2xl font-bold text-ink">Subir evidencia</h1>
       </div>
 
       {resultado ? (
@@ -109,19 +109,19 @@ export function EvidenciaWizard() {
           )}
         </div>
       ) : (
-        <Card>
-          <form onSubmit={guardar} className="space-y-4">
+        <div className="rounded-xl border border-line bg-white p-4">
+          <form onSubmit={guardar} className="space-y-5">
             <div>
-              <Label>Fotos (obligatorio)</Label>
-              <div className="flex flex-wrap gap-2">
+              <p className="mb-2 font-semibold text-ink">1. Fotos <span className="font-normal text-ink-soft">(al menos una)</span></p>
+              <div className="grid grid-cols-3 gap-2">
                 {fotos.map((f, i) => (
-                  <div key={f.url} className="relative">
-                    <img src={f.url} alt={`foto ${i + 1}`} className="h-20 w-20 rounded-md border border-black/10 object-cover" />
+                  <div key={f.url} className="relative aspect-square">
+                    <img src={f.url} alt={`foto ${i + 1}`} className="h-full w-full rounded-lg border border-black/10 object-cover" />
                     <button
                       type="button"
                       aria-label="Quitar foto"
                       onClick={() => quitar(f)}
-                      className="absolute -right-4 -top-4 flex h-11 w-11 items-center justify-center"
+                      className="absolute -right-3 -top-3 flex h-11 w-11 items-center justify-center"
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white text-crit shadow-sm">×</span>
                     </button>
@@ -130,34 +130,39 @@ export function EvidenciaWizard() {
                 <button
                   type="button"
                   onClick={() => camaraRef.current?.click()}
-                  className="flex h-20 w-20 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft"
+                  className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-accent bg-accent-soft text-sm font-semibold text-accent"
                 >
-                  <span className="text-xl">📷</span>
-                  <span className="text-[13px]">Cámara</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => galeriaRef.current?.click()}
-                  className="flex h-20 w-20 flex-col items-center justify-center rounded-md border border-dashed border-black/20 text-ink-soft"
-                >
-                  <span className="text-xl">🖼️</span>
-                  <span className="text-[13px]">Galería</span>
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+                    <circle cx="12" cy="13" r="3.5" />
+                  </svg>
+                  Tomar foto
                 </button>
               </div>
+              <button type="button" onClick={() => galeriaRef.current?.click()} className="mt-1 min-h-[44px] text-sm font-medium text-accent">
+                o elegir de la galería
+              </button>
               <input ref={camaraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { agregar(e.target.files); e.target.value = ""; }} />
               <input ref={galeriaRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => { agregar(e.target.files); e.target.value = ""; }} />
             </div>
             <div>
-              <Label>¿Qué se hizo?</Label>
-              <Textarea rows={4} placeholder="Describe el trabajo de hoy..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+              <label htmlFor="evid-texto" className="mb-2 block font-semibold text-ink">2. ¿Qué se hizo hoy?</label>
+              <Textarea id="evid-texto" rows={4} placeholder="Describe el trabajo de hoy..." value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
             </div>
             <FechaHoy value={fecha} onChange={setFecha} />
             {error && <p className="text-sm text-crit">{error}</p>}
-            <Button type="submit" className="w-full" disabled={progreso !== null}>
-              {progreso ?? "Guardar evidencia"}
-            </Button>
+            {/* En celular el boton queda fijo arriba de la barra inferior: siempre a la vista. */}
+            <div className="h-20 md:hidden" aria-hidden="true" />
+            <div
+              className="fixed inset-x-0 z-20 border-t border-line bg-white px-4 py-3 md:static md:border-0 md:p-0"
+              style={{ bottom: "calc(60px + env(safe-area-inset-bottom))" }}
+            >
+              <Button type="submit" className="min-h-[52px] w-full text-base" disabled={progreso !== null}>
+                {progreso ?? (fotos.length ? `Guardar evidencia · ${fotos.length} ${fotos.length === 1 ? "foto" : "fotos"}` : "Guardar evidencia")}
+              </Button>
+            </div>
           </form>
-        </Card>
+        </div>
       )}
     </div>
   );

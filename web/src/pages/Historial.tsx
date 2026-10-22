@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Asistencia, Avance } from "../lib/types";
-import { Button, Card, EmptyState, Input, Label, Textarea } from "../components/ui";
+import { Button, Card, EmptyState, Input, Label, Textarea, filaLista, lista } from "../components/ui";
 import { fechaCorta, hoyLocal } from "../lib/fechas";
 
 export function Historial() {
@@ -18,21 +18,21 @@ export function Historial() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Mi historial</h1>
+        <h1 className="text-2xl font-bold text-ink">Mi historial</h1>
         <p className="text-sm text-ink-soft">Confirma que tus registros quedaron guardados. Puedes editar las evidencias que tu registraste.</p>
       </div>
 
       <div>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Asistencias recientes</h2>
         {query.data?.asistencias.length === 0 && <EmptyState>Sin asistencias registradas todavia.</EmptyState>}
-        <div className="space-y-2">
+        <div className={lista}>
           {query.data?.asistencias.map((a) => (
-            <Card key={a.id} className="flex items-center justify-between">
+            <div key={a.id} className={`${filaLista} flex items-center justify-between`}>
               <div>
                 <p className="text-sm font-medium text-ink">{a.obra?.nombre}</p>
                 <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)} · llegada {a.horaLlegada}</p>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       </div>
@@ -40,12 +40,12 @@ export function Historial() {
       <div>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-soft">Evidencias recientes</h2>
         {query.data?.avances.length === 0 && <EmptyState>Sin evidencias registradas todavia.</EmptyState>}
-        <div className="space-y-2">
+        <div className={lista}>
           {query.data?.avances.map((a) =>
             editandoId === a.id ? (
               <EditarEvidenciaCard key={a.id} avance={a} onDone={() => setEditandoId(null)} />
             ) : (
-              <Card key={a.id}>
+              <div key={a.id} className={filaLista}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-ink-soft">{fechaCorta(a.fecha)}</p>
@@ -61,7 +61,7 @@ export function Historial() {
                     </button>
                   )}
                 </div>
-              </Card>
+              </div>
             )
           )}
         </div>

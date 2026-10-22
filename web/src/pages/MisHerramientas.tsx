@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../lib/api";
 import { HerramientaAsignacion } from "../lib/types";
-import { Card, EmptyState } from "../components/ui";
+import { EmptyState, filaLista, lista } from "../components/ui";
 import { fechaCortaDe } from "../lib/fechas";
 
 // Pantalla "Ver herramientas asignadas" (seccion 11): lista simple con
@@ -15,21 +15,21 @@ export function MisHerramientas() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Mis herramientas</h1>
+        <h1 className="text-2xl font-bold text-ink">Mis herramientas</h1>
         <p className="text-sm text-ink-soft">Lo asignado a tu nombre, mas lo asignado a las obras de las que eres responsable.</p>
       </div>
 
       {query.data?.length === 0 && <EmptyState>No tienes herramientas bajo tu custodia por ahora.</EmptyState>}
 
-      <div className="space-y-2">
+      <div className={lista}>
         {query.data?.map((a) => (
-          <Card key={a.id}>
+          <div key={a.id} className={filaLista}>
             <p className="font-medium text-ink">{a.herramienta?.nombre}</p>
             <p className="text-xs text-ink-soft">Codigo {a.herramienta?.codigo}</p>
             <p className="mt-1 text-sm text-ink-soft">
               {a.personaId ? "En mi poder" : `En la obra: ${a.obra?.nombre}`} · desde {fechaCortaDe(a.fechaAsignacion)}
             </p>
-          </Card>
+          </div>
         ))}
       </div>
     </div>

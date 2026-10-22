@@ -87,7 +87,7 @@ export function AsistenciaWizard() {
   return (
     <div className="space-y-4">
       <div>
-        <Link to={`/mis-obras/${obraId}`} className="text-sm text-accent">
+        <Link to={`/mis-obras/${obraId}`} className="inline-flex min-h-[44px] items-center text-sm text-accent">
           ← {obraQuery.data?.nombre ?? "Regresar"}
         </Link>
         <h1 className="mt-1 text-xl font-semibold text-ink">Registrar asistencia</h1>
