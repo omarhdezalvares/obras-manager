@@ -124,7 +124,7 @@ export function Tabla({ children, minWidth = 640 }: { children: ReactNode; minWi
   );
 }
 
-export const th = "bg-[#FAFAF8] px-4 py-2 text-left text-[12px] font-semibold uppercase tracking-wide text-ink-soft sm:px-5";
+export const th = "whitespace-nowrap bg-[#FAFAF8] px-4 py-2 text-left text-[12px] font-semibold uppercase tracking-wide text-ink-soft sm:px-5";
 export const td = "border-t border-[#EDEDEA] px-4 py-3 align-middle sm:px-5";
 
 export function Encabezado({ titulo, subtitulo, accion }: { titulo: ReactNode; subtitulo?: ReactNode; accion?: ReactNode }) {

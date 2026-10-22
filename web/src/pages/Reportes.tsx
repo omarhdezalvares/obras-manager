@@ -4,7 +4,8 @@ import { api, apiErrorMessage } from "../lib/api";
 import { puedeVerFinanciero, useAuth } from "../lib/auth";
 import { hoyLocal } from "../lib/fechas";
 import { Obra } from "../lib/types";
-import { Button, Card, Input, Label, Select } from "../components/ui";
+import { Button, Card, Encabezado, Input, Label, Select } from "../components/ui";
+import { IndicadoresPanel } from "./IndicadoresPanel";
 
 const TIPOS_FINANCIEROS = new Set(["presupuesto-vs-real", "materiales-remision", "costos-obra", "transacciones"]);
 
@@ -109,9 +110,12 @@ export function Reportes() {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-ink">Reportes</h1>
+    <div className="space-y-6">
+      <Encabezado titulo="Indicadores" subtitulo="Personal, herramientas y cumplimiento de las obras." />
+      <IndicadoresPanel />
+
+      <div className="border-t border-line pt-6">
+        <h2 className="text-xl font-bold text-ink">Descargas</h2>
         <p className="text-sm text-ink-soft">Elige un reporte para ver sus filtros y descargarlo en Excel.</p>
       </div>
 
