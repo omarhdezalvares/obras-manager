@@ -9,10 +9,17 @@ import { EvidenceUploader } from "../../components/EvidenceUploader";
 import { fechaCorta, hoyLocal } from "../../lib/fechas";
 
 interface Linea {
+  // Identificador estable: al quitar una linea, las de abajo conservan su campo (y su texto).
+  uid: string;
   materialId: string;
   cantidad: string;
   costoUnitario: string;
 }
+
+// Contador y no crypto.randomUUID: ese solo existe en https/localhost y el celular entra por http en la red local.
+let ultimaLinea = 0;
+const nuevoUid = () => String(++ultimaLinea);
+const lineaVacia = (): Linea => ({ uid: nuevoUid(), materialId: "", cantidad: "", costoUnitario: "" });
 
 export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: PartidaConSaldo[] }) {
   const { usuario } = useAuth();
@@ -34,7 +41,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
   const [proveedor, setProveedor] = useState("");
   const [folio, setFolio] = useState("");
   const [fecha, setFecha] = useState(hoyLocal());
-  const [lineas, setLineas] = useState<Linea[]>([{ materialId: "", cantidad: "", costoUnitario: "" }]);
+  const [lineas, setLineas] = useState<Linea[]>(() => [lineaVacia()]);
   const [error, setError] = useState<string | null>(null);
   const [ultimoId, setUltimoId] = useState<string | null>(null);
   // Con editandoId el mismo formulario edita (PATCH, motivo obligatorio).
@@ -48,7 +55,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
     setProveedor("");
     setFolio("");
     setFecha(hoyLocal());
-    setLineas([{ materialId: "", cantidad: "", costoUnitario: "" }]);
+    setLineas([lineaVacia()]);
     setError(null);
   }
 
@@ -59,7 +66,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
     setFolio(r.folio ?? "");
     setFecha(r.fecha.slice(0, 10));
     setLineas(
-      r.materiales.map((m) => ({ materialId: m.material.id, cantidad: String(m.cantidad), costoUnitario: String(m.costoUnitario) }))
+      r.materiales.map((m) => ({ uid: nuevoUid(), materialId: m.material.id, cantidad: String(m.cantidad), costoUnitario: String(m.costoUnitario) }))
     );
     setMotivo("");
     setError(null);
@@ -102,6 +109,9 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                 onSubmit={(e: FormEvent) => {
                   e.preventDefault();
                   setError(null);
+                  // Una linea con cantidad o costo pero sin material del catalogo se perderia al guardar.
+                  const sinMaterial = lineas.findIndex((l) => !l.materialId && (l.cantidad || l.costoUnitario));
+                  if (sinMaterial >= 0) return setError(`Elige o agrega el material de la línea ${sinMaterial + 1}.`);
                   mutation.mutate();
                 }}
                 className="space-y-3"
@@ -138,7 +148,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   {lineas.map((l, i) => (
                     <div key={i} className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr_1fr_auto]">
                       <SelectorMaterial
-                        key={`${editandoId ?? "nueva"}-${i}`}
+                        key={l.uid}
                         materiales={materialesQuery.data ?? []}
                         value={l.materialId}
                         onChange={(materialId) => setLineas((prev) => prev.map((x, xi) => (xi === i ? { ...x, materialId } : x)))}
@@ -172,7 +182,7 @@ export function RemisionesTab({ obraId, partidas }: { obraId: string; partidas: 
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => setLineas((prev) => [...prev, { materialId: "", cantidad: "", costoUnitario: "" }])}
+                    onClick={() => setLineas((prev) => [...prev, lineaVacia()])}
                   >
                     + Agregar linea
                   </Button>
