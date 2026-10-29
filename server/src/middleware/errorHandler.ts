@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { HttpError } from "./auth";
 import { ZodError } from "zod";
-import multer from "multer";
 
 export function notFoundHandler(req: Request, res: Response): void {
   res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });
@@ -17,11 +16,6 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     // Las reglas propias (refine/regex con mensaje) explican mejor que el generico.
     const propio = err.issues.find((i) => i.code === "custom" || i.code === "invalid_string");
     res.status(400).json({ error: propio?.message ?? "Datos invalidos", detalles: err.flatten() });
-    return;
-  }
-  if (err instanceof multer.MulterError) {
-    const error = err.code === "LIMIT_FILE_SIZE" ? "El archivo supera el tamano maximo de 15MB" : `Archivo rechazado: ${err.message}`;
-    res.status(400).json({ error });
     return;
   }
   if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "P2002") {

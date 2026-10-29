@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../lib/api";
+import { subirAlBucket } from "../lib/evidencias";
 import { EmpresaPerfil } from "../lib/types";
 import { useAuth } from "../lib/auth";
 import { Button, Card, Input, Label, Pill } from "../components/ui";
@@ -54,10 +55,13 @@ export function Empresa() {
   });
 
   const subirLogo = useMutation({
-    mutationFn: (file: File) => {
-      const form = new FormData();
-      form.append("logo", file);
-      return api.post("/empresa/logo", form, { headers: { "Content-Type": "multipart/form-data" } });
+    mutationFn: async (file: File) => {
+      const { data } = await api.post<{ objectKey: string; uploadUrl: string }>("/empresa/logo/subida", {
+        tipoMime: file.type,
+        tamanoBytes: file.size,
+      });
+      await subirAlBucket(data.uploadUrl, file);
+      return api.post("/empresa/logo", { objectKey: data.objectKey });
     },
     onMutate: () => setLogoMsg(null),
     onSuccess: () => {

@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 import { Router } from "express";
 import archiver from "archiver";
@@ -9,8 +8,8 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { assertObraVisible } from "../../lib/obraScope";
 import { ASISTENCIA_AVANCE_OPERATIVO, ROLES } from "../../lib/roles";
 import { startOfDay } from "../../lib/dates";
-import { generarReporteAvancesPdf } from "../../lib/avancesPdf";
-import { env } from "../../env";
+import { esImagenCompatible, generarReporteAvancesPdf } from "../../lib/avancesPdf";
+import { descargar, descargarVarios } from "../../lib/storage";
 import { writeAuditLog } from "../../lib/audit";
 
 export const avancesRouter = Router({ mergeParams: true });
@@ -135,10 +134,12 @@ avancesRouter.get(
             orderBy: { createdAt: "asc" },
           })
         : [];
-    const fotosPorAvance = new Map<string, { objectKey: string; tipoMime: string | null; creado: Date }[]>();
+    // pdfkit solo dibuja JPG/PNG: el resto no se descarga, sale como recuadro "no es imagen".
+    const datos = await descargarVarios(evidencias.filter((ev) => esImagenCompatible(ev.tipoMime)).map((ev) => ev.objectKey));
+    const fotosPorAvance = new Map<string, { datos: Buffer | null; tipoMime: string | null; creado: Date }[]>();
     for (const ev of evidencias) {
       const lista = fotosPorAvance.get(ev.entidadId) ?? [];
-      lista.push({ objectKey: ev.objectKey, tipoMime: ev.tipoMime, creado: ev.createdAt });
+      lista.push({ datos: datos.get(ev.objectKey) ?? null, tipoMime: ev.tipoMime, creado: ev.createdAt });
       fotosPorAvance.set(ev.entidadId, lista);
     }
 
@@ -159,6 +160,7 @@ avancesRouter.get(
         responsable: obra.responsable?.nombreCompleto ?? null,
       },
       tenant,
+      logo: tenant.logoKey ? await descargar(tenant.logoKey) : null,
       avances: avances.map((a) => ({
         id: a.id,
         fecha: a.fecha,
@@ -203,8 +205,7 @@ avancesRouter.get(
           })
         : [];
 
-    const archivosDisponibles = evidencias.filter((ev) => ev.bucket === "local" && fs.existsSync(path.join(env.uploadDir, ev.objectKey)));
-    if (archivosDisponibles.length === 0) throw new HttpError(404, "Esta obra no tiene fotos registradas para descargar");
+    if (evidencias.length === 0) throw new HttpError(404, "Esta obra no tiene fotos registradas para descargar");
 
     const nombreZip = `fotos-${obra.nombre.replace(/[^a-z0-9]+/gi, "-")}-${new Date().toISOString().slice(0, 10)}.zip`;
     res.setHeader("Content-Type", "application/zip");
@@ -221,12 +222,15 @@ avancesRouter.get(
     archive.pipe(res);
 
     const contadorPorCarpeta = new Map<string, number>();
-    for (const ev of archivosDisponibles) {
+    for (const ev of evidencias) {
+      // Una a la vez para no tener todas las fotos en memoria; si una falta en el bucket se omite.
+      const archivo = await descargar(ev.objectKey);
+      if (!archivo) continue;
       const carpeta = fechaPorAvance.get(ev.entidadId) ?? "sin-fecha";
       const indice = (contadorPorCarpeta.get(carpeta) ?? 0) + 1;
       contadorPorCarpeta.set(carpeta, indice);
       const ext = path.extname(ev.objectKey) || "";
-      archive.file(path.join(env.uploadDir, ev.objectKey), { name: `${carpeta}/foto-${indice}${ext}` });
+      archive.append(archivo, { name: `${carpeta}/foto-${indice}${ext}` });
     }
 
     await archive.finalize();

@@ -32,19 +32,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             urlPattern: /^\/api\//,
             handler: "NetworkOnly",
-          },
-          {
-            urlPattern: /^\/uploads\//,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "uploads",
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
-            },
           },
         ],
       },
@@ -55,7 +47,6 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": { target: "http://localhost:4000", changeOrigin: true },
-      "/uploads": { target: "http://localhost:4000", changeOrigin: true },
     },
   },
 });

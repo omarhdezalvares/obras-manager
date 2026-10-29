@@ -6,7 +6,6 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./env";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
-import { requireUploadFirmado } from "./lib/uploadUrl";
 
 import { authRouter } from "./modules/auth/auth.routes";
 import { obrasRouter } from "./modules/obras/obras.routes";
@@ -29,12 +28,18 @@ export const app = express();
 // Fly y Vercel ponen un proxy delante: sin esto req.ip seria la IP del proxy y el rate limit bloquearia a todos juntos.
 app.set("trust proxy", 1);
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+// Fotos y subidas van directo a Supabase Storage: la CSP por defecto ('self') las bloquearia.
+const storageOrigin = env.supabaseUrl ? [env.supabaseUrl] : [];
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: { imgSrc: ["'self'", "data:", "blob:", ...storageOrigin], connectSrc: ["'self'", ...storageOrigin] },
+    },
+  })
+);
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
-
-// Evidencias servidas como estaticos locales (ver middleware/upload.ts), solo con link firmado.
-app.use("/uploads", requireUploadFirmado, express.static(env.uploadDir));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "bitacora-api" }));
 
@@ -64,7 +69,7 @@ app.use("/api/obras/:obraId/remisiones", remisionesRouter);
 const webDistDir = path.resolve(__dirname, "../web-dist");
 if (fs.existsSync(webDistDir)) {
   app.use(express.static(webDistDir));
-  app.get(/^(?!\/api|\/uploads).*/, (_req, res) => {
+  app.get(/^(?!\/api).*/, (_req, res) => {
     res.sendFile(path.join(webDistDir, "index.html"));
   });
 }

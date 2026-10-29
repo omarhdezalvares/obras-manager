@@ -17,7 +17,7 @@
 ### Infraestructura (Vercel + Supabase)
 - [ ] Proyectos Supabase separados: `bitacora-staging` y `bitacora-prod`. (staging creado: `blxdwluxnuazjwhtlcep`, us-east-1; falta prod)
 - [x] Migrar SQLite → Postgres de Supabase. (2026-10-29: provider `postgresql`, migración base `0_init`; local usa staging schema `dev`, tests schemas `test_*`, CI con Postgres 16. Falta prod y migrar datos del piloto) Prisma: `DATABASE_URL` al pooler (puerto 6543, `?pgbouncer=true&connection_limit=1`) y `directUrl` (5432) para migraciones. Rehacer migraciones para `postgresql`.
-- [ ] Archivos → Supabase Storage (bucket privado). Vercel limita el body a 4.5 MB y hoy se aceptan 15 MB por foto: subir directo del navegador con `createSignedUploadUrl` y el server solo registra la `Evidencia` (`bucket = "supabase"`). Lectura con URLs firmadas en lugar de `urlFirmada`. Quitar `multer` a disco y los `fs.unlink` (asistencias, empresa, evidencias).
+- [x] Archivos → Supabase Storage (bucket privado `evidencias`, se crea solo). (2026-10-29, rama `saas/storage`: `server/src/lib/storage.ts` vía API REST sin dependencias; subida directa del navegador en 2 pasos `POST /evidencias/subida` → PUT al bucket → `POST /evidencias`; igual para el logo. PDF/ZIP descargan del bucket. Se quitaron `multer`, `/uploads` y los links HMAC. CSP permite el origen de Supabase)
 - [ ] Adaptar Express a Vercel: exportar `app` desde una función (`api/index.ts`), `app.listen` solo en local, `web/` como build estático de Vite con rewrites de SPA y `/api/*` a la función.
 - [ ] Verificar duración de función con reportes PDF/Excel/ZIP grandes (`pdfkit`, `exceljs` y `archiver` son JS puro, compatibles).
 - [ ] Migrar los datos del piloto (Fly SQLite + `/data/uploads`) a Supabase.
@@ -55,6 +55,6 @@
 ## Notas / decisiones
 <!-- Anota aquí decisiones tomadas (p. ej. "se eligió Neon para Postgres", fecha). -->
 - 2026-10-22: email de usuario único global (no se pide empresa al entrar).
-- 2026-10-22: archivos con links firmados que caducan; al migrar a S3/R2 se reemplaza `urlFirmada` por URLs prefirmadas del bucket.
+- 2026-10-22: archivos con links firmados que caducan. 2026-10-29: reemplazado por URLs firmadas de Supabase Storage (6 h).
 - 2026-10-28: hosting SaaS en **Vercel** (se deja Fly). Base de datos y archivos en **Supabase** (Postgres + Storage).
 - 2026-10-28: correo transaccional con **Resend**; pagos con **Stripe** (tarjeta + OXXO).

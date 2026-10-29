@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
@@ -9,7 +7,7 @@ import { assertObraVisible } from "../../lib/obraScope";
 import { resolveDefaultPartida } from "../../lib/defaultPartida";
 import { ASISTENCIA_AVANCE_OPERATIVO, ASISTENCIA_EDICION } from "../../lib/roles";
 import { writeAuditLog } from "../../lib/audit";
-import { env } from "../../env";
+import { borrar } from "../../lib/storage";
 import { startOfDay } from "../../lib/dates";
 import { checkSobreconsumo } from "../../lib/sobreconsumo";
 import { FECHA_ISO } from "../../lib/dates";
@@ -242,9 +240,7 @@ asistenciasRouter.delete(
       prisma.asistencia.delete({ where: { id: asistencia.id } }),
     ]);
 
-    for (const ev of evidencias) {
-      if (ev.bucket === "local") fs.unlink(path.join(env.uploadDir, ev.objectKey), () => {});
-    }
+    await borrar(evidencias.map((ev) => ev.objectKey));
 
     await writeAuditLog({
       tenantId: req.user!.tenantId,

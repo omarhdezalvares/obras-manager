@@ -1,7 +1,4 @@
-import fs from "fs";
-import path from "path";
 import PDFDocument from "pdfkit";
-import { env } from "../env";
 import { isoLocal } from "./dates";
 import { COLOR_HEX, textoSobre } from "./marca";
 
@@ -40,12 +37,11 @@ interface TenantHeader {
   direccion: string | null;
   telefono: string | null;
   correoContacto: string | null;
-  logoKey: string | null;
   colorPrimario: string | null;
 }
 
 interface Foto {
-  objectKey: string;
+  datos: Buffer | null; // descargada del bucket; null si no se pudo
   tipoMime: string | null;
   creado?: Date;
 }
@@ -59,7 +55,7 @@ interface AvanceConEvidencias {
 }
 
 const esImagen = (tipoMime: string | null) => !!tipoMime && tipoMime.startsWith("image/");
-const esImagenCompatible = (tipoMime: string | null) => !!tipoMime && /^image\/(jpe?g|png)$/i.test(tipoMime);
+export const esImagenCompatible = (tipoMime: string | null) => !!tipoMime && /^image\/(jpe?g|png)$/i.test(tipoMime);
 const capitalizar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fechaLarga = (d: Date) => d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
 const fechaCorta = (d: Date) => d.toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
@@ -106,12 +102,11 @@ function dibujarFotos(doc: PDFKit.PDFDocument, fotos: Foto[], numero: number, x0
       filaY = doc.y;
     }
     const x = x0 + col * (celda + gap);
-    const ruta = path.join(env.uploadDir, foto.objectKey);
     let dibujada = false;
-    if (esImagenCompatible(foto.tipoMime) && fs.existsSync(ruta)) {
+    if (esImagenCompatible(foto.tipoMime) && foto.datos) {
       try {
         doc.save().roundedRect(x, filaY, celda, alto, 3).clip();
-        doc.image(ruta, x, filaY, { cover: [celda, alto], align: "center", valign: "center" });
+        doc.image(foto.datos, x, filaY, { cover: [celda, alto], align: "center", valign: "center" });
         doc.restore();
         dibujada = true;
       } catch {
@@ -137,6 +132,7 @@ export async function generarReporteAvancesPdf(params: {
   obraId?: string;
   obra: ObraHeader;
   tenant: TenantHeader;
+  logo?: Buffer | null;
   avances: AvanceConEvidencias[];
   asistencias?: { personaId: string }[];
   desde?: string;
@@ -161,9 +157,9 @@ export async function generarReporteAvancesPdf(params: {
     doc.rect(0, 0, W, 86).fill(acento);
     doc.rect(0, 86, W, 3).fill(NARANJA);
     let xTexto = MARGIN;
-    if (params.tenant.logoKey) {
+    if (params.logo) {
       try {
-        doc.image(path.join(env.uploadDir, params.tenant.logoKey), MARGIN, 17, { fit: [52, 52], align: "center", valign: "center" });
+        doc.image(params.logo, MARGIN, 17, { fit: [52, 52], align: "center", valign: "center" });
         xTexto = MARGIN + 64;
       } catch {
         // logo faltante o ilegible: el reporte sale sin logo en vez de fallar

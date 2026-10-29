@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
@@ -8,9 +6,7 @@ import { rateLimit } from "../../middleware/rateLimit";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { EMPRESA_GESTION } from "../../lib/roles";
 import { COLOR_HEX } from "../../lib/marca";
-import { upload } from "../../middleware/upload";
-import { env } from "../../env";
-import { urlFirmada } from "../../lib/uploadUrl";
+import { MAX_BYTES, borrar, esKeyDelTenant, infoArchivo, nuevaKey, urlDeSubida, urlsDeLectura } from "../../lib/storage";
 
 export const empresaRouter = Router();
 empresaRouter.use(requireAuth);
@@ -27,8 +23,9 @@ const empresaSelect = {
   logoKey: true,
 } as const;
 
-function conLogoUrl<T extends { logoKey: string | null }>({ logoKey, ...tenant }: T) {
-  return { ...tenant, logoUrl: logoKey ? urlFirmada(logoKey) : null };
+async function conLogoUrl<T extends { logoKey: string | null }>({ logoKey, ...tenant }: T) {
+  const logoUrl = logoKey ? ((await urlsDeLectura([logoKey])).get(logoKey) ?? null) : null;
+  return { ...tenant, logoUrl };
 }
 
 empresaRouter.get(
@@ -36,7 +33,7 @@ empresaRouter.get(
   asyncHandler(async (req, res) => {
     const tenant = await prisma.tenant.findUnique({ where: { id: req.user!.tenantId }, select: empresaSelect });
     if (!tenant) throw new HttpError(404, "Empresa no encontrada");
-    res.json(conLogoUrl(tenant));
+    res.json(await conLogoUrl(tenant));
   })
 );
 
@@ -66,29 +63,49 @@ empresaRouter.patch(
       },
       select: empresaSelect,
     });
-    res.json(conLogoUrl(tenant));
+    res.json(await conLogoUrl(tenant));
   })
 );
 
 // Logo para encabezados de reportes. Solo PNG/JPEG: pdfkit no dibuja otros formatos.
+// Igual que las evidencias: se pide URL firmada, el navegador sube directo y luego se confirma.
+const LOGO_TIPOS = ["image/png", "image/jpeg"];
+
+empresaRouter.post(
+  "/logo/subida",
+  requireRole(...EMPRESA_GESTION),
+  rateLimit("upload", 200, 60 * 60 * 1000, (req) => req.user!.sub),
+  asyncHandler(async (req, res) => {
+    const { tipoMime } = z
+      .object({
+        tipoMime: z.string().refine((t) => LOGO_TIPOS.includes(t), { message: "El logo debe ser PNG o JPG" }),
+        tamanoBytes: z.number().int().positive().max(MAX_BYTES, "El archivo supera el tamano maximo de 15MB"),
+      })
+      .parse(req.body);
+    const objectKey = nuevaKey(req.user!.tenantId, tipoMime);
+    res.json({ objectKey, uploadUrl: await urlDeSubida(objectKey) });
+  })
+);
+
 empresaRouter.post(
   "/logo",
   requireRole(...EMPRESA_GESTION),
-  rateLimit("upload", 200, 60 * 60 * 1000, (req) => req.user!.sub),
-  upload.single("logo"),
   asyncHandler(async (req, res) => {
-    if (!req.file) throw new HttpError(400, "Falta el archivo del logo");
-    if (!["image/png", "image/jpeg"].includes(req.file.mimetype)) {
-      fs.unlink(req.file.path, () => {});
+    const { objectKey } = z.object({ objectKey: z.string().min(1) }).parse(req.body);
+    if (!esKeyDelTenant(objectKey, req.user!.tenantId)) throw new HttpError(403, "El archivo no pertenece a tu empresa");
+    const info = await infoArchivo(objectKey);
+    if (!info) throw new HttpError(400, "El logo no se subio; intenta de nuevo");
+    if (!LOGO_TIPOS.includes(info.tipoMime ?? "")) {
+      await borrar([objectKey]);
       throw new HttpError(400, "El logo debe ser PNG o JPG");
     }
     const antes = await prisma.tenant.findUnique({ where: { id: req.user!.tenantId }, select: { logoKey: true } });
     const tenant = await prisma.tenant.update({
       where: { id: req.user!.tenantId },
-      data: { logoKey: req.file.filename },
+      data: { logoKey: objectKey },
       select: empresaSelect,
     });
-    if (antes?.logoKey) fs.unlink(path.join(env.uploadDir, antes.logoKey), () => {});
-    res.json(conLogoUrl(tenant));
+    if (antes?.logoKey && antes.logoKey !== objectKey) await borrar([antes.logoKey]);
+    res.json(await conLogoUrl(tenant));
   })
 );
