@@ -4,6 +4,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import { requireAuth, requireRole, HttpError } from "../../middleware/auth";
+import { rateLimit } from "../../middleware/rateLimit";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { EMPRESA_GESTION } from "../../lib/roles";
 import { COLOR_HEX } from "../../lib/marca";
@@ -73,6 +74,7 @@ empresaRouter.patch(
 empresaRouter.post(
   "/logo",
   requireRole(...EMPRESA_GESTION),
+  rateLimit("upload", 200, 60 * 60 * 1000, (req) => req.user!.sub),
   upload.single("logo"),
   asyncHandler(async (req, res) => {
     if (!req.file) throw new HttpError(400, "Falta el archivo del logo");

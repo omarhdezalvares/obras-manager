@@ -4,6 +4,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import { requireAuth, HttpError } from "../../middleware/auth";
+import { rateLimit } from "../../middleware/rateLimit";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { upload } from "../../middleware/upload";
 import { assertObraVisible } from "../../lib/obraScope";
@@ -28,6 +29,7 @@ const metaSchema = z.object({
 // mismo, asi que migrar a S3 despues es solo cambiar esta ruta.
 evidenciasRouter.post(
   "/",
+  rateLimit("upload", 200, 60 * 60 * 1000, (req) => req.user!.sub),
   upload.single("archivo"),
   asyncHandler(async (req, res) => {
     if (!req.file) throw new HttpError(400, "Falta el archivo 'archivo'");

@@ -5,6 +5,9 @@ import { hashRefreshToken, generateRefreshToken, signAccessToken, verifyAccessTo
 import { verifyPassword } from "../../lib/password";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { HttpError, requireAuth } from "../../middleware/auth";
+import { rateLimit } from "../../middleware/rateLimit";
+
+const QUINCE_MIN = 15 * 60 * 1000;
 
 export const authRouter = Router();
 
@@ -15,6 +18,8 @@ const loginSchema = z.object({
 
 authRouter.post(
   "/login",
+  rateLimit("login-ip", 50, QUINCE_MIN),
+  rateLimit("login", 10, QUINCE_MIN, (req) => `${req.ip}:${String(req.body?.email ?? "").toLowerCase()}`),
   asyncHandler(async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
 
@@ -63,6 +68,7 @@ const refreshSchema = z.object({ refreshToken: z.string().min(1) });
 
 authRouter.post(
   "/refresh",
+  rateLimit("refresh", 60, QUINCE_MIN),
   asyncHandler(async (req, res) => {
     const { refreshToken } = refreshSchema.parse(req.body);
     const hash = hashRefreshToken(refreshToken);

@@ -277,10 +277,11 @@ obrasRouter.delete(
   requireRole(...OBRA_PERSONA_GESTION),
   asyncHandler(async (req, res) => {
     await assertObraVisible(req.user!, req.params.id);
-    await prisma.obraPersona.updateMany({
-      where: { obraId: req.params.id, personaId: req.params.personaId },
+    const { count } = await prisma.obraPersona.updateMany({
+      where: { tenantId: req.user!.tenantId, obraId: req.params.id, personaId: req.params.personaId },
       data: { activo: false },
     });
+    if (count === 0) throw new HttpError(404, "La persona no esta asignada a esta obra");
     res.status(204).send();
   })
 );

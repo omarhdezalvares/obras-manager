@@ -94,6 +94,8 @@ personasRouter.patch(
   requireRole(...OBRA_PERSONA_GESTION),
   asyncHandler(async (req, res) => {
     const body = updatePersonaSchema.parse(req.body);
+    const existe = await prisma.persona.count({ where: { id: req.params.id, tenantId: req.user!.tenantId, deletedAt: null } });
+    if (!existe) throw new HttpError(404, "Persona no encontrada");
     const persona = await prisma.persona.update({ where: { id: req.params.id }, data: body });
     res.json(persona);
   })

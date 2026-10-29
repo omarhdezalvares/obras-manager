@@ -349,3 +349,11 @@ model Notificacion {
   leida     Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+// Contador de intentos por clave (ip, usuario) para rate limiting. Vive en la
+// BD porque en serverless cada instancia tiene su propia memoria.
+model RateLimit {
+  clave      String   @id
+  intentos   Int
+  reiniciaEn DateTime
+}
