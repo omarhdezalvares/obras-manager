@@ -1,15 +1,15 @@
-// OBRA/OS - modelo de datos (version de test, SQLite)
+// OBRA/OS - modelo de datos (PostgreSQL en Supabase)
 // Fiel al diseno de la seccion 05 del documento de especificacion.
-// numeric(...) -> Float (SQLite no soporta Decimal nativo en Prisma)
-// enums de texto -> String (SQLite no soporta enums nativos)
+// Float y enums como String vienen de la version SQLite; se conservan para no cambiar el modelo en la migracion.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // transaction pooler (6543) para la app
+  directUrl = env("DIRECT_URL") // session pooler (5432) para migraciones
 }
 
 model Tenant {

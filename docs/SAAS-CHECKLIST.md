@@ -15,8 +15,8 @@
 - [x] Test automático de aislamiento: usuario del tenant A no puede leer/escribir datos del tenant B (cada módulo). (2026-10-28: `server/src/aislamiento.test.ts`; encontró y se corrigió `PATCH /api/personas/:id` sin filtro de tenant. Falta cubrir `POST /api/evidencias` multipart)
 
 ### Infraestructura (Vercel + Supabase)
-- [ ] Proyectos Supabase separados: `bitacora-staging` y `bitacora-prod`.
-- [ ] Migrar SQLite → Postgres de Supabase. Prisma: `DATABASE_URL` al pooler (puerto 6543, `?pgbouncer=true&connection_limit=1`) y `directUrl` (5432) para migraciones. Rehacer migraciones para `postgresql`.
+- [ ] Proyectos Supabase separados: `bitacora-staging` y `bitacora-prod`. (staging creado: `blxdwluxnuazjwhtlcep`, us-east-1; falta prod)
+- [x] Migrar SQLite → Postgres de Supabase. (2026-10-29: provider `postgresql`, migración base `0_init`; local usa staging schema `dev`, tests schemas `test_*`, CI con Postgres 16. Falta prod y migrar datos del piloto) Prisma: `DATABASE_URL` al pooler (puerto 6543, `?pgbouncer=true&connection_limit=1`) y `directUrl` (5432) para migraciones. Rehacer migraciones para `postgresql`.
 - [ ] Archivos → Supabase Storage (bucket privado). Vercel limita el body a 4.5 MB y hoy se aceptan 15 MB por foto: subir directo del navegador con `createSignedUploadUrl` y el server solo registra la `Evidencia` (`bucket = "supabase"`). Lectura con URLs firmadas en lugar de `urlFirmada`. Quitar `multer` a disco y los `fs.unlink` (asistencias, empresa, evidencias).
 - [ ] Adaptar Express a Vercel: exportar `app` desde una función (`api/index.ts`), `app.listen` solo en local, `web/` como build estático de Vite con rewrites de SPA y `/api/*` a la función.
 - [ ] Verificar duración de función con reportes PDF/Excel/ZIP grandes (`pdfkit`, `exceljs` y `archiver` son JS puro, compatibles).

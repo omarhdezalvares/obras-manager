@@ -367,7 +367,7 @@ async function construirHoja(
       { header: "Costo total", key: "total", width: 14 },
     ];
     const remisiones = await prisma.remision.findMany({
-      where: { ...obraFk, fecha: rangoFecha, proveedor: filtros.proveedor ? { contains: filtros.proveedor } : undefined, deletedAt: null },
+      where: { ...obraFk, fecha: rangoFecha, proveedor: filtros.proveedor ? { contains: filtros.proveedor, mode: "insensitive" } : undefined, deletedAt: null },
       include: { obra: true, materiales: { include: { material: true } } },
       orderBy: { fecha: "desc" },
     });

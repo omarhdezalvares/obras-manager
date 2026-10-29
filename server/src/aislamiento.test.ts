@@ -7,9 +7,9 @@ import path from "path";
 import type { AddressInfo } from "net";
 import type { Server } from "http";
 import type { PrismaClient } from "@prisma/client";
+import { usarSchemaDeTest } from "./testDb";
 
-const dbFile = path.resolve(__dirname, "../prisma/aislamiento-test.db");
-process.env.DATABASE_URL = `file:${dbFile}`;
+usarSchemaDeTest("test_aislamiento");
 
 const MARCA_B = "SECRETO-EMPRESA-B";
 let prisma: PrismaClient;
@@ -88,7 +88,7 @@ async function selloB() {
 before(async () => {
   execSync("npx prisma db push --force-reset --skip-generate", {
     cwd: path.resolve(__dirname, ".."),
-    env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL },
+    env: process.env,
     stdio: "ignore",
   });
   ({ prisma } = await import("./lib/prisma"));

@@ -4,8 +4,9 @@ import { execSync } from "child_process";
 import path from "path";
 import type { AddressInfo } from "net";
 import type { Server } from "http";
+import { usarSchemaDeTest } from "../testDb";
 
-process.env.DATABASE_URL = `file:${path.resolve(__dirname, "../../prisma/ratelimit-test.db")}`;
+usarSchemaDeTest("test_ratelimit");
 
 let consumirIntento: typeof import("./rateLimit").consumirIntento;
 let server: Server;
