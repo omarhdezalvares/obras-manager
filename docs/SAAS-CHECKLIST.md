@@ -49,7 +49,7 @@
 
 ## 🟢 Legal y comercial
 - [ ] Términos y condiciones, aviso de privacidad (LFPDPPP), SLA.
-- [ ] Landing pública con precios y registro.
+- [x] Landing pública con precios y registro. (2026-10-30, rama `saas/landing`: `web/src/pages/Landing.tsx` en `/` sin sesión, login movido a `/entrar`; precios preliminares del plan de negocios 3.3. Pendiente: que la prueba de 14 días y los límites por plan existan de verdad con Stripe)
 - [ ] Recorrido de bienvenida en la app (crear primera obra, invitar equipo).
 - [ ] Canal de soporte y documentación de ayuda.
 
