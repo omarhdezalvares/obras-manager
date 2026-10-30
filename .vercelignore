@@ -1,0 +1,4 @@
+# Nunca subir secretos ni dependencias locales al build de Vercel.
+**/.env*
+**/node_modules
+.vercel

@@ -18,12 +18,12 @@
 - [ ] Proyectos Supabase separados: `bitacora-staging` y `bitacora-prod`. (staging creado: `blxdwluxnuazjwhtlcep`, us-east-1; falta prod)
 - [x] Migrar SQLite → Postgres de Supabase. (2026-10-29: provider `postgresql`, migración base `0_init`; local usa staging schema `dev`, tests schemas `test_*`, CI con Postgres 16. Falta prod y migrar datos del piloto) Prisma: `DATABASE_URL` al pooler (puerto 6543, `?pgbouncer=true&connection_limit=1`) y `directUrl` (5432) para migraciones. Rehacer migraciones para `postgresql`.
 - [x] Archivos → Supabase Storage (bucket privado `evidencias`, se crea solo). (2026-10-29, rama `saas/storage`: `server/src/lib/storage.ts` vía API REST sin dependencias; subida directa del navegador en 2 pasos `POST /evidencias/subida` → PUT al bucket → `POST /evidencias`; igual para el logo. PDF/ZIP descargan del bucket. Se quitaron `multer`, `/uploads` y los links HMAC. CSP permite el origen de Supabase)
-- [ ] Adaptar Express a Vercel: exportar `app` desde una función (`api/index.ts`), `app.listen` solo en local, `web/` como build estático de Vite con rewrites de SPA y `/api/*` a la función.
+- [x] Adaptar Express a Vercel: exportar `app` desde una función (`api/index.ts`), `app.listen` solo en local, `web/` como build estático de Vite con rewrites de SPA y `/api/*` a la función. (2026-10-30; proyecto `bitacora`, preview verificado: login, subida directa al bucket, PDF, ZIP. `vercel.json` fija `framework: null` porque con un `Dockerfile` Vercel construye un contenedor; `.vercelignore` evita subir los `.env`)
 - [ ] Verificar duración de función con reportes PDF/Excel/ZIP grandes (`pdfkit`, `exceljs` y `archiver` son JS puro, compatibles).
 - [ ] Migrar los datos del piloto (Fly SQLite + `/data/uploads`) a Supabase.
 - [ ] Backups: Supabase diario (plan Pro para PITR) + respaldo del bucket; restauración probada en staging.
-- [ ] Previews de Vercel apuntando a Supabase staging, producción a prod.
-- [ ] Apagar Fly cuando el piloto esté migrado (`fly.toml`, `Dockerfile`, `docker-entrypoint.sh`).
+- [ ] Previews de Vercel apuntando a Supabase staging, producción a prod. (previews listas 2026-10-30; faltan las variables de Production cuando exista el proyecto prod)
+- [ ] Apagar Fly cuando el piloto esté migrado. (los archivos de Fly ya solo viven en la rama `piloto`; se quitaron de dev el 2026-10-30)
 
 ### Onboarding
 - [ ] Registro self-service: crea tenant + admin + roles (hoy solo `seedProd.ts` a mano).
