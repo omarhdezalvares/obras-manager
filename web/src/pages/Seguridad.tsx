@@ -164,6 +164,7 @@ function UsuarioForm({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Vacía: se le invita por correo"
+                title="Si la defines: 8+ caracteres con mayúscula, minúscula, número y símbolo"
               />
             </div>
           )}
@@ -249,7 +250,7 @@ function PasswordForm({ usuario, onDone }: { usuario: UsuarioAdmin; onDone: () =
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mínimo 8 caracteres"
+            placeholder="8+ con mayúscula, minúscula, número y símbolo"
           />
         </div>
         {error && <p className="text-sm text-crit">{error}</p>}

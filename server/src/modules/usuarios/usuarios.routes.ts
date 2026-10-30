@@ -3,7 +3,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { enviarLinkPassword } from "../../lib/tokenPassword";
 import { prisma } from "../../lib/prisma";
-import { hashPassword } from "../../lib/password";
+import { hashPassword, passwordSegura } from "../../lib/password";
 import { requireAuth, requireRole, HttpError } from "../../middleware/auth";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { USUARIO_GESTION } from "../../lib/roles";
@@ -86,7 +86,7 @@ usuariosRouter.get(
 const crearUsuarioSchema = z.object({
   email: z.string().email(),
   // Sin contrasena se invita por correo y el usuario la define con el link.
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").optional(),
+  password: passwordSegura.optional(),
   rolId: z.string().min(1),
   personaId: z.string().min(1).optional(),
 });
@@ -154,7 +154,7 @@ usuariosRouter.patch(
 );
 
 const passwordSchema = z.object({
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  password: passwordSegura,
 });
 
 usuariosRouter.post(

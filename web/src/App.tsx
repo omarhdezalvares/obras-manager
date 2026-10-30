@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
-import { Olvide, Registro, Restablecer } from "./pages/Acceso";
+import { Olvide, Registro, Restablecer, Verificar } from "./pages/Acceso";
 import { Dashboard } from "./pages/Dashboard";
 import { Obras } from "./pages/Obras";
 import { ObraDetail } from "./pages/ObraDetail";
@@ -33,6 +33,7 @@ export default function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/olvide" element={<Olvide />} />
         <Route path="/restablecer" element={<Restablecer />} />
+        <Route path="/verificar" element={<Verificar />} />
         <Route path="*" element={<Login />} />
       </Routes>
     );

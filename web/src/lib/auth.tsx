@@ -7,6 +7,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   registrar: (empresa: string, email: string, password: string) => Promise<void>;
+  verificar: (token: string) => Promise<void>;
   logout: () => void;
   refreshUsuario: () => Promise<void>;
 }
@@ -36,8 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(res.data.usuario);
   }
 
+  // Solo envia el correo de confirmacion; la sesion empieza en verificar().
   async function registrar(empresa: string, email: string, password: string) {
-    const res = await api.post("/auth/registro", { empresa, email, password });
+    await api.post("/auth/registro", { empresa, email, password });
+  }
+
+  async function verificar(token: string) {
+    const res = await api.post("/auth/verificar", { token });
     setTokens(res.data.accessToken, res.data.refreshToken);
     setUsuario(res.data.usuario);
   }
@@ -53,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, loading, login, registrar, logout, refreshUsuario }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ usuario, loading, login, registrar, verificar, logout, refreshUsuario }}>{children}</AuthContext.Provider>
   );
 }
 

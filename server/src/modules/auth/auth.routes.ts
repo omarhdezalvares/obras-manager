@@ -2,11 +2,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
 import { hashRefreshToken, generateRefreshToken, signAccessToken, verifyAccessToken } from "../../lib/jwt";
-import { verifyPassword } from "../../lib/password";
+import { passwordSegura, verifyPassword } from "../../lib/password";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { HttpError, requireAuth } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
-import { crearEmpresa } from "../../lib/empresa";
+import { confirmarRegistro, solicitarRegistro } from "../../lib/empresa";
 import { enviarLinkPassword, usarTokenPassword } from "../../lib/tokenPassword";
 
 const QUINCE_MIN = 15 * 60 * 1000;
@@ -75,12 +75,10 @@ async function iniciarSesion(usuarioId: string) {
   };
 }
 
-const passwordNueva = z.string().min(8, "La contraseña debe tener al menos 8 caracteres");
-
 const registroSchema = z.object({
   empresa: z.string().trim().min(2, "Escribe el nombre de tu empresa").max(120),
   email: z.string().email(),
-  password: passwordNueva,
+  password: passwordSegura,
 });
 
 authRouter.post(
@@ -91,7 +89,18 @@ authRouter.post(
     if (await prisma.usuario.findUnique({ where: { email: datos.email } })) {
       throw new HttpError(409, "Ya existe una cuenta con ese correo; inicia sesión o recupera tu contraseña");
     }
-    const usuario = await crearEmpresa(datos);
+    await solicitarRegistro(datos);
+    res.status(202).json({ email: datos.email });
+  })
+);
+
+// Link del correo de registro: crea la empresa y entra.
+authRouter.post(
+  "/verificar",
+  rateLimit("verificar", 20, QUINCE_MIN),
+  asyncHandler(async (req, res) => {
+    const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
+    const usuario = await confirmarRegistro(token);
     res.status(201).json(await iniciarSesion(usuario.id));
   })
 );
@@ -113,7 +122,7 @@ authRouter.post(
   "/restablecer",
   rateLimit("restablecer", 20, QUINCE_MIN),
   asyncHandler(async (req, res) => {
-    const { token, password } = z.object({ token: z.string().min(1), password: passwordNueva }).parse(req.body);
+    const { token, password } = z.object({ token: z.string().min(1), password: passwordSegura }).parse(req.body);
     await usarTokenPassword(token, password);
     res.status(204).send();
   })
