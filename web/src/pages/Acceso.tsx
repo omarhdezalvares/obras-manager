@@ -10,11 +10,11 @@ export function AccesoShell({ children, pie }: { children: ReactNode; pie?: Reac
   return (
     <div className="flex min-h-screen items-center justify-center bg-ground px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
+        <Link to="/" className="mb-6 block text-center">
           <LogoMark className="mx-auto h-9 w-9 text-accent" />
           <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">Plataforma de control de obras</p>
           <h1 className="mt-1 text-3xl font-semibold text-ink">Bitácora</h1>
-        </div>
+        </Link>
         <div className="space-y-4 rounded-lg border border-black/10 bg-white p-6 shadow-sm">{children}</div>
         {pie && <div className="mt-4 space-y-1 text-center text-sm text-ink-soft">{pie}</div>}
       </div>
@@ -97,7 +97,7 @@ export function Registro() {
 
   if (enviado) {
     return (
-      <AccesoShell pie={<p><Link to="/" className={enlace}>Volver a iniciar sesión</Link></p>}>
+      <AccesoShell pie={<p><Link to="/entrar" className={enlace}>Volver a iniciar sesión</Link></p>}>
         <h2 className="font-semibold text-ink">Revisa tu correo</h2>
         <p className="text-sm text-ink">
           Te enviamos un link a <strong>{email}</strong> para confirmar que es tuyo. Ábrelo para terminar de crear la cuenta; vale 24 horas.
@@ -108,7 +108,7 @@ export function Registro() {
   }
 
   return (
-    <AccesoShell pie={<p>¿Ya tienes cuenta? <Link to="/" className={enlace}>Inicia sesión</Link></p>}>
+    <AccesoShell pie={<p>¿Ya tienes cuenta? <Link to="/entrar" className={enlace}>Inicia sesión</Link></p>}>
       <form onSubmit={onSubmit} className="space-y-4">
         <h2 className="font-semibold text-ink">Crea la cuenta de tu empresa</h2>
         <div>
@@ -138,7 +138,7 @@ export function Olvide() {
   });
 
   return (
-    <AccesoShell pie={<p><Link to="/" className={enlace}>Volver a iniciar sesión</Link></p>}>
+    <AccesoShell pie={<p><Link to="/entrar" className={enlace}>Volver a iniciar sesión</Link></p>}>
       {enviado ? (
         <p className="text-sm text-ink">
           Si <strong>{email}</strong> tiene una cuenta, te enviamos un correo con un link para restablecer la contraseña. Vale 1 hora.
@@ -173,7 +173,7 @@ export function Restablecer() {
   });
 
   return (
-    <AccesoShell pie={<p><Link to="/" className={enlace}>Ir a iniciar sesión</Link></p>}>
+    <AccesoShell pie={<p><Link to="/entrar" className={enlace}>Ir a iniciar sesión</Link></p>}>
       {listo ? (
         <p className="text-sm text-ok">Listo, tu contraseña quedó guardada. Ya puedes iniciar sesión.</p>
       ) : (
@@ -207,7 +207,7 @@ export function Verificar() {
   }, [token, verificar]);
 
   return (
-    <AccesoShell pie={<p><Link to="/registro" className={enlace}>Registrarme de nuevo</Link> · <Link to="/" className={enlace}>Iniciar sesión</Link></p>}>
+    <AccesoShell pie={<p><Link to="/registro" className={enlace}>Registrarme de nuevo</Link> · <Link to="/entrar" className={enlace}>Iniciar sesión</Link></p>}>
       {error ? <p className="text-sm text-crit">{error}</p> : <p className="text-sm text-ink">Confirmando tu correo y creando tu cuenta…</p>}
     </AccesoShell>
   );

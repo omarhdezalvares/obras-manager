@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
+import { Landing } from "./pages/Landing";
 import { Olvide, Registro, Restablecer, Verificar } from "./pages/Acceso";
 import { Dashboard } from "./pages/Dashboard";
 import { Obras } from "./pages/Obras";
@@ -30,6 +31,7 @@ export default function App() {
   if (!usuario) {
     return (
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/registro" element={<Registro />} />
         <Route path="/olvide" element={<Olvide />} />
         <Route path="/restablecer" element={<Restablecer />} />
