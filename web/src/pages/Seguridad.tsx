@@ -127,7 +127,7 @@ function UsuarioForm({
       }
       return api.post("/usuarios", {
         email,
-        password,
+        password: password || undefined,
         rolId,
         personaId: personaId || undefined,
       });
@@ -157,14 +157,13 @@ function UsuarioForm({
           </div>
           {!usuario && (
             <div>
-              <Label>Contraseña</Label>
+              <Label>Contraseña (opcional)</Label>
               <Input
                 type="password"
-                required
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 8 caracteres"
+                placeholder="Vacía: se le invita por correo"
               />
             </div>
           )}

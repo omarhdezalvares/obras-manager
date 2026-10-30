@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
+import { Olvide, Registro, Restablecer } from "./pages/Acceso";
 import { Dashboard } from "./pages/Dashboard";
 import { Obras } from "./pages/Obras";
 import { ObraDetail } from "./pages/ObraDetail";
@@ -29,6 +30,9 @@ export default function App() {
   if (!usuario) {
     return (
       <Routes>
+        <Route path="/registro" element={<Registro />} />
+        <Route path="/olvide" element={<Olvide />} />
+        <Route path="/restablecer" element={<Restablecer />} />
         <Route path="*" element={<Login />} />
       </Routes>
     );
@@ -38,6 +42,8 @@ export default function App() {
 
   return (
     <Routes>
+      {/* El link del correo tambien debe abrir si en ese navegador hay otra sesion. */}
+      <Route path="/restablecer" element={<Restablecer />} />
       <Route element={<Layout />}>
         <Route path="/" element={esOficial ? <Navigate to="/mis-obras" replace /> : <Dashboard />} />
         <Route path="/obras" element={<Obras />} />

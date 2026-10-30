@@ -1,8 +1,9 @@
 import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { apiErrorMessage } from "../lib/api";
 import { Button, Input, Label } from "../components/ui";
-import { LogoMark } from "../components/Icons";
+import { AccesoShell, enlace } from "./Acceso";
 
 export function Login() {
   const { login } = useAuth();
@@ -25,42 +26,45 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ground px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 text-center">
-          <LogoMark className="mx-auto h-9 w-9 text-accent" />
-          <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">Plataforma de control de obras</p>
-          <h1 className="mt-1 text-3xl font-semibold text-ink">Bitácora</h1>
+    <AccesoShell
+      pie={
+        <>
+          <p>
+            <Link to="/olvide" className={enlace}>¿Olvidaste tu contraseña?</Link>
+          </p>
+          <p>
+            ¿Tu empresa aún no usa Bitácora? <Link to="/registro" className={enlace}>Crea una cuenta</Link>
+          </p>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <Label>Correo</Label>
+          <Input
+            type="email"
+            autoFocus
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@empresa.test"
+          />
         </div>
-
-        <form onSubmit={onSubmit} className="space-y-4 rounded-lg border border-black/10 bg-white p-6 shadow-sm">
-          <div>
-            <Label>Correo</Label>
-            <Input
-              type="email"
-              autoFocus
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@empresa.test"
-            />
-          </div>
-          <div>
-            <Label>Contraseña</Label>
-            <Input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
-          {error && <p className="text-sm text-crit">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Entrando…" : "Entrar"}
-          </Button>
-        </form>
-      </div>
-    </div>
+        <div>
+          <Label>Contraseña</Label>
+          <Input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+        {error && <p className="text-sm text-crit">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Entrando…" : "Entrar"}
+        </Button>
+      </form>
+    </AccesoShell>
   );
 }
