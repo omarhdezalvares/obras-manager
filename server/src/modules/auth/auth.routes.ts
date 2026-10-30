@@ -113,7 +113,8 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
     const usuario = await prisma.usuario.findUnique({ where: { email } });
-    if (usuario?.activo && !usuario.deletedAt) await enviarLinkPassword(usuario, "recuperar");
+    // Un fallo de envio tambien responde 204: un error solo para cuentas existentes revelaria cuales existen.
+    if (usuario?.activo && !usuario.deletedAt) await enviarLinkPassword(usuario, "recuperar").catch((err) => console.error("[olvide]", err));
     res.status(204).send();
   })
 );
