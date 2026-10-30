@@ -42,11 +42,12 @@ export async function solicitarRegistro(datos: { empresa: string; email: string;
     },
   });
   const link = `${env.appUrl}/verificar?token=${token}`;
-  await enviarCorreo(
-    datos.email,
-    "Confirma tu correo para crear tu cuenta de Bit·cora",
-    `<p>Para terminar de crear la cuenta de tu empresa, confirma tu correo. El link vale 24 horas; si no fuiste t˙, ignora este correo.</p><p><a href="${link}">Confirmar correo</a></p><p style="color:#666;font-size:12px">${link}</p>`
-  );
+  await enviarCorreo(datos.email, "Confirma tu correo para crear tu cuenta de Bit√°cora", {
+    titulo: "Confirma tu correo",
+    parrafos: ["Ya casi est√° lista la cuenta de tu empresa en Bit√°cora. Confirma que este correo es tuyo para terminar de crearla."],
+    boton: { texto: "Confirmar correo", link },
+    nota: "El link vale 24 horas. Si no fuiste t√∫, ignora este correo y no se crear√° ninguna cuenta.",
+  });
 }
 
 // Quema el link (deleteMany evita doble uso simultaneo) y crea la empresa; devuelve el Administrador.
@@ -56,7 +57,7 @@ export async function confirmarRegistro(token: string) {
   const { count } = await prisma.registroPendiente.deleteMany({ where: { id: fila.id } });
   if (count === 0) throw new HttpError(400, LINK_INVALIDO);
   if (await prisma.usuario.findUnique({ where: { email: fila.email } })) {
-    throw new HttpError(409, "Ya existe una cuenta con ese correo; inicia sesiÛn o recupera tu contraseÒa");
+    throw new HttpError(409, "Ya existe una cuenta con ese correo; inicia sesi√≥n o recupera tu contrase√±a");
   }
   return crearEmpresa(fila);
 }
