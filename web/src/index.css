@@ -26,3 +26,34 @@ textarea {
   @apply font-mono;
   font-variant-numeric: tabular-nums;
 }
+
+/* Landing: animaciones de entrada. Todas se apagan con "reducir movimiento". */
+@keyframes trazo {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes aparece {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes progreso {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.trazo {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: trazo 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.4s forwards;
+}
+.aparece {
+  animation: aparece 0.45s ease-out both;
+}
+.progreso {
+  transform-origin: left;
+  animation: progreso linear forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .trazo { animation: none; stroke-dashoffset: 0; }
+  .aparece { animation: none; }
+  .progreso { animation: none; transform: scaleX(0); }
+  .landing * { transition: none !important; }
+}
