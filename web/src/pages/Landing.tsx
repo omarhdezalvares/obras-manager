@@ -1,8 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, SVGProps, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { LogoMark } from "../components/Icons";
+import { IconEmpresa, IconHerramientas, IconObras, IconPersonas, IconReportes, IconSeguridad, LogoMark } from "../components/Icons";
+import { Demo, useVisible } from "./LandingDemo";
 
-// Pagina publica: historia (problema -> un dia de obra -> por que Bitacora) -> planes -> registro.
+// Pagina publica: historia (problema -> un dia de obra -> demo -> por que Bitacora) -> planes -> registro.
 // Precios preliminares del plan de negocios (seccion 3.3), sin IVA.
 
 const btnPrimario =
@@ -13,12 +14,21 @@ const contenedor = "mx-auto w-full max-w-6xl px-4 sm:px-6";
 
 export function Landing() {
   return (
-    <div className="min-h-screen bg-ground text-ink">
+    <div className="landing min-h-screen bg-ground text-ink">
       <Cabecera />
       <main>
         <Portada />
         <Problema />
         <DiaDeObra />
+        <section id="demo" className="border-t border-line py-20">
+          <div className={contenedor}>
+            <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.01em] sm:text-4xl">Recorre Bitácora por dentro.</h2>
+            <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-soft">
+              Así se ve con una empresa en marcha. Los datos son de ejemplo; las pantallas y las gráficas son las de la aplicación.
+            </p>
+            <Demo />
+          </div>
+        </section>
         <PorQue />
         <Planes />
         <Cierre />
@@ -42,6 +52,7 @@ function Cabecera() {
           Bitácora
         </Link>
         <nav className="flex items-center gap-1 text-sm sm:gap-4">
+          <a href="#demo" className="hidden rounded px-2 py-1 font-medium text-ink-soft hover:text-ink sm:inline">Demo</a>
           <a href="#planes" className="hidden rounded px-2 py-1 font-medium text-ink-soft hover:text-ink sm:inline">Planes</a>
           <Link to="/entrar" className="rounded px-2 py-1 font-medium text-ink-soft hover:text-ink">Iniciar sesión</Link>
           <Link to="/registro" className="rounded-md bg-graphite px-3 py-2 font-semibold text-white hover:bg-graphite-soft">Crear cuenta</Link>
@@ -64,7 +75,7 @@ function Portada() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/registro" className={btnPrimario}>Prueba 14 días gratis</Link>
-          <a href="#planes" className={btnSecundario}>Ver planes</a>
+          <a href="#demo" className={btnSecundario}>Ver la demo</a>
         </div>
         <p className="mt-4 text-sm text-ink-soft">Sin tarjeta para empezar. Precio por empresa, no por usuario.</p>
       </div>
@@ -80,7 +91,18 @@ const PARTIDAS = [
   { nombre: "CCTV y control de acceso", avance: 15, gasto: 11 },
 ];
 
+// Avance y gasto acumulados (% del total) de las ultimas 8 semanas: el gasto se despega del avance.
+const SEMANAS_AVANCE = [4, 11, 19, 26, 32, 37, 42, 46];
+const SEMANAS_GASTO = [5, 13, 22, 31, 40, 48, 55, 61];
+const linea = (vals: number[]) => vals.map((v, i) => `${i === 0 ? "M" : "L"}${(i * 460) / 7} ${78 - (v / 62) * 74}`).join(" ");
+
 function TableroObra() {
+  // Las barras arrancan en 0 y se llenan al montar (con "reducir movimiento" aparecen llenas).
+  const [listo, setListo] = useState(false);
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setListo(true));
+    return () => cancelAnimationFrame(t);
+  }, []);
   return (
     <figure aria-label="Ejemplo del tablero de una obra en Bitácora" className="rounded-xl bg-graphite p-5 text-white shadow-[0_24px_60px_-24px_rgba(31,35,40,0.55)] sm:p-7">
       <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
@@ -94,7 +116,7 @@ function TableroObra() {
         </p>
       </div>
       <ul className="mt-5 space-y-5">
-        {PARTIDAS.map((p) => (
+        {PARTIDAS.map((p, i) => (
           <li key={p.nombre}>
             <div className="flex items-baseline justify-between gap-3 text-sm">
               <span className="font-medium">{p.nombre}</span>
@@ -103,15 +125,35 @@ function TableroObra() {
               </span>
             </div>
             <div className="mt-2 h-2 rounded-full bg-white/10">
-              <div className="h-2 rounded-full bg-white/80" style={{ width: `${p.avance}%` }} />
+              <div
+                className="h-2 rounded-full bg-white/80 transition-[width] duration-1000 ease-out"
+                style={{ width: listo ? `${p.avance}%` : 0, transitionDelay: `${i * 150}ms` }}
+              />
             </div>
             <div className="mt-1 h-1 rounded-full bg-white/5">
-              <div className={`h-1 rounded-full ${p.alerta ? "bg-accent-mark" : "bg-white/35"}`} style={{ width: `${p.gasto}%` }} />
+              <div
+                className={`h-1 rounded-full transition-[width] duration-1000 ease-out ${p.alerta ? "bg-accent-mark" : "bg-white/35"}`}
+                style={{ width: listo ? `${p.gasto}%` : 0, transitionDelay: `${i * 150 + 250}ms` }}
+              />
             </div>
           </li>
         ))}
       </ul>
-      <div className="mt-6 rounded-lg border-l-4 border-accent-mark bg-white/5 px-4 py-3 text-sm">
+      <div className="mt-6 border-t border-white/10 pt-4">
+        <div className="flex items-center justify-between text-xs text-white/60">
+          <span>Últimas 8 semanas, acumulado</span>
+          <span className="flex gap-3">
+            <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 bg-white/80" />Avance</span>
+            <span className="flex items-center gap-1.5"><span className="h-0.5 w-3 bg-accent-mark" />Gasto</span>
+          </span>
+        </div>
+        <svg viewBox="0 0 460 80" preserveAspectRatio="none" className="mt-2 h-20 w-full overflow-visible" role="img" aria-label="El gasto acumulado pasó de 5% a 61% mientras el avance llegó a 46%">
+          <path d="M0 78 H460" stroke="rgba(255,255,255,0.12)" />
+          <path className="trazo" pathLength={1} d={linea(SEMANAS_AVANCE)} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path className="trazo" pathLength={1} d={linea(SEMANAS_GASTO)} fill="none" stroke="#E0701F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="mt-4 rounded-lg border-l-4 border-accent-mark bg-white/5 px-4 py-3 text-sm">
         <p className="font-semibold">Cableado va 12 puntos más gastado que avanzado</p>
         <p className="mt-0.5 text-white/60">3 remisiones de cable UTP esta semana sin avance registrado.</p>
       </div>
@@ -122,22 +164,44 @@ function TableroObra() {
   );
 }
 
-const PROBLEMAS = [
+type Icono = (p: SVGProps<SVGSVGElement>) => JSX.Element;
+const trazoIcono = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+const IconCaja: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M3 8l9-4 9 4v9l-9 4-9-4z" /><path d="M3 8l9 4 9-4M12 12v9" /></svg>
+);
+const IconEstimacion: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v4h4M9 12h6M9 16h4" /></svg>
+);
+const IconCamara: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+);
+const IconAlarma: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 2M5 4L2.5 6.5M19 4l2.5 2.5" /></svg>
+);
+const IconLista: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
+);
+
+const PROBLEMAS: { titulo: string; texto: string; icono: Icono }[] = [
   {
     titulo: "El material sale y nadie sabe a dónde",
     texto: "Salidas de almacén sin remisión, consumos arriba de lo presupuestado y horas pagadas que no se trabajaron. En una obra con 15% de margen, una fuga de 3% se come la quinta parte de la utilidad.",
+    icono: IconCaja,
   },
   {
     titulo: "Las estimaciones se atoran",
     texto: "Sin fotos con fecha ni avance por partida, el cliente o la constructora rechaza o retrasa el cobro.",
+    icono: IconEstimacion,
   },
   {
     titulo: "¿Quién tiene la fusionadora?",
     texto: "La herramienta pasa de mano en mano y cuando se pierde, la reposición sale de tu bolsa.",
+    icono: IconHerramientas,
   },
   {
     titulo: "Te enteras cuando ya terminó",
     texto: "La información llega por WhatsApp y se captura en Excel días después. Para entonces, la obra ya perdió dinero.",
+    icono: IconAlarma,
   },
 ];
 
@@ -150,11 +214,13 @@ function Problema() {
           <p className="mt-4 max-w-md text-lg leading-relaxed text-ink-soft">
             Varias obras a la vez, cuadrillas dispersas y todo pasando por fotos sueltas, listas en papel y mensajes.
           </p>
+          <Fuga />
         </div>
         <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
           {PROBLEMAS.map((p) => (
             <div key={p.titulo} className="border-t-2 border-graphite pt-4">
-              <dt className="text-lg font-semibold">{p.titulo}</dt>
+              <p.icono aria-hidden className="h-7 w-7 text-accent" />
+              <dt className="mt-3 text-lg font-semibold">{p.titulo}</dt>
               <dd className="mt-2 leading-relaxed text-ink-soft">{p.texto}</dd>
             </div>
           ))}
@@ -164,15 +230,39 @@ function Problema() {
   );
 }
 
-const DIA = [
-  { hora: "7:30", titulo: "El residente pasa lista desde el celular", texto: "Cada asistencia se convierte sola en costo de mano de obra de la obra." },
-  { hora: "12:00", titulo: "Registra el avance con fotos", texto: "Porcentaje por partida con evidencia fechada: el respaldo que pide tu cliente para pagar la estimación." },
-  { hora: "15:00", titulo: "Sale material con remisión", texto: "Ligada a la obra y a la partida. Si se pasa de lo presupuestado, Bitácora avisa." },
-  { hora: "18:00", titulo: "La herramienta regresa con su responsable", texto: "Cada equipo tiene un dueño a la vez y su historial completo." },
-  { hora: "19:00", titulo: "Tú ves los números del día", texto: "Gastado contra avanzado en cada obra, sin llamar a nadie. Y si hace falta, un reporte en Excel." },
+// Grafica del ejemplo del texto: de 15% de margen, 3 puntos de fuga se llevan la quinta parte.
+function Fuga() {
+  const { ref, visible } = useVisible<HTMLDivElement>();
+  return (
+    <div ref={ref} className="mt-10 max-w-md rounded-lg bg-ground p-5">
+      <p className="text-sm font-semibold">Utilidad de una obra de $1,000,000 con 15% de margen</p>
+      <div className="mt-4 flex h-9 overflow-hidden rounded" role="img" aria-label="Utilidad esperada $150,000; la fuga de 3% se lleva $30,000 y quedan $120,000">
+        <span className="flex items-center bg-graphite pl-3 text-xs font-semibold text-white transition-[flex-grow] duration-1000 ease-out" style={{ flexGrow: visible ? 12 : 15 }}>
+          $120,000
+        </span>
+        <span
+          className="flex items-center justify-center bg-accent-mark text-xs font-semibold text-graphite transition-[flex-grow,opacity] duration-1000 ease-out"
+          style={{ flexGrow: visible ? 3 : 0, opacity: visible ? 1 : 0 }}
+        >
+          −$30k
+        </span>
+      </div>
+      <p className="mt-3 text-sm text-ink-soft">De $150,000 esperados, una fuga de 3% se lleva $30,000 sin que nadie lo note.</p>
+    </div>
+  );
+}
+
+const DIA: { hora: string; titulo: string; texto: string; icono: Icono }[] = [
+  { hora: "7:30", titulo: "El residente pasa lista desde el celular", texto: "Cada asistencia se convierte sola en costo de mano de obra de la obra.", icono: IconLista },
+  { hora: "12:00", titulo: "Registra el avance con fotos", texto: "Porcentaje por partida con evidencia fechada: el respaldo que pide tu cliente para pagar la estimación.", icono: IconCamara },
+  { hora: "15:00", titulo: "Sale material con remisión", texto: "Ligada a la obra y a la partida. Si se pasa de lo presupuestado, Bitácora avisa.", icono: IconCaja },
+  { hora: "18:00", titulo: "La herramienta regresa con su responsable", texto: "Cada equipo tiene un dueño a la vez y su historial completo.", icono: IconHerramientas },
+  { hora: "19:00", titulo: "Tú ves los números del día", texto: "Gastado contra avanzado en cada obra, sin llamar a nadie. Y si hace falta, un reporte en Excel.", icono: IconReportes },
 ];
 
+// La linea del dia se llena y cada hora se enciende en orden cuando la seccion entra a la pantalla.
 function DiaDeObra() {
+  const { ref, visible } = useVisible<HTMLOListElement>();
   return (
     <section className="py-20">
       <div className={contenedor}>
@@ -180,15 +270,26 @@ function DiaDeObra() {
         <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-soft">
           Lo que pasa en campo queda registrado en el momento, por quien lo hizo. En la oficina ya no se captura nada dos veces.
         </p>
-        <ol className="mt-12 max-w-3xl">
+        <ol ref={ref} className="relative mt-12 max-w-3xl">
           {DIA.map((d, i) => (
-            <li key={d.hora} className="grid grid-cols-[4.5rem_1fr] gap-4 sm:grid-cols-[6rem_1fr]">
-              <div className="relative">
-                <span className="font-mono text-lg font-semibold text-accent">{d.hora}</span>
-                {i < DIA.length - 1 && <span aria-hidden className="absolute bottom-0 left-1 top-9 w-px bg-line" />}
-              </div>
-              <div className="pb-10">
-                <h3 className="text-xl font-semibold">{d.titulo}</h3>
+            <li key={d.hora} className="relative grid grid-cols-[3rem_1fr] gap-4 pb-10 last:pb-0 sm:gap-6">
+              {i < DIA.length - 1 && (
+                <span aria-hidden className="absolute bottom-0 left-[1.45rem] top-12 w-0.5 bg-line">
+                  <span
+                    className="block h-full w-full origin-top bg-accent-mark transition-transform duration-500 ease-out"
+                    style={{ transform: `scaleY(${visible ? 1 : 0})`, transitionDelay: `${i * 420 + 200}ms` }}
+                  />
+                </span>
+              )}
+              <span
+                className={`relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 transition-colors duration-500 ${visible ? "border-accent-mark bg-white text-accent" : "border-line bg-ground text-ink-soft"}`}
+                style={{ transitionDelay: `${i * 420}ms` }}
+              >
+                <d.icono aria-hidden className="h-5 w-5" />
+              </span>
+              <div className="pt-1">
+                <p className="font-mono text-sm font-semibold text-accent">{d.hora}</p>
+                <h3 className="mt-0.5 text-xl font-semibold">{d.titulo}</h3>
                 <p className="mt-1.5 max-w-xl leading-relaxed text-ink-soft">{d.texto}</p>
               </div>
             </li>
@@ -199,11 +300,11 @@ function DiaDeObra() {
   );
 }
 
-const RAZONES = [
-  { titulo: "Pagas por empresa, no por usuario", texto: "Todas tus cuadrillas pueden usarla sin que el costo crezca con cada residente." },
-  { titulo: "En español y en pesos", texto: "Pensada para el instalador mexicano: eléctrico, voz y datos, CCTV, audio y video." },
-  { titulo: "Te ayudamos a arrancar", texto: "En Jalisco vamos a tu obra, cargamos tu primer presupuesto y capacitamos a tus residentes." },
-  { titulo: "Cada quien ve lo suyo", texto: "El oficial ve sus obras; el dinero lo ven el dueño y administración. Tus datos, aislados de otras empresas." },
+const RAZONES: { titulo: string; texto: string; icono: Icono }[] = [
+  { titulo: "Pagas por empresa, no por usuario", texto: "Todas tus cuadrillas pueden usarla sin que el costo crezca con cada residente.", icono: IconPersonas },
+  { titulo: "En español y en pesos", texto: "Pensada para el instalador mexicano: eléctrico, voz y datos, CCTV, audio y video.", icono: IconEmpresa },
+  { titulo: "Te ayudamos a arrancar", texto: "En Jalisco vamos a tu obra, cargamos tu primer presupuesto y capacitamos a tus residentes.", icono: IconObras },
+  { titulo: "Cada quien ve lo suyo", texto: "El oficial ve sus obras; el dinero lo ven el dueño y administración. Tus datos, aislados de otras empresas.", icono: IconSeguridad },
 ];
 
 function PorQue() {
@@ -217,10 +318,13 @@ function PorQue() {
           Una contratista de Guadalajara la usa todos los días en sus obras. Las plataformas grandes cobran en dólares por usuario
           y están hechas para constructoras; Bitácora está hecha para la cuadrilla.
         </p>
-        <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {RAZONES.map((r) => (
             <div key={r.titulo}>
-              <h3 className="text-lg font-semibold">{r.titulo}</h3>
+              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/10">
+                <r.icono aria-hidden className="h-6 w-6 text-accent-mark" />
+              </span>
+              <h3 className="mt-4 text-lg font-semibold">{r.titulo}</h3>
               <p className="mt-2 leading-relaxed text-white/70">{r.texto}</p>
             </div>
           ))}
