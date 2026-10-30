@@ -12,14 +12,18 @@ const PLANTILLAS = {
   recuperar: {
     vigenciaMs: HORA,
     asunto: "Restablece tu contraseña de Bitácora",
-    cuerpo: "Recibimos una solicitud para restablecer tu contraseña. El link vale 1 hora; si no fuiste tú, ignora este correo.",
+    titulo: "Restablece tu contraseña",
+    cuerpo: "Recibimos una solicitud para restablecer la contraseña de tu cuenta de Bitácora.",
     boton: "Restablecer contraseña",
+    nota: "El link vale 1 hora. Si no fuiste tú, ignora este correo; tu contraseña no cambiará.",
   },
   invitar: {
     vigenciaMs: 7 * 24 * HORA,
     asunto: "Te invitaron a Bitácora",
-    cuerpo: "Te dieron acceso a Bitácora. Define tu contraseña para entrar; el link vale 7 días.",
+    titulo: "Te dieron acceso a Bitácora",
+    cuerpo: "Tu empresa te dio de alta en Bitácora, la plataforma de control de obras. Define tu contraseña para entrar.",
     boton: "Definir contraseña",
+    nota: "El link vale 7 días. Si no esperabas esta invitación, ignora este correo.",
   },
 };
 
@@ -31,11 +35,7 @@ export async function enviarLinkPassword(usuario: { id: string; email: string },
     data: { usuarioId: usuario.id, tokenHash: hash(token), expiresAt: new Date(Date.now() + p.vigenciaMs) },
   });
   const link = `${env.appUrl}/restablecer?token=${token}`;
-  await enviarCorreo(
-    usuario.email,
-    p.asunto,
-    `<p>${p.cuerpo}</p><p><a href="${link}">${p.boton}</a></p><p style="color:#666;font-size:12px">${link}</p>`
-  );
+  await enviarCorreo(usuario.email, p.asunto, { titulo: p.titulo, parrafos: [p.cuerpo], boton: { texto: p.boton, link }, nota: p.nota });
 }
 
 // Define la contrasena con un link valido y lo quema; cierra las sesiones abiertas.

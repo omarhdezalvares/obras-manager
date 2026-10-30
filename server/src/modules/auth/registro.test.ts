@@ -49,7 +49,7 @@ after(async () => {
 });
 
 test("registro: la empresa se crea hasta confirmar el correo", async () => {
-  const datos = { empresa: "Constructora Pérez", email: "dueno@perez.mx", password: "Segura123!" };
+  const datos = { empresa: "Constructora PÃ©rez", email: "dueno@perez.mx", password: "Segura123!" };
   const token = await tokenEnviado(async () => assert.equal((await post("/api/auth/registro", datos)).status, 202));
   assert.ok(token);
   assert.equal((await post("/api/auth/login", { email: datos.email, password: datos.password })).status, 401, "sin confirmar no hay cuenta");
@@ -57,7 +57,7 @@ test("registro: la empresa se crea hasta confirmar el correo", async () => {
   const res = await post("/api/auth/verificar", { token });
   assert.equal(res.status, 201);
   assert.equal(res.data.usuario.rol, "Administrador");
-  assert.equal(res.data.usuario.tenantNombre, "Constructora Pérez");
+  assert.equal(res.data.usuario.tenantNombre, "Constructora PÃ©rez");
   assert.equal((await post("/api/auth/verificar", { token })).status, 400, "el link ya se uso");
   assert.equal((await post("/api/auth/verificar", { token: "falso" })).status, 400);
 
