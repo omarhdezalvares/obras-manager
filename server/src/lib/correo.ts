@@ -63,5 +63,9 @@ export async function enviarCorreo(para: string, asunto: string, contenido: Cont
     headers: { authorization: `Bearer ${env.resendApiKey}`, "content-type": "application/json" },
     body: JSON.stringify({ from: env.correoRemitente, to: [para], subject: asunto, html, text }),
   });
-  if (!res.ok) throw new HttpError(502, `No se pudo enviar el correo (${res.status})`);
+  if (!res.ok) {
+    // El motivo de Resend (p. ej. dominio sin verificar) solo va al log; al usuario, un mensaje generico.
+    console.error(`[correo] Resend ${res.status}: ${await res.text()}`);
+    throw new HttpError(502, `No se pudo enviar el correo (${res.status})`);
+  }
 }
