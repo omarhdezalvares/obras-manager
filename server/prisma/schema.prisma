@@ -370,3 +370,14 @@ model RateLimit {
   intentos   Int
   reiniciaEn DateTime
 }
+
+// Registro de empresa en espera de que el dueno confirme su correo (24 h); al confirmar se crea la empresa.
+model RegistroPendiente {
+  id           String   @id @default(uuid())
+  empresa      String
+  email        String
+  passwordHash String
+  tokenHash    String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}

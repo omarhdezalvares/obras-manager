@@ -6,7 +6,7 @@ import { enviarCorreo } from "./correo";
 import { HttpError } from "../middleware/auth";
 
 const HORA = 60 * 60 * 1000;
-const hash = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
+export const hash = (token: string) => crypto.createHash("sha256").update(token).digest("hex");
 
 const PLANTILLAS = {
   recuperar: {

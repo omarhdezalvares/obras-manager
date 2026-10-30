@@ -27,9 +27,10 @@
 
 ### Onboarding
 - [x] Registro self-service: crea tenant + admin + roles (hoy solo `seedProd.ts` a mano). (2026-10-30, rama `saas/registro`: `POST /api/auth/registro` + pantalla `/registro`, `server/src/lib/empresa.ts`; plan `trial`, 5 registros/h por IP)
+  - [x] Verificación de correo antes de crear la empresa, confirmación y contraseña segura (8+, mayúscula, minúscula, número, símbolo; también en restablecer y alta por admin). (2026-10-30, rama `saas/registro-seguro`: `RegistroPendiente` 24 h + `POST /api/auth/verificar`, pantalla `/verificar`)
 - [x] Recuperar contraseña por correo. (2026-10-30: `POST /api/auth/olvide` siempre 204, link de un solo uso de 1 h en tabla `TokenPassword` (solo hash), `/restablecer` cierra las sesiones abiertas)
 - [x] Invitación de usuarios por correo. (2026-10-30: crear usuario sin contraseña en Seguridad envía link de 7 días; si vence, el usuario usa "¿Olvidaste tu contraseña?")
-- [ ] Correo transaccional con Resend (dominio verificado, SPF/DKIM). (código listo, `server/src/lib/correo.ts` vía API REST; falta cuenta, dominio y cargar `RESEND_API_KEY` + `CORREO_REMITENTE` en Vercel. Sin key en producción los correos responden 503)
+- [ ] Correo transaccional con Resend (dominio verificado, SPF/DKIM). (código listo, `server/src/lib/correo.ts` vía API REST; `RESEND_API_KEY` cargada en Preview; falta verificar dominio y `CORREO_REMITENTE`. Sin key en producción los correos responden 503)
 
 ## 🟠 Necesario para cobrar
 - [ ] Planes y cobro con Stripe (`Tenant.plan` existe pero no se usa): Checkout + Customer Portal + webhook que actualiza `plan`/`activo`.
