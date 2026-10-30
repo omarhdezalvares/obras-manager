@@ -6,6 +6,8 @@ import { verifyPassword } from "../../lib/password";
 import { asyncHandler } from "../../middleware/errorHandler";
 import { HttpError, requireAuth } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
+import { crearEmpresa } from "../../lib/empresa";
+import { enviarLinkPassword, usarTokenPassword } from "../../lib/tokenPassword";
 
 const QUINCE_MIN = 15 * 60 * 1000;
 
@@ -33,34 +35,87 @@ authRouter.post(
     if (!ok) throw new HttpError(401, "Credenciales invalidas");
     if (!usuario.tenant.activo) throw new HttpError(403, "El tenant de esta cuenta esta suspendido");
 
-    await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLoginAt: new Date() } });
+    res.json(await iniciarSesion(usuario.id));
+  })
+);
 
-    const accessToken = signAccessToken({
-      sub: usuario.id,
-      tenantId: usuario.tenantId,
-      rol: usuario.rol.nombre,
-      personaId: usuario.personaId,
+// Emite access + refresh token y la ficha del usuario (respuesta de login y registro).
+async function iniciarSesion(usuarioId: string) {
+  const usuario = await prisma.usuario.update({
+    where: { id: usuarioId },
+    data: { ultimoLoginAt: new Date() },
+    include: { rol: true, persona: true, tenant: true },
+  });
+
+  const accessToken = signAccessToken({
+    sub: usuario.id,
+    tenantId: usuario.tenantId,
+    rol: usuario.rol.nombre,
+    personaId: usuario.personaId,
+    email: usuario.email,
+  });
+
+  const refresh = generateRefreshToken();
+  await prisma.refreshToken.create({
+    data: { usuarioId: usuario.id, tokenHash: refresh.hash, expiresAt: refresh.expiresAt },
+  });
+
+  return {
+    accessToken,
+    refreshToken: refresh.token,
+    usuario: {
+      id: usuario.id,
       email: usuario.email,
-    });
+      rol: usuario.rol.nombre,
+      tenantId: usuario.tenantId,
+      tenantNombre: usuario.tenant.nombre,
+      personaId: usuario.personaId,
+      personaNombre: usuario.persona?.nombreCompleto ?? null,
+    },
+  };
+}
 
-    const refresh = generateRefreshToken();
-    await prisma.refreshToken.create({
-      data: { usuarioId: usuario.id, tokenHash: refresh.hash, expiresAt: refresh.expiresAt },
-    });
+const passwordNueva = z.string().min(8, "La contraseña debe tener al menos 8 caracteres");
 
-    res.json({
-      accessToken,
-      refreshToken: refresh.token,
-      usuario: {
-        id: usuario.id,
-        email: usuario.email,
-        rol: usuario.rol.nombre,
-        tenantId: usuario.tenantId,
-        tenantNombre: usuario.tenant.nombre,
-        personaId: usuario.personaId,
-        personaNombre: usuario.persona?.nombreCompleto ?? null,
-      },
-    });
+const registroSchema = z.object({
+  empresa: z.string().trim().min(2, "Escribe el nombre de tu empresa").max(120),
+  email: z.string().email(),
+  password: passwordNueva,
+});
+
+authRouter.post(
+  "/registro",
+  rateLimit("registro", 5, 60 * 60 * 1000),
+  asyncHandler(async (req, res) => {
+    const datos = registroSchema.parse(req.body);
+    if (await prisma.usuario.findUnique({ where: { email: datos.email } })) {
+      throw new HttpError(409, "Ya existe una cuenta con ese correo; inicia sesión o recupera tu contraseña");
+    }
+    const usuario = await crearEmpresa(datos);
+    res.status(201).json(await iniciarSesion(usuario.id));
+  })
+);
+
+// Siempre 204, exista o no el correo, para no revelar quien tiene cuenta.
+authRouter.post(
+  "/olvide",
+  rateLimit("olvide-ip", 20, QUINCE_MIN),
+  rateLimit("olvide", 3, QUINCE_MIN, (req) => String(req.body?.email ?? "").toLowerCase()),
+  asyncHandler(async (req, res) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const usuario = await prisma.usuario.findUnique({ where: { email } });
+    if (usuario?.activo && !usuario.deletedAt) await enviarLinkPassword(usuario, "recuperar");
+    res.status(204).send();
+  })
+);
+
+authRouter.post(
+  "/restablecer",
+  rateLimit("restablecer", 20, QUINCE_MIN),
+  asyncHandler(async (req, res) => {
+    const { token, password } = z.object({ token: z.string().min(1), password: passwordNueva }).parse(req.body);
+    await usarTokenPassword(token, password);
+    res.status(204).send();
   })
 );
 

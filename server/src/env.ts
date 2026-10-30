@@ -20,4 +20,10 @@ export const env = {
   supabaseUrl: required("SUPABASE_URL", isProd ? undefined : ""),
   supabaseServiceKey: required("SUPABASE_SERVICE_ROLE_KEY", isProd ? undefined : ""),
   storageBucket: process.env.STORAGE_BUCKET ?? "evidencias",
+  // Base de los links en correos; nunca del header Host, que el cliente controla.
+  appUrl: process.env.APP_URL ?? (process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : "http://localhost:5173"),
+  // Sin key, en local los correos se imprimen en consola; en produccion fallan.
+  resendApiKey: process.env.RESEND_API_KEY ?? "",
+  correoRemitente: process.env.CORREO_REMITENTE ?? "Bitácora <onboarding@resend.dev>",
+  isProd,
 };

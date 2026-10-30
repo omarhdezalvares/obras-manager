@@ -64,6 +64,7 @@ model Usuario {
   rol           Rol            @relation(fields: [rolId], references: [id])
   persona       Persona?       @relation(fields: [personaId], references: [id])
   refreshTokens RefreshToken[]
+  tokensPassword TokenPassword[]
 }
 
 model RefreshToken {
@@ -73,6 +74,18 @@ model RefreshToken {
   expiresAt DateTime
   revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+}
+
+// Link de un solo uso para definir contrasena: recuperacion (1 h) o invitacion (7 dias).
+model TokenPassword {
+  id        String    @id @default(uuid())
+  usuarioId String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usadoAt   DateTime?
+  createdAt DateTime  @default(now())
 
   usuario Usuario @relation(fields: [usuarioId], references: [id])
 }

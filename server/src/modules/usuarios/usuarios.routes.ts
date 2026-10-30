@@ -1,5 +1,7 @@
+import crypto from "crypto";
 import { Router } from "express";
 import { z } from "zod";
+import { enviarLinkPassword } from "../../lib/tokenPassword";
 import { prisma } from "../../lib/prisma";
 import { hashPassword } from "../../lib/password";
 import { requireAuth, requireRole, HttpError } from "../../middleware/auth";
@@ -83,7 +85,8 @@ usuariosRouter.get(
 
 const crearUsuarioSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  // Sin contrasena se invita por correo y el usuario la define con el link.
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").optional(),
   rolId: z.string().min(1),
   personaId: z.string().min(1).optional(),
 });
@@ -97,7 +100,8 @@ usuariosRouter.post(
     await rolDeTenant(body.rolId, tenantId);
     if (body.personaId) await personaDeTenant(body.personaId, tenantId);
 
-    const passwordHash = await hashPassword(body.password);
+    // Hash de un secreto aleatorio que nadie conoce: no se puede entrar hasta usar la invitacion.
+    const passwordHash = await hashPassword(body.password ?? crypto.randomBytes(32).toString("hex"));
     const usuario = await prisma.usuario.create({
       data: {
         tenantId,
@@ -108,6 +112,7 @@ usuariosRouter.post(
       },
       select: usuarioSelect,
     });
+    if (!body.password) await enviarLinkPassword(usuario, "invitar");
     res.status(201).json(serializar(usuario));
   })
 );
