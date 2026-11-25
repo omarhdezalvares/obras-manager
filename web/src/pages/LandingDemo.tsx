@@ -28,7 +28,8 @@ export function useVisible<T extends Element>() {
 }
 
 type Icono = (p: React.SVGProps<SVGSVGElement>) => JSX.Element;
-const PESTANAS: { id: string; titulo: string; texto: string; icono: Icono; vista: () => JSX.Element }[] = [
+export type PestanaId = "tablero" | "presupuesto" | "asistencia" | "avances" | "herramientas" | "reportes";
+const PESTANAS: { id: PestanaId; titulo: string; texto: string; icono: Icono; vista: () => JSX.Element }[] = [
   { id: "tablero", titulo: "Tablero", texto: "Todas tus obras y el gasto del día en una sola pantalla.", icono: IconResumen, vista: Tablero },
   { id: "presupuesto", titulo: "Presupuesto", texto: "Cada partida contra lo gastado, con alerta al pasarse.", icono: IconObras, vista: Presupuesto },
   { id: "asistencia", titulo: "Asistencia", texto: "El residente pasa lista y el costo se calcula solo. Pruébalo.", icono: IconPersonas, vista: Asistencia },
@@ -36,9 +37,10 @@ const PESTANAS: { id: string; titulo: string; texto: string; icono: Icono; vista
   { id: "herramientas", titulo: "Herramientas", texto: "Quién tiene cada equipo y dónde está.", icono: IconHerramientas, vista: Herramientas },
   { id: "reportes", titulo: "Reportes", texto: "Personal por obra y día, listo para exportar a Excel.", icono: IconReportes, vista: Reportes },
 ];
+export const TITULO_PESTANA = Object.fromEntries(PESTANAS.map((t) => [t.id, t.titulo])) as Record<PestanaId, string>;
 const DURACION_MS = 7000;
 
-export function Demo() {
+export function Demo({ pedida }: { pedida?: { id: PestanaId } | null }) {
   const [activa, setActiva] = useState(0);
   const [manual, setManual] = useState(false);
   const [pausa, setPausa] = useState(false);
@@ -50,6 +52,11 @@ export function Demo() {
     setManual(true);
     setActiva(i);
   }
+
+  // Cada clic en "Verlo en la demo" trae un objeto nuevo, asi el mismo id vuelve a abrirse.
+  useEffect(() => {
+    if (pedida) elegir(PESTANAS.findIndex((t) => t.id === pedida.id));
+  }, [pedida]);
 
   return (
     <div

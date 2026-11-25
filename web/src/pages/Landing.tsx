@@ -1,7 +1,7 @@
 import { ReactNode, SVGProps, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { IconEmpresa, IconHerramientas, IconObras, IconPersonas, IconReportes, IconSeguridad, LogoMark } from "../components/Icons";
-import { Demo, useVisible } from "./LandingDemo";
+import { Demo, PestanaId, TITULO_PESTANA, useVisible } from "./LandingDemo";
 
 // Pagina publica: historia (problema -> un dia de obra -> demo -> por que Bitacora) -> planes -> registro.
 // Precios preliminares del plan de negocios (seccion 3.3), sin IVA.
@@ -13,12 +13,14 @@ const btnSecundario =
 const contenedor = "mx-auto w-full max-w-6xl px-4 sm:px-6";
 
 export function Landing() {
+  const [pedida, setPedida] = useState<{ id: PestanaId } | null>(null);
+  const ver = (id: PestanaId) => setPedida({ id });
   return (
     <div className="landing min-h-screen bg-ground text-ink">
       <Cabecera />
       <main>
         <Portada />
-        <Problema />
+        <Problema ver={ver} />
         <DiaDeObra />
         <section id="demo" className="border-t border-line py-20">
           <div className={contenedor}>
@@ -26,7 +28,7 @@ export function Landing() {
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-soft">
               Así se ve con una empresa en marcha. Los datos son de ejemplo; las pantallas y las gráficas son las de la aplicación.
             </p>
-            <Demo />
+            <Demo pedida={pedida} />
           </div>
         </section>
         <PorQue />
@@ -182,30 +184,34 @@ const IconLista: Icono = (p) => (
   <svg {...trazoIcono} {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
 );
 
-const PROBLEMAS: { titulo: string; texto: string; icono: Icono }[] = [
+const PROBLEMAS: { titulo: string; texto: string; icono: Icono; demo: PestanaId }[] = [
   {
-    titulo: "El material sale y nadie sabe a dónde",
+    titulo: "¿Ya nos pasamos de cable?",
     texto: "Salidas de almacén sin remisión, consumos arriba de lo presupuestado y horas pagadas que no se trabajaron. En una obra con 15% de margen, una fuga de 3% se come la quinta parte de la utilidad.",
     icono: IconCaja,
+    demo: "presupuesto",
   },
   {
-    titulo: "Las estimaciones se atoran",
+    titulo: "¿Ya mandaron las fotos?",
     texto: "Sin fotos con fecha ni avance por partida, el cliente o la constructora rechaza o retrasa el cobro.",
     icono: IconEstimacion,
+    demo: "avances",
   },
   {
     titulo: "¿Quién tiene la fusionadora?",
     texto: "La herramienta pasa de mano en mano y cuando se pierde, la reposición sale de tu bolsa.",
     icono: IconHerramientas,
+    demo: "herramientas",
   },
   {
-    titulo: "Te enteras cuando ya terminó",
+    titulo: "¿Por qué me entero hasta el final?",
     texto: "La información llega por WhatsApp y se captura en Excel días después. Para entonces, la obra ya perdió dinero.",
     icono: IconAlarma,
+    demo: "tablero",
   },
 ];
 
-function Problema() {
+function Problema({ ver }: { ver: (id: PestanaId) => void }) {
   return (
     <section className="border-y border-line bg-white py-20">
       <div className={`${contenedor} grid gap-12 lg:grid-cols-[1fr_1.4fr]`}>
@@ -222,6 +228,16 @@ function Problema() {
               <p.icono aria-hidden className="h-7 w-7 text-accent" />
               <dt className="mt-3 text-lg font-semibold">{p.titulo}</dt>
               <dd className="mt-2 leading-relaxed text-ink-soft">{p.texto}</dd>
+              <dd className="mt-3">
+                <a
+                  href="#demo"
+                  onClick={() => ver(p.demo)}
+                  aria-label={`Verlo en la demo: ${TITULO_PESTANA[p.demo]}`}
+                  className="rounded font-medium text-accent underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  Verlo en la demo
+                </a>
+              </dd>
             </div>
           ))}
         </dl>
