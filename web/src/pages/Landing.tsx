@@ -65,25 +65,74 @@ function Cabecera() {
   );
 }
 
+// Fases de la portada: 1-3 llegan los mensajes del grupo, 4 entra el tablero encima.
+const ENTRADAS_MS = [600, 1400, 2200, 3200];
+
 function Portada() {
+  const [fase, setFase] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return setFase(4);
+    const ts = ENTRADAS_MS.map((ms, i) => setTimeout(() => setFase(i + 1), ms));
+    return () => ts.forEach(clearTimeout);
+  }, []);
   return (
     <section className={`${contenedor} grid items-center gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:py-24`}>
       <div>
         <h1 className="max-w-xl text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] text-ink sm:text-[56px]">
-          Sabe hoy cuánto llevas gastado, avanzado y por cobrar en cada obra.
+          Tu obra no cabe en un grupo de WhatsApp.
         </h1>
         <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-          Bitácora junta en el celular la asistencia, los avances con foto, el material y la herramienta de tus cuadrillas.
-          Sin esperar al cierre y sin perseguir a nadie por WhatsApp.
+          Asistencia, avances con foto, material y herramienta de tus cuadrillas, al día y en el celular.
         </p>
+        <p className="mt-2 max-w-lg text-lg font-medium text-ink">Para construcción y servicios en campo.</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/registro" className={btnPrimario}>Prueba 14 días gratis</Link>
           <a href="#demo" className={btnSecundario}>Ver la demo</a>
         </div>
         <p className="mt-4 text-sm text-ink-soft">Sin tarjeta para empezar. Precio por empresa, no por usuario.</p>
       </div>
-      <TableroObra />
+      {/* El chat queda detras; el tablero entra encima y solo deja asomar el encabezado y el ultimo mensaje. */}
+      <div className="relative pt-36">
+        <ChatObra mostrados={fase} />
+        <div className={`relative z-10 transition-[transform,opacity] duration-700 ease-out ${fase === 4 ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>
+          <TableroObra listo={fase === 4} />
+        </div>
+      </div>
     </section>
+  );
+}
+
+const MENSAJES = [
+  { quien: "Iván · Residente", texto: "¿Alguien tiene la fusionadora?", hora: "8:12" },
+  { quien: "Luis · Oficial", texto: "Ahí van las fotos del jueves 📷", hora: "13:40" },
+  { quien: "Compras", texto: "¿Ya nos pasamos de cable?", hora: "17:05" },
+];
+
+// Decorativo: el mismo mensaje ya lo dice el titulo, por eso aria-hidden.
+function ChatObra({ mostrados }: { mostrados: number }) {
+  const final = mostrados >= 4;
+  return (
+    <div aria-hidden className="absolute inset-x-3 top-0 rounded-xl bg-white p-4 shadow-sm ring-1 ring-line">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-graphite text-xs font-semibold text-white">CZ</span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">Obra Clínica Zapopan</p>
+          <p className="truncate text-xs text-ink-soft">Residente, oficiales, almacén y compras</p>
+        </div>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {MENSAJES.map((m, i) => (
+          <li
+            key={m.texto}
+            className={`max-w-[85%] rounded-lg bg-ground px-3 py-2 text-sm transition-[opacity,transform] duration-300 ease-out ${final && i < MENSAJES.length - 1 ? "hidden" : ""} ${mostrados > i ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+          >
+            <span className="block text-xs font-semibold text-accent">{m.quien}</span>
+            {m.texto}
+            <span className="ml-2 text-[11px] text-ink-soft">{m.hora}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -99,13 +148,8 @@ const SEMANAS_AVANCE = [4, 11, 19, 26, 32, 37, 42, 46];
 const SEMANAS_GASTO = [5, 13, 22, 31, 40, 48, 55, 61];
 const linea = (vals: number[]) => vals.map((v, i) => `${i === 0 ? "M" : "L"}${(i * 460) / 7} ${78 - (v / 62) * 74}`).join(" ");
 
-function TableroObra() {
-  // Las barras arrancan en 0 y se llenan al montar (con "reducir movimiento" aparecen llenas).
-  const [listo, setListo] = useState(false);
-  useEffect(() => {
-    const t = requestAnimationFrame(() => setListo(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
+// Las barras arrancan en 0 y se llenan cuando el tablero entra (con "reducir movimiento" aparecen llenas).
+function TableroObra({ listo }: { listo: boolean }) {
   return (
     <figure aria-label="Ejemplo del tablero de una obra en Bitácora" className="rounded-xl bg-graphite p-5 text-white shadow-[0_24px_60px_-24px_rgba(31,35,40,0.55)] sm:p-7">
       <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
@@ -152,8 +196,8 @@ function TableroObra() {
         </div>
         <svg viewBox="0 0 460 80" preserveAspectRatio="none" className="mt-2 h-20 w-full overflow-visible" role="img" aria-label="El gasto acumulado pasó de 5% a 61% mientras el avance llegó a 46%">
           <path d="M0 78 H460" stroke="rgba(255,255,255,0.12)" />
-          <path className="trazo" pathLength={1} d={linea(SEMANAS_AVANCE)} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path className="trazo" pathLength={1} d={linea(SEMANAS_GASTO)} fill="none" stroke="#E0701F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path className={listo ? "trazo" : "invisible"} pathLength={1} d={linea(SEMANAS_AVANCE)} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path className={listo ? "trazo" : "invisible"} pathLength={1} d={linea(SEMANAS_GASTO)} fill="none" stroke="#E0701F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="mt-4 rounded-lg border-l-4 border-accent-mark bg-white/5 px-4 py-3 text-sm">
