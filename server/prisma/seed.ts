@@ -5,7 +5,8 @@ const prisma = new PrismaClient();
 
 const ROLES = ["Administrador", "Gerente de Proyecto", "Supervisor", "Oficial", "Finanzas", "Solo lectura"] as const;
 
-const DEMO_PASSWORD = "obraos2026";
+// En entornos publicos pasa DEMO_PASSWORD; la fija solo sirve en local.
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? "obraos2026";
 
 function daysAgo(n: number): Date {
   const d = new Date();
