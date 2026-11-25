@@ -1,6 +1,7 @@
 import { ReactNode, SVGProps, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { IconEmpresa, IconHerramientas, IconObras, IconPersonas, IconReportes, IconSeguridad, LogoMark } from "../components/Icons";
+import { whatsappUrl } from "../lib/whatsapp";
 import { Demo, PestanaId, TITULO_PESTANA, useVisible } from "./LandingDemo";
 
 // Pagina publica: historia (problema -> un dia de obra -> demo -> por que Bitacora) -> planes -> registro.
@@ -38,7 +39,7 @@ export function Landing() {
       </main>
       <footer className="border-t border-line py-8">
         <div className={`${contenedor} flex flex-col gap-2 text-sm text-ink-soft sm:flex-row sm:justify-between`}>
-          <p>Bitácora, control de obras para contratistas de instalaciones. Guadalajara, Jalisco.</p>
+          <p>Bitácora, control de obras para contratistas de construcción y servicios en campo. Guadalajara, Jalisco.</p>
           <Link to="/entrar" className="font-medium text-ink hover:text-accent">Iniciar sesión</Link>
         </div>
       </footer>
@@ -412,17 +413,26 @@ const RAZONES: { titulo: string; texto: string; icono: Icono }[] = [
   { titulo: "Cada quien ve lo suyo", texto: "El oficial ve sus obras; el dinero lo ven el dueño y administración. Tus datos, aislados de otras empresas.", icono: IconSeguridad },
 ];
 
+// Pendiente: texto aprobado por Edgar; mientras sea null el bloque no se dibuja.
+const CITA: { texto: string; nombre: string; cargo: string } | null = null;
+
 function PorQue() {
   return (
     <section className="bg-graphite py-20 text-white">
       <div className={contenedor}>
         <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.01em] sm:text-4xl">
-          Nació en una empresa de instalaciones, no en una oficina.
+          Nació en una empresa del giro, no en una oficina.
         </h2>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/70">
           Una contratista de Guadalajara la usa todos los días en sus obras. Las plataformas grandes cobran en dólares por usuario
           y están hechas para constructoras; Bitácora está hecha para la cuadrilla.
         </p>
+        {CITA && (
+          <figure className="mt-10 max-w-3xl border-l-4 border-accent-mark pl-6">
+            <blockquote className="text-xl leading-relaxed sm:text-2xl">“{CITA.texto}”</blockquote>
+            <figcaption className="mt-3 text-white/70">{CITA.nombre}, {CITA.cargo}</figcaption>
+          </figure>
+        )}
         <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {RAZONES.map((r) => (
             <div key={r.titulo}>
@@ -516,6 +526,9 @@ function Palomita({ oscuro }: { oscuro: boolean }): ReactNode {
   );
 }
 
+// Pendiente: numero en VITE_WHATSAPP (Vercel); sin el, el boton no se dibuja.
+const WHATSAPP = whatsappUrl(import.meta.env.VITE_WHATSAPP, "Hola, quiero conocer Bitácora para mi empresa.");
+
 function Cierre() {
   return (
     <section className="border-t border-line bg-white py-20">
@@ -523,8 +536,14 @@ function Cierre() {
         <div>
           <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.01em] sm:text-4xl">Tu próxima obra, con los números al día.</h2>
           <p className="mt-3 text-lg text-ink-soft">Crea la cuenta de tu empresa en dos minutos e invita a tu equipo.</p>
+          <p className="mt-1 text-lg text-ink-soft">Vamos a tu obra en Jalisco y lo cargamos contigo.</p>
         </div>
-        <Link to="/registro" className={btnPrimario}>Crear cuenta gratis</Link>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/registro" className={btnPrimario}>Crear cuenta gratis</Link>
+          {WHATSAPP && (
+            <a href={WHATSAPP} target="_blank" rel="noopener" className={btnSecundario}>Escríbenos por WhatsApp</a>
+          )}
+        </div>
       </div>
     </section>
   );
