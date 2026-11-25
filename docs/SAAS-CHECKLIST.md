@@ -50,6 +50,9 @@
 ## 🟢 Legal y comercial
 - [ ] Términos y condiciones, aviso de privacidad (LFPDPPP), SLA.
 - [x] Landing pública con precios y registro. (2026-10-30, rama `saas/landing`: `web/src/pages/Landing.tsx` en `/` sin sesión, login movido a `/entrar`; precios preliminares del plan de negocios 3.3. Pendiente: que la prueba de 14 días y los límites por plan existan de verdad con Stripe)
+  - [x] Landing con el idioma del giro: chat de obra en la portada, franja de giros, problemas que abren su pestaña de la demo. (2026-11-25, rama `saas/landing-giro`)
+  - [ ] Número de WhatsApp: poner `VITE_WHATSAPP` en Vercel (solo dígitos con lada); sin él no aparece el botón del cierre.
+  - [ ] Cita de Edgar: llenar `CITA` en `web/src/pages/Landing.tsx` con texto, nombre y cargo; mientras sea `null` no se muestra.
 - [ ] Recorrido de bienvenida en la app (crear primera obra, invitar equipo).
 - [ ] Canal de soporte y documentación de ayuda.
 

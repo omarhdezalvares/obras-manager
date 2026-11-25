@@ -1,7 +1,8 @@
 import { ReactNode, SVGProps, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { IconEmpresa, IconHerramientas, IconObras, IconPersonas, IconReportes, IconSeguridad, LogoMark } from "../components/Icons";
-import { Demo, useVisible } from "./LandingDemo";
+import { whatsappUrl } from "../lib/whatsapp";
+import { Demo, PestanaId, TITULO_PESTANA, useVisible } from "./LandingDemo";
 
 // Pagina publica: historia (problema -> un dia de obra -> demo -> por que Bitacora) -> planes -> registro.
 // Precios preliminares del plan de negocios (seccion 3.3), sin IVA.
@@ -13,12 +14,15 @@ const btnSecundario =
 const contenedor = "mx-auto w-full max-w-6xl px-4 sm:px-6";
 
 export function Landing() {
+  const [pedida, setPedida] = useState<{ id: PestanaId } | null>(null);
+  const ver = (id: PestanaId) => setPedida({ id });
   return (
     <div className="landing min-h-screen bg-ground text-ink">
       <Cabecera />
       <main>
         <Portada />
-        <Problema />
+        <Giros />
+        <Problema ver={ver} />
         <DiaDeObra />
         <section id="demo" className="border-t border-line py-20">
           <div className={contenedor}>
@@ -26,7 +30,7 @@ export function Landing() {
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-ink-soft">
               Así se ve con una empresa en marcha. Los datos son de ejemplo; las pantallas y las gráficas son las de la aplicación.
             </p>
-            <Demo />
+            <Demo pedida={pedida} />
           </div>
         </section>
         <PorQue />
@@ -35,7 +39,7 @@ export function Landing() {
       </main>
       <footer className="border-t border-line py-8">
         <div className={`${contenedor} flex flex-col gap-2 text-sm text-ink-soft sm:flex-row sm:justify-between`}>
-          <p>Bitácora, control de obras para contratistas de instalaciones. Guadalajara, Jalisco.</p>
+          <p>Bitácora, control de obras para contratistas de construcción y servicios en campo. Guadalajara, Jalisco.</p>
           <Link to="/entrar" className="font-medium text-ink hover:text-accent">Iniciar sesión</Link>
         </div>
       </footer>
@@ -62,25 +66,74 @@ function Cabecera() {
   );
 }
 
+// Fases de la portada: 1-3 llegan los mensajes del grupo, 4 entra el tablero encima.
+const ENTRADAS_MS = [600, 1400, 2200, 3200];
+
 function Portada() {
+  const [fase, setFase] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return setFase(4);
+    const ts = ENTRADAS_MS.map((ms, i) => setTimeout(() => setFase(i + 1), ms));
+    return () => ts.forEach(clearTimeout);
+  }, []);
   return (
     <section className={`${contenedor} grid items-center gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:py-24`}>
       <div>
         <h1 className="max-w-xl text-[40px] font-semibold leading-[1.08] tracking-[-0.02em] text-ink sm:text-[56px]">
-          Sabe hoy cuánto llevas gastado, avanzado y por cobrar en cada obra.
+          Tu obra no cabe en un grupo de WhatsApp.
         </h1>
         <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-soft">
-          Bitácora junta en el celular la asistencia, los avances con foto, el material y la herramienta de tus cuadrillas.
-          Sin esperar al cierre y sin perseguir a nadie por WhatsApp.
+          Asistencia, avances con foto, material y herramienta de tus cuadrillas, al día y en el celular.
         </p>
+        <p className="mt-2 max-w-lg text-lg font-medium text-ink">Para construcción y servicios en campo.</p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/registro" className={btnPrimario}>Prueba 14 días gratis</Link>
           <a href="#demo" className={btnSecundario}>Ver la demo</a>
         </div>
         <p className="mt-4 text-sm text-ink-soft">Sin tarjeta para empezar. Precio por empresa, no por usuario.</p>
       </div>
-      <TableroObra />
+      {/* El chat queda detras; el tablero entra encima y solo deja asomar el encabezado y el ultimo mensaje. */}
+      <div className="relative pt-36">
+        <ChatObra mostrados={fase} />
+        <div className={`relative z-10 transition-[transform,opacity] duration-700 ease-out ${fase === 4 ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}`}>
+          <TableroObra listo={fase === 4} />
+        </div>
+      </div>
     </section>
+  );
+}
+
+const MENSAJES = [
+  { quien: "Iván · Residente", texto: "¿Alguien tiene la fusionadora?", hora: "8:12" },
+  { quien: "Luis · Oficial", texto: "Ahí van las fotos del jueves 📷", hora: "13:40" },
+  { quien: "Compras", texto: "¿Ya nos pasamos de cable?", hora: "17:05" },
+];
+
+// Decorativo: el mismo mensaje ya lo dice el titulo, por eso aria-hidden.
+function ChatObra({ mostrados }: { mostrados: number }) {
+  const final = mostrados >= 4;
+  return (
+    <div aria-hidden className="absolute inset-x-3 top-0 rounded-xl bg-white p-4 shadow-sm ring-1 ring-line">
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-graphite text-xs font-semibold text-white">CZ</span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">Obra Clínica Zapopan</p>
+          <p className="truncate text-xs text-ink-soft">Residente, oficiales, almacén y compras</p>
+        </div>
+      </div>
+      <ul className="mt-3 space-y-2">
+        {MENSAJES.map((m, i) => (
+          <li
+            key={m.texto}
+            className={`max-w-[85%] rounded-lg bg-ground px-3 py-2 text-sm transition-[opacity,transform] duration-300 ease-out ${final && i < MENSAJES.length - 1 ? "hidden" : ""} ${mostrados > i ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+          >
+            <span className="block text-xs font-semibold text-accent">{m.quien}</span>
+            {m.texto}
+            <span className="ml-2 text-[11px] text-ink-soft">{m.hora}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -96,13 +149,8 @@ const SEMANAS_AVANCE = [4, 11, 19, 26, 32, 37, 42, 46];
 const SEMANAS_GASTO = [5, 13, 22, 31, 40, 48, 55, 61];
 const linea = (vals: number[]) => vals.map((v, i) => `${i === 0 ? "M" : "L"}${(i * 460) / 7} ${78 - (v / 62) * 74}`).join(" ");
 
-function TableroObra() {
-  // Las barras arrancan en 0 y se llenan al montar (con "reducir movimiento" aparecen llenas).
-  const [listo, setListo] = useState(false);
-  useEffect(() => {
-    const t = requestAnimationFrame(() => setListo(true));
-    return () => cancelAnimationFrame(t);
-  }, []);
+// Las barras arrancan en 0 y se llenan cuando el tablero entra (con "reducir movimiento" aparecen llenas).
+function TableroObra({ listo }: { listo: boolean }) {
   return (
     <figure aria-label="Ejemplo del tablero de una obra en Bitácora" className="rounded-xl bg-graphite p-5 text-white shadow-[0_24px_60px_-24px_rgba(31,35,40,0.55)] sm:p-7">
       <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
@@ -149,8 +197,8 @@ function TableroObra() {
         </div>
         <svg viewBox="0 0 460 80" preserveAspectRatio="none" className="mt-2 h-20 w-full overflow-visible" role="img" aria-label="El gasto acumulado pasó de 5% a 61% mientras el avance llegó a 46%">
           <path d="M0 78 H460" stroke="rgba(255,255,255,0.12)" />
-          <path className="trazo" pathLength={1} d={linea(SEMANAS_AVANCE)} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path className="trazo" pathLength={1} d={linea(SEMANAS_GASTO)} fill="none" stroke="#E0701F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path className={listo ? "trazo" : "invisible"} pathLength={1} d={linea(SEMANAS_AVANCE)} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path className={listo ? "trazo" : "invisible"} pathLength={1} d={linea(SEMANAS_GASTO)} fill="none" stroke="#E0701F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
       <div className="mt-4 rounded-lg border-l-4 border-accent-mark bg-white/5 px-4 py-3 text-sm">
@@ -178,34 +226,82 @@ const IconCamara: Icono = (p) => (
 const IconAlarma: Icono = (p) => (
   <svg {...trazoIcono} {...p}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 2M5 4L2.5 6.5M19 4l2.5 2.5" /></svg>
 );
+const IconRayo: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M13 3L5 14h6l-1 7 8-11h-6z" /></svg>
+);
+const IconRed: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M5 5h14v10h-3v3H8v-3H5z" /><path d="M9 9v2M12 9v2M15 9v2" /></svg>
+);
+const IconCctv: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M3 9l13-4 2 6-13 4z" /><path d="M18 8l3-1M8 14l1 4H4M4 15v6" /></svg>
+);
+const IconClima: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" /><path d="M10 4.5l2 1.5 2-1.5M10 19.5l2-1.5 2 1.5" /></svg>
+);
+const IconTuberia: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M3 6h9a5 5 0 0 1 5 5v10M3 10h8a2 2 0 0 1 2 2v9" /><path d="M3 4.5v7M11.5 21h7" /></svg>
+);
+const IconUbicacion: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
+);
 const IconLista: Icono = (p) => (
   <svg {...trazoIcono} {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
 );
 
-const PROBLEMAS: { titulo: string; texto: string; icono: Icono }[] = [
+const PROBLEMAS: { titulo: string; texto: string; icono: Icono; demo: PestanaId }[] = [
   {
-    titulo: "El material sale y nadie sabe a dónde",
+    titulo: "¿Ya nos pasamos de cable?",
     texto: "Salidas de almacén sin remisión, consumos arriba de lo presupuestado y horas pagadas que no se trabajaron. En una obra con 15% de margen, una fuga de 3% se come la quinta parte de la utilidad.",
     icono: IconCaja,
+    demo: "presupuesto",
   },
   {
-    titulo: "Las estimaciones se atoran",
+    titulo: "¿Ya mandaron las fotos?",
     texto: "Sin fotos con fecha ni avance por partida, el cliente o la constructora rechaza o retrasa el cobro.",
     icono: IconEstimacion,
+    demo: "avances",
   },
   {
     titulo: "¿Quién tiene la fusionadora?",
     texto: "La herramienta pasa de mano en mano y cuando se pierde, la reposición sale de tu bolsa.",
     icono: IconHerramientas,
+    demo: "herramientas",
   },
   {
-    titulo: "Te enteras cuando ya terminó",
+    titulo: "¿Por qué me entero hasta el final?",
     texto: "La información llega por WhatsApp y se captura en Excel días después. Para entonces, la obra ya perdió dinero.",
     icono: IconAlarma,
+    demo: "tablero",
   },
 ];
 
-function Problema() {
+const GIROS: { nombre: string; icono: Icono }[] = [
+  { nombre: "Obra civil", icono: IconObras },
+  { nombre: "Instalaciones eléctricas", icono: IconRayo },
+  { nombre: "Voz y datos", icono: IconRed },
+  { nombre: "CCTV y seguridad", icono: IconCctv },
+  { nombre: "Aire acondicionado", icono: IconClima },
+  { nombre: "Plomería", icono: IconTuberia },
+  { nombre: "Mantenimiento", icono: IconHerramientas },
+  { nombre: "Servicios en campo", icono: IconUbicacion },
+];
+
+function Giros() {
+  return (
+    <section aria-label="Para qué giros es Bitácora" className="pb-14">
+      <ul className={`${contenedor} flex flex-wrap gap-x-8 gap-y-4 text-ink-soft`}>
+        {GIROS.map((g) => (
+          <li key={g.nombre} className="flex items-center gap-2 text-sm font-medium">
+            <g.icono aria-hidden className="h-5 w-5 flex-none text-accent" />
+            {g.nombre}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Problema({ ver }: { ver: (id: PestanaId) => void }) {
   return (
     <section className="border-y border-line bg-white py-20">
       <div className={`${contenedor} grid gap-12 lg:grid-cols-[1fr_1.4fr]`}>
@@ -222,6 +318,16 @@ function Problema() {
               <p.icono aria-hidden className="h-7 w-7 text-accent" />
               <dt className="mt-3 text-lg font-semibold">{p.titulo}</dt>
               <dd className="mt-2 leading-relaxed text-ink-soft">{p.texto}</dd>
+              <dd className="mt-3">
+                <a
+                  href="#demo"
+                  onClick={() => ver(p.demo)}
+                  aria-label={`Verlo en la demo: ${TITULO_PESTANA[p.demo]}`}
+                  className="rounded font-medium text-accent underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  Verlo en la demo
+                </a>
+              </dd>
             </div>
           ))}
         </dl>
@@ -307,17 +413,26 @@ const RAZONES: { titulo: string; texto: string; icono: Icono }[] = [
   { titulo: "Cada quien ve lo suyo", texto: "El oficial ve sus obras; el dinero lo ven el dueño y administración. Tus datos, aislados de otras empresas.", icono: IconSeguridad },
 ];
 
+// Pendiente: texto aprobado por Edgar; mientras sea null el bloque no se dibuja.
+const CITA: { texto: string; nombre: string; cargo: string } | null = null;
+
 function PorQue() {
   return (
     <section className="bg-graphite py-20 text-white">
       <div className={contenedor}>
         <h2 className="max-w-2xl text-3xl font-semibold leading-tight tracking-[-0.01em] sm:text-4xl">
-          Nació en una empresa de instalaciones, no en una oficina.
+          Nació en una empresa del giro, no en una oficina.
         </h2>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/70">
           Una contratista de Guadalajara la usa todos los días en sus obras. Las plataformas grandes cobran en dólares por usuario
           y están hechas para constructoras; Bitácora está hecha para la cuadrilla.
         </p>
+        {CITA && (
+          <figure className="mt-10 max-w-3xl border-l-4 border-accent-mark pl-6">
+            <blockquote className="text-xl leading-relaxed sm:text-2xl">“{CITA.texto}”</blockquote>
+            <figcaption className="mt-3 text-white/70">{CITA.nombre}, {CITA.cargo}</figcaption>
+          </figure>
+        )}
         <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {RAZONES.map((r) => (
             <div key={r.titulo}>
@@ -411,6 +526,9 @@ function Palomita({ oscuro }: { oscuro: boolean }): ReactNode {
   );
 }
 
+// Pendiente: numero en VITE_WHATSAPP (Vercel); sin el, el boton no se dibuja.
+const WHATSAPP = whatsappUrl(import.meta.env.VITE_WHATSAPP, "Hola, quiero conocer Bitácora para mi empresa.");
+
 function Cierre() {
   return (
     <section className="border-t border-line bg-white py-20">
@@ -418,8 +536,14 @@ function Cierre() {
         <div>
           <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-[-0.01em] sm:text-4xl">Tu próxima obra, con los números al día.</h2>
           <p className="mt-3 text-lg text-ink-soft">Crea la cuenta de tu empresa en dos minutos e invita a tu equipo.</p>
+          <p className="mt-1 text-lg text-ink-soft">Vamos a tu obra en Jalisco y lo cargamos contigo.</p>
         </div>
-        <Link to="/registro" className={btnPrimario}>Crear cuenta gratis</Link>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/registro" className={btnPrimario}>Crear cuenta gratis</Link>
+          {WHATSAPP && (
+            <a href={WHATSAPP} target="_blank" rel="noopener" className={btnSecundario}>Escríbenos por WhatsApp</a>
+          )}
+        </div>
       </div>
     </section>
   );
