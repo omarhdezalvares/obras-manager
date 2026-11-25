@@ -55,7 +55,7 @@ Gris = se queda como está. Lo demás se agrega o ajusta con el mismo estilo.
 ## Restricciones
 
 - React + Tailwind como el resto de la landing; sin dependencias nuevas.
-- Íconos nuevos en `web/src/components/Icons.tsx`, mismo trazo que los existentes.
+- Íconos nuevos junto a los demás íconos propios de la landing (`Landing.tsx`, con `trazoIcono`), mismo trazo que los existentes.
 - Funciona a 360 px de ancho sin scroll horizontal.
 - Animaciones solo al entrar en pantalla (reutilizar `useVisible` de `LandingDemo.tsx`) y apagadas con `prefers-reduced-motion`.
 - Rama nueva desde `dev` (`saas/landing-giro`), merge a `dev`, push solo a `dev`.
