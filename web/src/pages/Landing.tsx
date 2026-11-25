@@ -20,6 +20,7 @@ export function Landing() {
       <Cabecera />
       <main>
         <Portada />
+        <Giros />
         <Problema ver={ver} />
         <DiaDeObra />
         <section id="demo" className="border-t border-line py-20">
@@ -180,6 +181,24 @@ const IconCamara: Icono = (p) => (
 const IconAlarma: Icono = (p) => (
   <svg {...trazoIcono} {...p}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 2M5 4L2.5 6.5M19 4l2.5 2.5" /></svg>
 );
+const IconRayo: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M13 3L5 14h6l-1 7 8-11h-6z" /></svg>
+);
+const IconRed: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M5 5h14v10h-3v3H8v-3H5z" /><path d="M9 9v2M12 9v2M15 9v2" /></svg>
+);
+const IconCctv: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M3 9l13-4 2 6-13 4z" /><path d="M18 8l3-1M8 14l1 4H4M4 15v6" /></svg>
+);
+const IconClima: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" /><path d="M10 4.5l2 1.5 2-1.5M10 19.5l2-1.5 2 1.5" /></svg>
+);
+const IconTuberia: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M3 6h9a5 5 0 0 1 5 5v10M3 10h8a2 2 0 0 1 2 2v9" /><path d="M3 4.5v7M11.5 21h7" /></svg>
+);
+const IconUbicacion: Icono = (p) => (
+  <svg {...trazoIcono} {...p}><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
+);
 const IconLista: Icono = (p) => (
   <svg {...trazoIcono} {...p}><path d="M9 6h11M9 12h11M9 18h11" /><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
 );
@@ -210,6 +229,32 @@ const PROBLEMAS: { titulo: string; texto: string; icono: Icono; demo: PestanaId 
     demo: "tablero",
   },
 ];
+
+const GIROS: { nombre: string; icono: Icono }[] = [
+  { nombre: "Obra civil", icono: IconObras },
+  { nombre: "Instalaciones eléctricas", icono: IconRayo },
+  { nombre: "Voz y datos", icono: IconRed },
+  { nombre: "CCTV y seguridad", icono: IconCctv },
+  { nombre: "Aire acondicionado", icono: IconClima },
+  { nombre: "Plomería", icono: IconTuberia },
+  { nombre: "Mantenimiento", icono: IconHerramientas },
+  { nombre: "Servicios en campo", icono: IconUbicacion },
+];
+
+function Giros() {
+  return (
+    <section aria-label="Para qué giros es Bitácora" className="pb-14">
+      <ul className={`${contenedor} flex flex-wrap gap-x-8 gap-y-4 text-ink-soft`}>
+        {GIROS.map((g) => (
+          <li key={g.nombre} className="flex items-center gap-2 text-sm font-medium">
+            <g.icono aria-hidden className="h-5 w-5 flex-none text-accent" />
+            {g.nombre}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 function Problema({ ver }: { ver: (id: PestanaId) => void }) {
   return (
