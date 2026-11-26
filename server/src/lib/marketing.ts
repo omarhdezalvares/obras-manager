@@ -13,3 +13,12 @@ export const marketingSchema = z
   .transform((d) => ({ giro: d.giro, canal: d.canal, canalDetalle: d.canal === "Otro" ? d.canalDetalle! : null }));
 
 export type Marketing = z.output<typeof marketingSchema>;
+
+// Correccion desde el panel: cada campo es opcional; mismas reglas para "Otro".
+export const marketingParcialSchema = z
+  .object({ giro: z.enum(GIROS).optional(), canal: z.enum(CANALES).optional(), canalDetalle: detalle })
+  .refine((d) => d.canal !== "Otro" || Boolean(d.canalDetalle), { message: "Escribe cómo se enteró", path: ["canalDetalle"] })
+  .transform((d) => ({
+    ...(d.giro ? { giro: d.giro } : {}),
+    ...(d.canal ? { canal: d.canal, canalDetalle: d.canal === "Otro" ? d.canalDetalle! : null } : {}),
+  }));

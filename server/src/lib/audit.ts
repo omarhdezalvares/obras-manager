@@ -5,7 +5,7 @@ interface AuditParams {
   usuarioId: string;
   entidadTipo: string;
   entidadId: string;
-  accion: "crear" | "actualizar" | "eliminar" | "aprobar";
+  accion: "crear" | "actualizar" | "eliminar" | "aprobar" | "pago_manual" | "cambiar_plan" | "suspender" | "reactivar";
   cambios?: Record<string, unknown>;
 }
 
