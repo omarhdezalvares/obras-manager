@@ -75,3 +75,18 @@ test("sin Stripe configurado: estado responde y las acciones dan 503", async () 
 test("solo el Administrador contrata", async () => {
   assert.equal((await pedir("POST", "/checkout", tokenOficial, { plan: "basico" })).status, 403);
 });
+
+test("el webhook se crea fijo a la version de API que entiende el codigo", async () => {
+  const { paramsWebhook } = await import("../../lib/stripe");
+  const p = paramsWebhook("https://x/api/facturacion/webhook");
+  assert.equal(p.api_version, "2025-02-24.acacia");
+  assert.deepEqual([...p.enabled_events].sort(), ["checkout.session.completed", "customer.subscription.deleted", "customer.subscription.updated", "invoice.paid"]);
+});
+
+test("contratar: no crea una segunda suscripcion ni una segunda sesion abierta", async () => {
+  const { decidirCheckout } = await import("../../lib/stripe");
+  assert.deepEqual(decidirCheckout([{ status: "canceled" }], []), { tipo: "nueva" });
+  assert.deepEqual(decidirCheckout([{ status: "trialing" }], []), { tipo: "ya_suscrita" });
+  assert.deepEqual(decidirCheckout([{ status: "past_due" }], []), { tipo: "ya_suscrita" });
+  assert.deepEqual(decidirCheckout([], [{ url: "https://checkout/abierta" }]), { tipo: "reusar", url: "https://checkout/abierta" });
+});

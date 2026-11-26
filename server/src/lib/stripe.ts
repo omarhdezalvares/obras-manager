@@ -7,10 +7,13 @@ export type PlanPagado = Exclude<Plan, "trial" | "piloto">;
 export type Precios = Record<PlanPagado, string>;
 export type StripeConfig = NonNullable<typeof env.stripe>;
 
+// El webhook (webhook.ts) lee la forma de los eventos de esta version; el SDK y el endpoint quedan fijos a ella.
+export const API_VERSION = "2025-02-24.acacia" as const;
+
 let cliente: Stripe | null = null;
 export function stripe(): Stripe {
   if (!env.stripe) throw new HttpError(503, "Cobro no configurado");
-  cliente ??= new Stripe(env.stripe.secretKey);
+  cliente ??= new Stripe(env.stripe.secretKey, { apiVersion: API_VERSION });
   return cliente;
 }
 
@@ -44,4 +47,28 @@ export function paramsSuscripcion(
     params.trial_end = Math.floor(t.vigenteHasta.getTime() / 1000);
   }
   return params;
+}
+
+export const EVENTOS_WEBHOOK = [
+  "checkout.session.completed",
+  "invoice.paid",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+] as const;
+
+// Sin api_version los eventos llegarian en la version por defecto de la cuenta, con otra forma.
+export function paramsWebhook(url: string) {
+  return { url, api_version: API_VERSION, enabled_events: [...EVENTOS_WEBHOOK] };
+}
+
+const VIVAS = new Set(["active", "trialing", "past_due", "unpaid", "incomplete", "paused"]);
+
+// Evita doble cobro: dos pestanas o un doble clic no deben crear dos suscripciones.
+export function decidirCheckout(
+  suscripciones: { status: string }[],
+  sesionesAbiertas: { url: string | null }[]
+): { tipo: "nueva" } | { tipo: "ya_suscrita" } | { tipo: "reusar"; url: string } {
+  if (suscripciones.some((s) => VIVAS.has(s.status))) return { tipo: "ya_suscrita" };
+  const abierta = sesionesAbiertas.find((s) => s.url);
+  return abierta?.url ? { tipo: "reusar", url: abierta.url } : { tipo: "nueva" };
 }

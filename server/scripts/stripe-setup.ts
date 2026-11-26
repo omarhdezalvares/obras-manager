@@ -4,6 +4,7 @@
 import "dotenv/config";
 import fs from "fs";
 import Stripe from "stripe";
+import { API_VERSION, paramsWebhook } from "../src/lib/stripe";
 
 const arg = (nombre: string) => {
   const i = process.argv.indexOf(nombre);
@@ -14,18 +15,12 @@ const webhookUrl = arg("--webhook-url");
 
 const key = process.env.STRIPE_SECRET_KEY;
 if (!key) throw new Error("Falta STRIPE_SECRET_KEY en el entorno");
-const stripe = new Stripe(key);
+const stripe = new Stripe(key, { apiVersion: API_VERSION });
 
 const PLANES = [
   { lookup: "bitacora_basico", nombre: "Bitácora Básico", centavos: 129000, env: "STRIPE_PRICE_BASICO" },
   { lookup: "bitacora_profesional", nombre: "Bitácora Profesional", centavos: 269000, env: "STRIPE_PRICE_PROFESIONAL" },
   { lookup: "bitacora_empresa", nombre: "Bitácora Empresa", centavos: 549000, env: "STRIPE_PRICE_EMPRESA" },
-];
-const EVENTOS: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
-  "checkout.session.completed",
-  "invoice.paid",
-  "customer.subscription.updated",
-  "customer.subscription.deleted",
 ];
 
 function guardar(valores: Record<string, string>): void {
@@ -86,12 +81,18 @@ async function main() {
   console.log("Portal de clientes: configurado");
 
   if (webhookUrl) {
+    const params = paramsWebhook(webhookUrl);
     const ya = (await stripe.webhookEndpoints.list({ limit: 100 })).data.find((w) => w.url === webhookUrl);
-    if (ya) {
-      await stripe.webhookEndpoints.update(ya.id, { enabled_events: EVENTOS });
+    if (ya && ya.api_version !== API_VERSION) {
+      // La version de un endpoint no se puede cambiar: se borra y se crea de nuevo.
+      await stripe.webhookEndpoints.del(ya.id);
+      console.log("Webhook: existía con otra versión de API; se recrea");
+    }
+    if (ya && ya.api_version === API_VERSION) {
+      await stripe.webhookEndpoints.update(ya.id, { enabled_events: params.enabled_events });
       console.log("Webhook: ya existía (su secreto no se puede volver a leer; si falta, bórralo en Stripe y corre de nuevo)");
     } else {
-      const nuevo = await stripe.webhookEndpoints.create({ url: webhookUrl, enabled_events: EVENTOS });
+      const nuevo = await stripe.webhookEndpoints.create(params);
       valores.STRIPE_WEBHOOK_SECRET = nuevo.secret!;
       console.log("Webhook: creado, secreto guardado en " + envPath);
     }

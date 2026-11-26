@@ -6,7 +6,7 @@ import { HttpError, requireAuth, requireRole } from "../../middleware/auth";
 import { prisma } from "../../lib/prisma";
 import { estadoCuenta, finDeGracia, limitesDe } from "../../lib/plan";
 import { uso } from "../../lib/limites";
-import { paramsSuscripcion, PlanPagado, planDePrecio, stripe } from "../../lib/stripe";
+import { decidirCheckout, paramsSuscripcion, PlanPagado, planDePrecio, stripe } from "../../lib/stripe";
 import { ROLES } from "../../lib/roles";
 
 export const facturacionRouter = Router();
@@ -63,6 +63,17 @@ facturacionRouter.post(
     const t = await tenantDe(req.user!.tenantId);
     sinSuscripcion(t);
     const customer = await clienteDe(t, req.user!.email);
+    // El id de la suscripcion llega por webhook: mientras tanto se pregunta a Stripe para no cobrar dos veces.
+    const [subs, sesiones] = await Promise.all([
+      stripe().subscriptions.list({ customer, status: "all", limit: 20 }),
+      stripe().checkout.sessions.list({ customer, status: "open", limit: 5 }),
+    ]);
+    const decision = decidirCheckout(subs.data, sesiones.data);
+    if (decision.tipo === "ya_suscrita") throw new HttpError(409, "La empresa ya tiene una suscripción; usa Cambiar plan o Administrar pago");
+    if (decision.tipo === "reusar") {
+      res.json({ url: decision.url });
+      return;
+    }
     const sesion = await stripe().checkout.sessions.create({
       mode: "subscription",
       customer,

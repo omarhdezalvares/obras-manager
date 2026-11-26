@@ -103,3 +103,28 @@ test("suscripcion borrada quita el id y deja la vigencia", async () => {
   assert.equal(t.stripeSubscriptionId, null);
   assert.equal(t.vigenteHasta?.toISOString(), new Date("2027-01-15").toISOString());
 });
+
+test("subir de plan: la factura de prorrateo cambia el plan aunque sus lineas no sean de tipo subscription", async () => {
+  const antes = await tenant();
+  const fin = antes.vigenteHasta!.toISOString();
+  const evento = facturaPagada("up", "price_e", fin, { tenantId });
+  evento.data.object.lines.data = [
+    { type: "invoiceitem", proration: true, amount: -50000, price: { id: "price_p" }, period: { start: seg("2026-12-20"), end: seg(fin) } },
+    { type: "invoiceitem", proration: true, amount: 120000, price: { id: "price_e" }, period: { start: seg("2026-12-20"), end: seg(fin) } },
+  ] as never;
+  await enviar(evento);
+  assert.equal((await tenant()).plan, "empresa");
+});
+
+test("un updated reintentado despues del deleted no revive la suscripcion cancelada", async () => {
+  await prisma.tenant.update({ where: { id: tenantId }, data: { stripeSubscriptionId: "sub_2" } });
+  await enviar({ id: "evt_d2", object: "event", type: "customer.subscription.deleted", data: { object: { id: "sub_2", object: "subscription", status: "canceled", customer: "cus_1", metadata: { tenantId } } } });
+  await enviar({ id: "evt_u2", object: "event", type: "customer.subscription.updated", data: { object: { id: "sub_2", object: "subscription", status: "canceled", customer: "cus_1", metadata: { tenantId } } } });
+  assert.equal((await tenant()).stripeSubscriptionId, null);
+});
+
+test("deleted de otra suscripcion no borra la actual", async () => {
+  await prisma.tenant.update({ where: { id: tenantId }, data: { stripeSubscriptionId: "sub_3" } });
+  await enviar({ id: "evt_d3", object: "event", type: "customer.subscription.deleted", data: { object: { id: "sub_vieja", object: "subscription", status: "canceled", customer: "cus_1", metadata: { tenantId } } } });
+  assert.equal((await tenant()).stripeSubscriptionId, "sub_3");
+});

@@ -39,8 +39,10 @@ export async function aplicarEvento(evento: Stripe.Event): Promise<void> {
       const customer = idDe(f.customer);
       const tenantId = await tenantPor(f.subscription_details?.metadata?.tenantId, customer);
       if (!tenantId) return;
-      // En una factura de prorrateo la linea positiva es la del plan nuevo.
-      const linea = [...f.lines.data].reverse().find((l) => l.type === "subscription" && l.amount >= 0);
+      // Renovacion o prueba: linea "subscription". Subida de plan: lineas de prorrateo; la positiva es la del plan nuevo.
+      const linea =
+        [...f.lines.data].reverse().find((l) => l.proration && l.amount > 0 && l.price && planDePrecio(precios, l.price.id)) ??
+        [...f.lines.data].reverse().find((l) => l.type === "subscription" && l.amount >= 0);
       if (!linea) return;
       const fin = new Date(linea.period.end * 1000);
       const plan = linea.price ? planDePrecio(precios, linea.price.id) : null;
@@ -75,8 +77,14 @@ export async function aplicarEvento(evento: Stripe.Event): Promise<void> {
       const s = evento.data.object;
       const tenantId = await tenantPor(s.metadata?.tenantId, idDe(s.customer));
       if (!tenantId) return;
-      const borrada = evento.type === "customer.subscription.deleted";
-      await prisma.tenant.update({ where: { id: tenantId }, data: { stripeSubscriptionId: borrada ? null : s.id } });
+      const terminada = evento.type === "customer.subscription.deleted" || s.status === "canceled" || s.status === "incomplete_expired";
+      const actual = (await prisma.tenant.findUniqueOrThrow({ where: { id: tenantId }, select: { stripeSubscriptionId: true } })).stripeSubscriptionId;
+      // Un evento viejo o de otra suscripcion no debe borrar ni revivir la actual.
+      if (terminada) {
+        if (actual === s.id) await prisma.tenant.update({ where: { id: tenantId }, data: { stripeSubscriptionId: null } });
+      } else if (!actual) {
+        await prisma.tenant.update({ where: { id: tenantId }, data: { stripeSubscriptionId: s.id } });
+      }
       return;
     }
     default:
