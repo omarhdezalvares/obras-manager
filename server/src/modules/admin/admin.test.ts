@@ -153,3 +153,16 @@ test("un cliente recibe 404 en todas las acciones", async () => {
   assert.equal((await pedir("PATCH", `/admin/empresas/${tenantCliente}/activo`, tokenCliente, { activo: true })).status, 404);
   assert.equal((await pedir("PATCH", `/admin/empresas/${tenantCliente}/marketing`, tokenCliente, { giro: "Otro" })).status, 404);
 });
+
+test("tendencias por periodo excluye empresas fuera de rango y la interna", async () => {
+  const vieja = await (await import("../../lib/empresa")).crearEmpresa({ empresa: "Vieja SA", email: "admin@vieja.test", passwordHash: "x", giro: "Plomería", canal: "Google" });
+  await prisma.tenant.update({ where: { id: vieja.tenantId }, data: { createdAt: new Date(Date.now() - 60 * 86_400_000) } });
+  const total = (d: { porGiro: { registros: number }[] }) => d.porGiro.reduce((s, f) => s + f.registros, 0);
+  const r30 = await pedir("GET", "/admin/tendencias?periodo=30d", tokenJefe);
+  assert.equal(r30.status, 200);
+  assert.equal(total((await r30.json()) as { porGiro: { registros: number }[] }), 1);
+  const rTodo = (await (await pedir("GET", "/admin/tendencias?periodo=todo", tokenJefe)).json()) as { porGiro: { registros: number }[] };
+  assert.equal(total(rTodo), 2);
+  assert.equal((await pedir("GET", "/admin/tendencias?periodo=xx", tokenJefe)).status, 400);
+  assert.equal((await pedir("GET", "/admin/tendencias", tokenCliente)).status, 404);
+});

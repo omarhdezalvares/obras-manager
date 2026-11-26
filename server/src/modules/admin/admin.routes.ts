@@ -9,7 +9,7 @@ import { uso } from "../../lib/limites";
 import { writeAuditLog } from "../../lib/audit";
 import { marketingParcialSchema } from "../../lib/marketing";
 import { ROLES } from "../../lib/roles";
-import { resumenTablero, tenantsInternos } from "./resumen";
+import { resumenTablero, tendencias, tenantsInternos } from "./resumen";
 
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireSuperAdmin);
@@ -179,5 +179,20 @@ adminRouter.patch(
       despues: datos,
     });
     res.json({ ok: true });
+  })
+);
+
+const PERIODOS_DIAS = { "30d": 30, "90d": 90, "12m": 365 } as const;
+
+adminRouter.get(
+  "/tendencias",
+  asyncHandler(async (req, res) => {
+    const { periodo } = z.object({ periodo: z.enum(["30d", "90d", "12m", "todo"]).default("90d") }).parse(req.query);
+    const desde = periodo === "todo" ? undefined : new Date(Date.now() - PERIODOS_DIAS[periodo] * 86_400_000);
+    const filas = await prisma.tenant.findMany({
+      where: { id: { notIn: await tenantsInternos() }, ...(desde ? { createdAt: { gte: desde } } : {}) },
+      select: { giro: true, canal: true, plan: true, primerPagoAt: true },
+    });
+    res.json({ periodo, ...tendencias(filas) });
   })
 );
