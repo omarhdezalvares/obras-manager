@@ -55,6 +55,7 @@ export async function aplicarEvento(evento: Stripe.Event): Promise<void> {
         data: {
           vigenteHasta,
           ...(plan && !vieja ? { plan } : {}),
+          ...(f.amount_paid > 0 && !antes.primerPagoAt ? { primerPagoAt: new Date(evento.created * 1000) } : {}),
           origenPago: "stripe",
           stripeCustomerId: customer,
           stripeSubscriptionId: idDe(f.subscription) ?? antes.stripeSubscriptionId,

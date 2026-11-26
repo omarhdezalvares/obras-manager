@@ -48,14 +48,16 @@ function enviar(evento: object, secreto = SECRETO) {
   return fetch(`${base}/api/facturacion/webhook`, { method: "POST", headers: { "content-type": "application/json", "stripe-signature": header }, body: payload });
 }
 
-const facturaPagada = (id: string, price: string, fin: string, meta: Record<string, string> = { tenantId: "" }) => ({
+const facturaPagada = (id: string, price: string, fin: string, meta: Record<string, string> = { tenantId: "" }, amountPaid = 149640, creado = "2026-12-09T00:00:00Z") => ({
   id: `evt_${id}`,
   object: "event",
   type: "invoice.paid",
+  created: seg(creado),
   data: {
     object: {
       id: `in_${id}`,
       object: "invoice",
+      amount_paid: amountPaid,
       customer: "cus_1",
       subscription: "sub_1",
       subscription_details: { metadata: meta },
@@ -94,6 +96,17 @@ test("la factura $0 de la prueba aplica el plan aunque la vigencia tenga miliseg
   evento.data.object.lines.data[0].amount = 0;
   await enviar(evento);
   assert.equal((await prisma.tenant.findUniqueOrThrow({ where: { id: u.tenantId } })).plan, "basico");
+});
+
+test("primerPagoAt: la factura $0 no cuenta, la primera con monto si y no cambia despues", async () => {
+  const u = await (await import("../../lib/empresa")).crearEmpresa({ empresa: "Primer Pago SA", email: "admin@pp.test", passwordHash: "x" });
+  const t = () => prisma.tenant.findUniqueOrThrow({ where: { id: u.tenantId } });
+  await enviar(facturaPagada("pp0", "price_b", "2027-01-01", { tenantId: u.tenantId }, 0, "2026-12-01T00:00:00Z"));
+  assert.equal((await t()).primerPagoAt, null);
+  await enviar(facturaPagada("pp1", "price_b", "2027-02-01", { tenantId: u.tenantId }, 149640, "2027-01-01T00:00:00Z"));
+  assert.equal((await t()).primerPagoAt?.toISOString(), "2027-01-01T00:00:00.000Z");
+  await enviar(facturaPagada("pp2", "price_b", "2027-03-01", { tenantId: u.tenantId }, 149640, "2027-02-01T00:00:00Z"));
+  assert.equal((await t()).primerPagoAt?.toISOString(), "2027-01-01T00:00:00.000Z");
 });
 
 test("checkout completado guarda ids y metodo tarjeta", async () => {
