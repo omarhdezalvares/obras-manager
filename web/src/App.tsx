@@ -15,6 +15,7 @@ import { MisHerramientas } from "./pages/MisHerramientas";
 import { Historial } from "./pages/Historial";
 import { Seguridad } from "./pages/Seguridad";
 import { Empresa } from "./pages/Empresa";
+import { Plan } from "./pages/Plan";
 import { ProcesoSelector } from "./pages/oficial/ProcesoSelector";
 import { AsistenciaWizard } from "./pages/oficial/AsistenciaWizard";
 import { EvidenciaWizard } from "./pages/oficial/EvidenciaWizard";
@@ -62,6 +63,7 @@ export default function App() {
           path="/empresa"
           element={usuario.rol === "Administrador" ? <Empresa /> : <Navigate to="/" replace />}
         />
+        <Route path="/plan" element={<Plan />} />
         <Route path="/mis-obras" element={<MisObras />} />
         <Route path="/mis-obras/:obraId" element={<ProcesoSelector />} />
         <Route path="/mis-obras/:obraId/asistencia" element={<AsistenciaWizard />} />

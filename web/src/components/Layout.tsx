@@ -2,6 +2,7 @@ import { ComponentType } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { MenuDesplegable } from "./MenuDesplegable";
 import { useAuth } from "../lib/auth";
+import { AvisoCuenta } from "./AvisoCuenta";
 import {
   LogoMark,
   IconResumen,
@@ -40,6 +41,7 @@ const CONFIG_GESTION = [
 ];
 const CONFIG_ADMIN = [
   { label: "Empresa", to: "/empresa" },
+  { label: "Plan y pago", to: "/plan" },
   { label: "Seguridad", to: "/seguridad" },
 ];
 
@@ -115,6 +117,7 @@ export function Layout() {
           </div>
         </div>
       </header>
+      <AvisoCuenta />
 
       <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-5 pb-24 sm:px-6 md:py-7 md:pb-10 lg:px-8">
         <Outlet />
