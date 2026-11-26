@@ -101,11 +101,16 @@ test("la factura $0 de la prueba aplica el plan aunque la vigencia tenga miliseg
 test("primerPagoAt: la factura $0 no cuenta, la primera con monto si y no cambia despues", async () => {
   const u = await (await import("../../lib/empresa")).crearEmpresa({ empresa: "Primer Pago SA", email: "admin@pp.test", passwordHash: "x" });
   const t = () => prisma.tenant.findUniqueOrThrow({ where: { id: u.tenantId } });
-  await enviar(facturaPagada("pp0", "price_b", "2027-01-01", { tenantId: u.tenantId }, 0, "2026-12-01T00:00:00Z"));
+  const enviarPP = (e: ReturnType<typeof facturaPagada>) => {
+    e.data.object.customer = "cus_pp";
+    e.data.object.subscription = "sub_pp";
+    return enviar(e);
+  };
+  await enviarPP(facturaPagada("pp0", "price_b", "2027-01-01", { tenantId: u.tenantId }, 0, "2026-12-01T00:00:00Z"));
   assert.equal((await t()).primerPagoAt, null);
-  await enviar(facturaPagada("pp1", "price_b", "2027-02-01", { tenantId: u.tenantId }, 149640, "2027-01-01T00:00:00Z"));
+  await enviarPP(facturaPagada("pp1", "price_b", "2027-02-01", { tenantId: u.tenantId }, 149640, "2027-01-01T00:00:00Z"));
   assert.equal((await t()).primerPagoAt?.toISOString(), "2027-01-01T00:00:00.000Z");
-  await enviar(facturaPagada("pp2", "price_b", "2027-03-01", { tenantId: u.tenantId }, 149640, "2027-02-01T00:00:00Z"));
+  await enviarPP(facturaPagada("pp2", "price_b", "2027-03-01", { tenantId: u.tenantId }, 149640, "2027-02-01T00:00:00Z"));
   assert.equal((await t()).primerPagoAt?.toISOString(), "2027-01-01T00:00:00.000Z");
 });
 
