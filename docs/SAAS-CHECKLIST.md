@@ -33,9 +33,9 @@
 - [ ] Correo transaccional con Resend (dominio verificado, SPF/DKIM). (código listo, `server/src/lib/correo.ts` vía API REST; `RESEND_API_KEY` cargada en Preview; plantilla HTML de marca lista. Envío real probado en dev el 2026-10-30 (registro con verificación de correo). **Dominio pendiente hasta el paso a prod**: mientras tanto Resend solo entrega al correo del dueño de la cuenta (otros destinatarios → 403). Al tener dominio: verificar SPF/DKIM, cargar `CORREO_REMITENTE` y la key en Production. Sin key en producción los correos responden 503)
 
 ## 🟠 Necesario para cobrar
-- [ ] Planes y cobro con Stripe: código listo en rama `saas/stripe` (2026-11-25): Checkout (tarjeta), suscripción con factura SPEI, Customer Portal, webhook que mueve `plan`/`vigenteHasta`. Falta: cuenta de Stripe, `npx tsx scripts/stripe-setup.ts` con llaves de prueba, prueba en preview con tarjeta 4242, merge a dev.
-- [ ] Límites por plan: obras activas y usuarios listos en `saas/stripe` (`server/src/lib/limites.ts`); almacenamiento pendiente.
-- [ ] Trial y suspensión automática: listos en `saas/stripe` (14 días de prueba, 7 de gracia, luego solo lectura; `Tenant.activo=false` suspende en cada petición).
+- [x] Planes y cobro con Stripe (2026-11-26, en dev): Checkout (tarjeta), suscripción con factura SPEI, Customer Portal, webhook que mueve `plan`/`vigenteHasta`. Probado en modo prueba en la preview `bitacora-cobro-prueba.vercel.app`: tarjeta 4242 y SPEI durante la prueba. Para producción: llaves reales, `npx tsx scripts/stripe-setup.ts --webhook-url https://<dominio>/api/facturacion/webhook` y variables en Vercel Production; falta probar una factura SPEI con monto > 0.
+- [ ] Límites por plan: obras activas y usuarios listos (`server/src/lib/limites.ts`, en dev); almacenamiento pendiente.
+- [x] Trial y suspensión automática (en dev): 14 días de prueba, 7 de gracia, luego solo lectura; `Tenant.activo=false` suspende en cada petición.
 - [ ] Facturación CFDI (si se vende en México).
 - [ ] Panel super-admin: ver, suspender y cambiar plan de empresas; soporte.
 
