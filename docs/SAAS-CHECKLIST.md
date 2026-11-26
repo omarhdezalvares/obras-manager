@@ -37,7 +37,7 @@
 - [ ] Límites por plan: obras activas y usuarios listos (`server/src/lib/limites.ts`, en dev); almacenamiento pendiente.
 - [x] Trial y suspensión automática (en dev): 14 días de prueba, 7 de gracia, luego solo lectura; `Tenant.activo=false` suspende en cada petición.
 - [ ] Facturación CFDI (si se vende en México).
-- [ ] Panel super-admin: ver, suspender y cambiar plan de empresas; soporte.
+- [x] Panel super-admin (2026-11-26, rama `saas/super-admin`): tablero de clientes, ficha con pago manual, cambio de plan, suspender/reactivar, giro y canal; tendencias por giro, canal y plan. Registro pide giro y "¿cómo te enteraste?". Para usarlo en un entorno: `SUPERADMIN_EMAILS` en Vercel y `SUPERADMIN_PASSWORD=... npx tsx scripts/crear-superadmin.ts --email <correo>` contra esa base. Pendiente: soporte (entrar como la empresa) quedó fuera.
 
 ## 🟡 Operación
 - [ ] Monitoreo de errores (Sentry) y logs estructurados (hoy `console.log`).
