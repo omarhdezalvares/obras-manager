@@ -480,7 +480,13 @@ function Planes() {
           ))}
         </div>
         <p className="mt-6 text-sm text-ink-soft">
-          Precios mensuales en pesos mexicanos, más IVA. Implementación opcional en sitio: $2,500 una sola vez (visita, carga inicial y capacitación).
+          Precios mensuales en pesos mexicanos, más IVA. ¿Necesitas implementación en sitio (visita, carga inicial y capacitación)?{" "}
+          {WHATSAPP ? (
+            <a href={WHATSAPP} target="_blank" rel="noopener" className="font-medium text-accent underline-offset-4 hover:underline">Contáctanos</a>
+          ) : (
+            "Contáctanos"
+          )}
+          .
         </p>
       </div>
     </section>
