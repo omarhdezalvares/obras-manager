@@ -74,12 +74,15 @@ facturacionRouter.post(
       res.json({ url: decision.url });
       return;
     }
+    // Checkout recibe el precio en line_items; IVA, metadata y prueba van en subscription_data.
+    const { items, ...subscription_data } = paramsSuscripcion(c, t, plan);
     const sesion = await stripe().checkout.sessions.create({
       mode: "subscription",
       customer,
       client_reference_id: t.id,
       locale: "es",
-      subscription_data: paramsSuscripcion(c, t, plan),
+      line_items: items.map((i) => ({ price: i.price, quantity: 1 })),
+      subscription_data,
       success_url: `${env.appUrl}/plan?pago=ok`,
       cancel_url: `${env.appUrl}/plan?pago=cancelado`,
     });
