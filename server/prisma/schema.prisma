@@ -24,6 +24,10 @@ model Tenant {
   stripeSubscriptionId String?   @unique
   metodoPago           String? // tarjeta | transferencia
   origenPago           String? // stripe | manual
+  primerPagoAt         DateTime? // primer pago real (Stripe con monto > 0 o manual): "compro" en tendencias
+  giro                 String?
+  canal                String? // como se entero de Bitacora
+  canalDetalle         String? // texto cuando canal = "Otro"
   rfc            String?
   direccion      String?
   telefono       String?
@@ -383,6 +387,9 @@ model RegistroPendiente {
   empresa      String
   email        String
   passwordHash String
+  giro         String?
+  canal        String?
+  canalDetalle String?
   tokenHash    String   @unique
   expiresAt    DateTime
   createdAt    DateTime @default(now())

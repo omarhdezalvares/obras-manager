@@ -7,6 +7,7 @@ import { asyncHandler } from "../../middleware/errorHandler";
 import { HttpError, requireAuth } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 import { confirmarRegistro, solicitarRegistro } from "../../lib/empresa";
+import { marketingSchema } from "../../lib/marketing";
 import { enviarLinkPassword, usarTokenPassword } from "../../lib/tokenPassword";
 
 const QUINCE_MIN = 15 * 60 * 1000;
@@ -75,11 +76,13 @@ async function iniciarSesion(usuarioId: string) {
   };
 }
 
-const registroSchema = z.object({
-  empresa: z.string().trim().min(2, "Escribe el nombre de tu empresa").max(120),
-  email: z.string().email(),
-  password: passwordSegura,
-});
+const registroSchema = z
+  .object({
+    empresa: z.string().trim().min(2, "Escribe el nombre de tu empresa").max(120),
+    email: z.string().email(),
+    password: passwordSegura,
+  })
+  .and(marketingSchema);
 
 authRouter.post(
   "/registro",

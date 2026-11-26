@@ -7,6 +7,9 @@ import { enviarCorreo } from "./correo";
 import { hash } from "./tokenPassword";
 import { HttpError } from "../middleware/auth";
 import { ALL_ROLES, ROLES } from "./roles";
+import type { Marketing } from "./marketing";
+
+type MarketingOpcional = { [K in keyof Marketing]?: string | null };
 
 const MATERIALES_BASE = ["MATERIALES", "HERRAMIENTAS", "SERVICIOS", "IMPUESTOS"];
 
@@ -17,9 +20,17 @@ function slugDe(nombre: string): string {
 }
 
 // Alta de una empresa nueva con sus roles, catalogo base y su primer Administrador, todo o nada.
-export async function crearEmpresa(datos: { empresa: string; email: string; passwordHash: string }) {
+export async function crearEmpresa(datos: { empresa: string; email: string; passwordHash: string } & MarketingOpcional) {
   return prisma.$transaction(async (tx) => {
-    const tenant = await tx.tenant.create({ data: { nombre: datos.empresa, slug: slugDe(datos.empresa), plan: "trial", vigenteHasta: finDePrueba() } });
+    const tenant = await tx.tenant.create({ data: {
+        nombre: datos.empresa,
+        slug: slugDe(datos.empresa),
+        plan: "trial",
+        vigenteHasta: finDePrueba(),
+        giro: datos.giro ?? null,
+        canal: datos.canal ?? null,
+        canalDetalle: datos.canalDetalle ?? null,
+      }, });
     await tx.rol.createMany({ data: ALL_ROLES.map((nombre) => ({ tenantId: tenant.id, nombre })) });
     await tx.material.createMany({ data: MATERIALES_BASE.map((nombre) => ({ tenantId: tenant.id, nombre })) });
     const rolAdmin = await tx.rol.findUniqueOrThrow({ where: { tenantId_nombre: { tenantId: tenant.id, nombre: ROLES.ADMIN } } });
@@ -30,7 +41,7 @@ export async function crearEmpresa(datos: { empresa: string; email: string; pass
 const LINK_INVALIDO = "El link no es valido o ya vencio; registrate de nuevo";
 
 // La empresa no existe hasta que el dueno abre el link del correo: asi no hay altas con correos ficticios.
-export async function solicitarRegistro(datos: { empresa: string; email: string; password: string }): Promise<void> {
+export async function solicitarRegistro(datos: { empresa: string; email: string; password: string } & Marketing): Promise<void> {
   await prisma.registroPendiente.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   const token = crypto.randomBytes(32).toString("hex");
   await prisma.registroPendiente.create({
@@ -38,6 +49,9 @@ export async function solicitarRegistro(datos: { empresa: string; email: string;
       empresa: datos.empresa,
       email: datos.email,
       passwordHash: await hashPassword(datos.password),
+      giro: datos.giro,
+      canal: datos.canal,
+      canalDetalle: datos.canalDetalle,
       tokenHash: hash(token),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     },
