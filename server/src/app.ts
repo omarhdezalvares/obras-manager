@@ -24,6 +24,7 @@ import { notificacionesRouter } from "./modules/notificaciones/notificaciones.ro
 import { historialRouter } from "./modules/historial/historial.routes";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
 import { empresaRouter } from "./modules/empresa/empresa.routes";
+import { facturacionRouter } from "./modules/facturacion/facturacion.routes";
 
 export const app = express();
 // Fly y Vercel ponen un proxy delante: sin esto req.ip seria la IP del proxy y el rate limit bloquearia a todos juntos.
@@ -56,6 +57,7 @@ app.use("/api/notificaciones", notificacionesRouter);
 app.use("/api/mi-historial", historialRouter);
 app.use("/api/usuarios", usuariosRouter);
 app.use("/api/empresa", empresaRouter);
+app.use("/api/facturacion", facturacionRouter);
 
 // Rutas anidadas por obra (modulo modular: cada dominio vive en su propio
 // router, montado bajo /obras/:obraId/<dominio>, seccion 03).
