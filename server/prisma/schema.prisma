@@ -18,6 +18,12 @@ model Tenant {
   slug           String   @unique
   plan           String   @default("piloto")
   activo         Boolean  @default(true)
+  // Cobro: el estado (prueba, activa, gracia, solo lectura) se calcula con vigenteHasta (lib/plan.ts).
+  vigenteHasta         DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  metodoPago           String? // tarjeta | transferencia
+  origenPago           String? // stripe | manual
   rfc            String?
   direccion      String?
   telefono       String?

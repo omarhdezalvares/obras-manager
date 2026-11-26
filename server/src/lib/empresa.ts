@@ -1,3 +1,4 @@
+import { finDePrueba } from "./plan";
 import crypto from "crypto";
 import { prisma } from "./prisma";
 import { hashPassword } from "./password";
@@ -18,7 +19,7 @@ function slugDe(nombre: string): string {
 // Alta de una empresa nueva con sus roles, catalogo base y su primer Administrador, todo o nada.
 export async function crearEmpresa(datos: { empresa: string; email: string; passwordHash: string }) {
   return prisma.$transaction(async (tx) => {
-    const tenant = await tx.tenant.create({ data: { nombre: datos.empresa, slug: slugDe(datos.empresa), plan: "trial" } });
+    const tenant = await tx.tenant.create({ data: { nombre: datos.empresa, slug: slugDe(datos.empresa), plan: "trial", vigenteHasta: finDePrueba() } });
     await tx.rol.createMany({ data: ALL_ROLES.map((nombre) => ({ tenantId: tenant.id, nombre })) });
     await tx.material.createMany({ data: MATERIALES_BASE.map((nombre) => ({ tenantId: tenant.id, nombre })) });
     const rolAdmin = await tx.rol.findUniqueOrThrow({ where: { tenantId_nombre: { tenantId: tenant.id, nombre: ROLES.ADMIN } } });
