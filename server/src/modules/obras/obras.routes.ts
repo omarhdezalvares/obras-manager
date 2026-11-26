@@ -1,3 +1,4 @@
+import { assertCabeObra, OBRA_NO_CUENTA } from "../../lib/limites";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../lib/prisma";
@@ -101,6 +102,7 @@ obrasRouter.post(
   requireRole(...OBRA_PERSONA_GESTION),
   asyncHandler(async (req, res) => {
     const body = createObraSchema.parse(req.body);
+    await assertCabeObra(req.user!.tenantId);
 
     // Flujo 1 (seccion 08): al crear la obra se genera automaticamente una
     // partida "General" y una transaccion presupuesto_inicial por el monto
@@ -212,6 +214,7 @@ obrasRouter.patch(
     const body = updateObraSchema.parse(req.body);
     const antes = await prisma.obra.findFirst({ where: { id: req.params.id, tenantId: req.user!.tenantId } });
     if (!antes) throw new HttpError(404, "Obra no encontrada");
+    if (body.estado && OBRA_NO_CUENTA.includes(antes.estado) && !OBRA_NO_CUENTA.includes(body.estado)) await assertCabeObra(req.user!.tenantId);
 
     const obra = await prisma.obra.update({
       where: { id: req.params.id },

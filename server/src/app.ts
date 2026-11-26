@@ -6,6 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./env";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
+import { aplicarEstadoCuenta } from "./middleware/estadoCuenta";
 
 import { authRouter } from "./modules/auth/auth.routes";
 import { obrasRouter } from "./modules/obras/obras.routes";
@@ -23,6 +24,8 @@ import { notificacionesRouter } from "./modules/notificaciones/notificaciones.ro
 import { historialRouter } from "./modules/historial/historial.routes";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
 import { empresaRouter } from "./modules/empresa/empresa.routes";
+import { facturacionRouter } from "./modules/facturacion/facturacion.routes";
+import { stripeWebhook } from "./modules/facturacion/webhook";
 
 export const app = express();
 // Fly y Vercel ponen un proxy delante: sin esto req.ip seria la IP del proxy y el rate limit bloquearia a todos juntos.
@@ -39,7 +42,10 @@ app.use(
   })
 );
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
+// El webhook de Stripe firma el cuerpo exacto: va antes del parser JSON.
+app.post("/api/facturacion/webhook", express.raw({ type: "application/json" }), (req, res, next) => stripeWebhook(req, res).catch(next));
 app.use(express.json({ limit: "5mb" }));
+app.use(aplicarEstadoCuenta);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "bitacora-api" }));
 
@@ -54,6 +60,7 @@ app.use("/api/notificaciones", notificacionesRouter);
 app.use("/api/mi-historial", historialRouter);
 app.use("/api/usuarios", usuariosRouter);
 app.use("/api/empresa", empresaRouter);
+app.use("/api/facturacion", facturacionRouter);
 
 // Rutas anidadas por obra (modulo modular: cada dominio vive en su propio
 // router, montado bajo /obras/:obraId/<dominio>, seccion 03).

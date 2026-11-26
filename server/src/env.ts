@@ -26,4 +26,24 @@ export const env = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   correoRemitente: process.env.CORREO_REMITENTE ?? "Bitácora <onboarding@resend.dev>",
   isProd,
+  // Cobro: sin todas las variables el servidor arranca y /api/facturacion responde "Cobro no configurado".
+  stripe: stripeConfig(),
 };
+
+function stripeConfig() {
+  const v = {
+    secretKey: process.env.STRIPE_SECRET_KEY,
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    basico: process.env.STRIPE_PRICE_BASICO,
+    profesional: process.env.STRIPE_PRICE_PROFESIONAL,
+    empresa: process.env.STRIPE_PRICE_EMPRESA,
+    ivaTaxRate: process.env.STRIPE_TAX_RATE_IVA,
+  };
+  if (!v.secretKey || !v.webhookSecret || !v.basico || !v.profesional || !v.empresa || !v.ivaTaxRate) return null;
+  return {
+    secretKey: v.secretKey,
+    webhookSecret: v.webhookSecret,
+    precios: { basico: v.basico, profesional: v.profesional, empresa: v.empresa },
+    ivaTaxRate: v.ivaTaxRate,
+  };
+}

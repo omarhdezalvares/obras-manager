@@ -33,9 +33,9 @@
 - [ ] Correo transaccional con Resend (dominio verificado, SPF/DKIM). (código listo, `server/src/lib/correo.ts` vía API REST; `RESEND_API_KEY` cargada en Preview; plantilla HTML de marca lista. Envío real probado en dev el 2026-10-30 (registro con verificación de correo). **Dominio pendiente hasta el paso a prod**: mientras tanto Resend solo entrega al correo del dueño de la cuenta (otros destinatarios → 403). Al tener dominio: verificar SPF/DKIM, cargar `CORREO_REMITENTE` y la key en Production. Sin key en producción los correos responden 503)
 
 ## 🟠 Necesario para cobrar
-- [ ] Planes y cobro con Stripe (`Tenant.plan` existe pero no se usa): Checkout + Customer Portal + webhook que actualiza `plan`/`activo`.
-- [ ] Límites por plan: obras, usuarios, almacenamiento.
-- [ ] Trial y suspensión automática por falta de pago (conectar a `Tenant.activo`).
+- [ ] Planes y cobro con Stripe: código listo en rama `saas/stripe` (2026-11-25): Checkout (tarjeta), suscripción con factura SPEI, Customer Portal, webhook que mueve `plan`/`vigenteHasta`. Falta: cuenta de Stripe, `npx tsx scripts/stripe-setup.ts` con llaves de prueba, prueba en preview con tarjeta 4242, merge a dev.
+- [ ] Límites por plan: obras activas y usuarios listos en `saas/stripe` (`server/src/lib/limites.ts`); almacenamiento pendiente.
+- [ ] Trial y suspensión automática: listos en `saas/stripe` (14 días de prueba, 7 de gracia, luego solo lectura; `Tenant.activo=false` suspende en cada petición).
 - [ ] Facturación CFDI (si se vende en México).
 - [ ] Panel super-admin: ver, suspender y cambiar plan de empresas; soporte.
 
