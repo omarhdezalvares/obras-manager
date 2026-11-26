@@ -6,6 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { env } from "./env";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
+import { aplicarEstadoCuenta } from "./middleware/estadoCuenta";
 
 import { authRouter } from "./modules/auth/auth.routes";
 import { obrasRouter } from "./modules/obras/obras.routes";
@@ -40,6 +41,7 @@ app.use(
 );
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
 app.use(express.json({ limit: "5mb" }));
+app.use(aplicarEstadoCuenta);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, service: "bitacora-api" }));
 
