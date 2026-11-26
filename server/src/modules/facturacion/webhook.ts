@@ -47,8 +47,8 @@ export async function aplicarEvento(evento: Stripe.Event): Promise<void> {
       const fin = new Date(linea.period.end * 1000);
       const plan = linea.price ? planDePrecio(precios, linea.price.id) : null;
       const antes = await prisma.tenant.findUniqueOrThrow({ where: { id: tenantId } });
-      // Una factura vieja que llega tarde no retrocede la fecha ni el plan.
-      const vieja = Boolean(antes.vigenteHasta && antes.vigenteHasta > fin);
+      // Una factura vieja que llega tarde no retrocede la fecha ni el plan. Stripe maneja segundos: se comparan sin milisegundos.
+      const vieja = Boolean(antes.vigenteHasta && Math.floor(antes.vigenteHasta.getTime() / 1000) > linea.period.end);
       const vigenteHasta = vieja ? antes.vigenteHasta! : fin;
       const despues = await prisma.tenant.update({
         where: { id: tenantId },

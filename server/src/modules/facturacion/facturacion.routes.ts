@@ -106,10 +106,10 @@ facturacionRouter.post(
     });
     await prisma.tenant.update({ where: { id: t.id }, data: { stripeSubscriptionId: sub.id, metodoPago: "transferencia" } });
     let factura = sub.latest_invoice && typeof sub.latest_invoice !== "string" ? sub.latest_invoice : null;
-    // Sin prueba, la primera factura nace en borrador: se finaliza y se envia ya para que pueda pagar hoy.
+    // La primera factura nace en borrador: se finaliza ya. La de $0 (en prueba) queda pagada al finalizar y no se envia.
     if (factura?.id && factura.status === "draft") {
       factura = await stripe().invoices.finalizeInvoice(factura.id);
-      if (factura.id) await stripe().invoices.sendInvoice(factura.id);
+      if (factura.id && factura.status === "open" && factura.amount_due > 0) await stripe().invoices.sendInvoice(factura.id);
     }
     res.json({ facturaUrl: factura?.amount_due ? (factura.hosted_invoice_url ?? null) : null });
   })

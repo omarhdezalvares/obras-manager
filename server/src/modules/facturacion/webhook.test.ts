@@ -84,6 +84,18 @@ test("el mismo evento dos veces no cambia nada y un periodo viejo no retrocede l
   assert.equal(t.vigenteHasta?.toISOString(), new Date("2027-01-15").toISOString());
 });
 
+test("la factura $0 de la prueba aplica el plan aunque la vigencia tenga milisegundos", async () => {
+  const otra = (await import("../../lib/empresa")).crearEmpresa;
+  const u = await otra({ empresa: "Prueba Ms SA", email: "admin@ms.test", passwordHash: "x" });
+  await prisma.tenant.update({ where: { id: u.tenantId }, data: { vigenteHasta: new Date("2026-12-10T18:33:36.231Z") } });
+  const evento = facturaPagada("ms", "price_b", "2026-12-10T18:33:36Z", { tenantId: u.tenantId });
+  evento.data.object.customer = "cus_ms";
+  evento.data.object.subscription = "sub_ms";
+  evento.data.object.lines.data[0].amount = 0;
+  await enviar(evento);
+  assert.equal((await prisma.tenant.findUniqueOrThrow({ where: { id: u.tenantId } })).plan, "basico");
+});
+
 test("checkout completado guarda ids y metodo tarjeta", async () => {
   await enviar({ id: "evt_c", object: "event", type: "checkout.session.completed", data: { object: { id: "cs_1", object: "checkout.session", client_reference_id: tenantId, customer: "cus_1", subscription: "sub_1" } } });
   assert.equal((await tenant()).metodoPago, "tarjeta");
