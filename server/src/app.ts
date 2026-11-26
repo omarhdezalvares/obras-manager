@@ -25,6 +25,7 @@ import { historialRouter } from "./modules/historial/historial.routes";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
 import { empresaRouter } from "./modules/empresa/empresa.routes";
 import { facturacionRouter } from "./modules/facturacion/facturacion.routes";
+import { adminRouter } from "./modules/admin/admin.routes";
 import { stripeWebhook } from "./modules/facturacion/webhook";
 
 export const app = express();
@@ -61,6 +62,7 @@ app.use("/api/mi-historial", historialRouter);
 app.use("/api/usuarios", usuariosRouter);
 app.use("/api/empresa", empresaRouter);
 app.use("/api/facturacion", facturacionRouter);
+app.use("/api/admin", adminRouter);
 
 // Rutas anidadas por obra (modulo modular: cada dominio vive en su propio
 // router, montado bajo /obras/:obraId/<dominio>, seccion 03).

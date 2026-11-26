@@ -8,6 +8,7 @@ import { HttpError, requireAuth } from "../../middleware/auth";
 import { rateLimit } from "../../middleware/rateLimit";
 import { confirmarRegistro, solicitarRegistro } from "../../lib/empresa";
 import { marketingSchema } from "../../lib/marketing";
+import { esSuperAdmin } from "../../middleware/superAdmin";
 import { enviarLinkPassword, usarTokenPassword } from "../../lib/tokenPassword";
 
 const QUINCE_MIN = 15 * 60 * 1000;
@@ -195,6 +196,7 @@ authRouter.get(
       tenantNombre: usuario.tenant.nombre,
       personaId: usuario.personaId,
       personaNombre: usuario.persona?.nombreCompleto ?? null,
+      superAdmin: esSuperAdmin(usuario.email),
     });
   })
 );

@@ -11,6 +11,11 @@ function required(name: string, fallback?: string): string {
 // En produccion no hay fallback: un secreto conocido permitiria firmar tokens de cualquier tenant.
 const isProd = process.env.NODE_ENV === "production";
 
+// Correos de super admin: separados por coma, sin distinguir mayusculas; vacia = nadie.
+export function listaSuperAdmins(raw: string | undefined): string[] {
+  return (raw ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+}
+
 export const env = {
   port: Number(process.env.PORT ?? 4000),
   corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
@@ -28,6 +33,7 @@ export const env = {
   isProd,
   // Cobro: sin todas las variables el servidor arranca y /api/facturacion responde "Cobro no configurado".
   stripe: stripeConfig(),
+  superAdminEmails: listaSuperAdmins(process.env.SUPERADMIN_EMAILS),
 };
 
 function stripeConfig() {
