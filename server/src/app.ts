@@ -25,6 +25,7 @@ import { historialRouter } from "./modules/historial/historial.routes";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
 import { empresaRouter } from "./modules/empresa/empresa.routes";
 import { facturacionRouter } from "./modules/facturacion/facturacion.routes";
+import { stripeWebhook } from "./modules/facturacion/webhook";
 
 export const app = express();
 // Fly y Vercel ponen un proxy delante: sin esto req.ip seria la IP del proxy y el rate limit bloquearia a todos juntos.
@@ -41,6 +42,8 @@ app.use(
   })
 );
 app.use(cors({ origin: env.corsOrigin, credentials: true }));
+// El webhook de Stripe firma el cuerpo exacto: va antes del parser JSON.
+app.post("/api/facturacion/webhook", express.raw({ type: "application/json" }), (req, res, next) => stripeWebhook(req, res).catch(next));
 app.use(express.json({ limit: "5mb" }));
 app.use(aplicarEstadoCuenta);
 
