@@ -1,3 +1,4 @@
+import { assertCabeUsuario } from "../../lib/limites";
 import crypto from "crypto";
 import { Router } from "express";
 import { z } from "zod";
@@ -99,6 +100,7 @@ usuariosRouter.post(
 
     await rolDeTenant(body.rolId, tenantId);
     if (body.personaId) await personaDeTenant(body.personaId, tenantId);
+    await assertCabeUsuario(tenantId);
 
     // Hash de un secreto aleatorio que nadie conoce: no se puede entrar hasta usar la invitacion.
     const passwordHash = await hashPassword(body.password ?? crypto.randomBytes(32).toString("hex"));
@@ -132,6 +134,7 @@ usuariosRouter.patch(
 
     const existente = await prisma.usuario.findFirst({ where: { id: req.params.id, tenantId, deletedAt: null } });
     if (!existente) throw new HttpError(404, "Usuario no encontrado");
+    if (body.activo === true && !existente.activo) await assertCabeUsuario(tenantId);
 
     if (body.activo === false && req.params.id === req.user!.sub) {
       throw new HttpError(400, "No puedes desactivar tu propia cuenta");
