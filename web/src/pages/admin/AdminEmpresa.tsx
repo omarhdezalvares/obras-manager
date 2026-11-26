@@ -4,17 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, apiErrorMessage } from "../../lib/api";
 import { CANALES, GIROS } from "../../lib/marketing";
 import { Button, Card, Encabezado, Input, Label, Pill, Select } from "../../components/ui";
-import { ESTADO, METODO, NOMBRE_PLAN, fecha } from "./comun";
+import { ESTADO, METODO, NOMBRE_PLAN, etiquetaHistorial, fecha } from "./comun";
 
 const AVISO_STRIPE = "Esta empresa paga con Stripe; el cambio se revierte en su próximo cobro.";
 const PLANES = ["basico", "profesional", "empresa", "piloto"] as const;
-const ACCION: Record<string, string> = {
-  pago_manual: "Pago manual",
-  cambiar_plan: "Cambio de plan",
-  suspender: "Suspendida",
-  reactivar: "Reactivada",
-  actualizar: "Datos corregidos",
-};
 
 interface Ficha {
   id: string;
@@ -213,7 +206,7 @@ export function AdminEmpresa() {
             {e.historial.map((h, i) => (
               <li key={i} className="flex flex-wrap justify-between gap-2 py-2">
                 <span>
-                  <span className="font-medium">{ACCION[h.accion] ?? (h.quien === "stripe" ? "Pago en Stripe" : h.accion)}</span>
+                  <span className="font-medium">{etiquetaHistorial(h)}</span>
                   {h.cambios?.despues?.plan && ` · ${NOMBRE_PLAN[h.cambios.despues.plan] ?? h.cambios.despues.plan}`}
                   {typeof h.cambios?.monto === "number" && ` · $${h.cambios.monto.toLocaleString("es-MX")}`}
                   {h.cambios?.nota && <span className="block text-ink-soft">{h.cambios.nota}</span>}

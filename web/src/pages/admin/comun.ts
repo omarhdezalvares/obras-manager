@@ -13,4 +13,15 @@ export const METODO: Record<string, string> = { tarjeta: "Tarjeta", transferenci
 
 export const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "—");
 
+const ACCION: Record<string, string> = {
+  pago_manual: "Pago manual",
+  cambiar_plan: "Cambio de plan",
+  suspender: "Suspendida",
+  reactivar: "Reactivada",
+  actualizar: "Datos corregidos",
+};
+
+// El webhook de Stripe tambien registra "actualizar": se distingue por quien lo hizo.
+export const etiquetaHistorial = (h: { accion: string; quien: string }) => (h.quien === "stripe" ? "Pago en Stripe" : (ACCION[h.accion] ?? h.accion));
+
 export const pesos = (n: number) => `$${n.toLocaleString("es-MX")}`;
