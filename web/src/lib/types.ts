@@ -14,6 +14,7 @@ export interface Usuario {
   tenantNombre: string;
   personaId: string | null;
   personaNombre: string | null;
+  superAdmin?: boolean;
 }
 
 export interface Obra {

@@ -52,7 +52,7 @@ export function Layout() {
 
   const esOficial = usuario.rol === "Oficial";
   const items = esOficial ? NAV_OFICIAL : NAV_GESTION;
-  const config = esOficial ? [] : [...CONFIG_GESTION, ...(usuario.rol === "Administrador" ? CONFIG_ADMIN : [])];
+  const config = esOficial ? [] : [...CONFIG_GESTION, ...(usuario.rol === "Administrador" ? CONFIG_ADMIN : []), ...(usuario.superAdmin ? [{ label: "Panel Bitácora", to: "/admin" }] : [])];
   const enConfig = config.some((c) => pathname.startsWith(c.to));
 
   const nombre = usuario.personaNombre ?? usuario.email;

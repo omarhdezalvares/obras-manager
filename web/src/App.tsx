@@ -16,6 +16,9 @@ import { Historial } from "./pages/Historial";
 import { Seguridad } from "./pages/Seguridad";
 import { Empresa } from "./pages/Empresa";
 import { Plan } from "./pages/Plan";
+import { AdminEmpresas } from "./pages/admin/AdminEmpresas";
+import { AdminEmpresa } from "./pages/admin/AdminEmpresa";
+import { AdminTendencias } from "./pages/admin/AdminTendencias";
 import { ProcesoSelector } from "./pages/oficial/ProcesoSelector";
 import { AsistenciaWizard } from "./pages/oficial/AsistenciaWizard";
 import { EvidenciaWizard } from "./pages/oficial/EvidenciaWizard";
@@ -64,6 +67,14 @@ export default function App() {
           element={usuario.rol === "Administrador" ? <Empresa /> : <Navigate to="/" replace />}
         />
         <Route path="/plan" element={<Plan />} />
+        {/* Solo oculta; el servidor responde 404 a quien no esta en SUPERADMIN_EMAILS. */}
+        {usuario.superAdmin && (
+          <>
+            <Route path="/admin" element={<AdminEmpresas />} />
+            <Route path="/admin/empresas/:id" element={<AdminEmpresa />} />
+            <Route path="/admin/tendencias" element={<AdminTendencias />} />
+          </>
+        )}
         <Route path="/mis-obras" element={<MisObras />} />
         <Route path="/mis-obras/:obraId" element={<ProcesoSelector />} />
         <Route path="/mis-obras/:obraId/asistencia" element={<AsistenciaWizard />} />

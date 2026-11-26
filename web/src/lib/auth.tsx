@@ -2,11 +2,20 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { api, clearTokens, getAccessToken, setTokens } from "./api";
 import { Usuario } from "./types";
 
+export interface DatosRegistro {
+  empresa: string;
+  email: string;
+  password: string;
+  giro: string;
+  canal: string;
+  canalDetalle?: string;
+}
+
 interface AuthContextValue {
   usuario: Usuario | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  registrar: (empresa: string, email: string, password: string) => Promise<void>;
+  registrar: (datos: DatosRegistro) => Promise<void>;
   verificar: (token: string) => Promise<void>;
   logout: () => void;
   refreshUsuario: () => Promise<void>;
@@ -38,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Solo envia el correo de confirmacion; la sesion empieza en verificar().
-  async function registrar(empresa: string, email: string, password: string) {
-    await api.post("/auth/registro", { empresa, email, password });
+  async function registrar(datos: DatosRegistro) {
+    await api.post("/auth/registro", datos);
   }
 
   async function verificar(token: string) {

@@ -2,7 +2,8 @@ import { FormEvent, ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { api, apiErrorMessage } from "../lib/api";
-import { Button, Input, Label } from "../components/ui";
+import { Button, Input, Label, Select } from "../components/ui";
+import { CANALES, GIROS } from "../lib/marketing";
 import { LogoMark } from "../components/Icons";
 
 // Marco comun de las pantallas sin sesion: login, registro y contrasenas.
@@ -87,11 +88,14 @@ export function Registro() {
   const { registrar } = useAuth();
   const [empresa, setEmpresa] = useState("");
   const [email, setEmail] = useState("");
+  const [giro, setGiro] = useState("");
+  const [canal, setCanal] = useState("");
+  const [canalDetalle, setCanalDetalle] = useState("");
   const [enviado, setEnviado] = useState(false);
   const { password, validar, campos } = usePasswordNueva();
   const { error, loading, onSubmit } = useEnvio(async () => {
     validar();
-    await registrar(empresa, email, password);
+    await registrar({ empresa, email, password, giro, canal, ...(canal === "Otro" ? { canalDetalle } : {}) });
     setEnviado(true);
   });
 
@@ -118,6 +122,23 @@ export function Registro() {
         <div>
           <Label>Tu correo</Label>
           <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@empresa.mx" />
+        </div>
+        <div>
+          <Label>¿A qué se dedica tu empresa?</Label>
+          <Select required value={giro} onChange={(e) => setGiro(e.target.value)}>
+            <option value="" disabled>Elige una opción</option>
+            {GIROS.map((g) => <option key={g}>{g}</option>)}
+          </Select>
+        </div>
+        <div>
+          <Label>¿Cómo te enteraste de Bitácora?</Label>
+          <Select required value={canal} onChange={(e) => setCanal(e.target.value)}>
+            <option value="" disabled>Elige una opción</option>
+            {CANALES.map((c) => <option key={c}>{c}</option>)}
+          </Select>
+          {canal === "Otro" && (
+            <Input className="mt-2" required maxLength={120} value={canalDetalle} onChange={(e) => setCanalDetalle(e.target.value)} placeholder="¿Cuál?" aria-label="Cómo te enteraste" />
+          )}
         </div>
         {campos}
         {error && <p className="text-sm text-crit">{error}</p>}

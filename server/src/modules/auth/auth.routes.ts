@@ -73,6 +73,7 @@ async function iniciarSesion(usuarioId: string) {
       tenantNombre: usuario.tenant.nombre,
       personaId: usuario.personaId,
       personaNombre: usuario.persona?.nombreCompleto ?? null,
+      superAdmin: esSuperAdmin(usuario.email),
     },
   };
 }
