@@ -5,7 +5,7 @@ import { LogoMark } from "../components/Icons";
 // Debe coincidir con VERSION_LEGAL en server/src/lib/legal.ts: es la version que acepta quien se registra.
 const FECHA = "26 de noviembre de 2026";
 const RESPONSABLE = "Omar Hernandez Alvares";
-const DOMICILIO = "Aurora Boreal 3220, Lomas de San Eugio, Guadalajara, Jalisco, México";
+const DOMICILIO = "Aurora Boreal 3220, Lomas de San Eugenio, C.P. 44720, Guadalajara, Jalisco, México";
 const CORREO = "bitacora.app.lab@gmail.com";
 
 function Documento({ titulo, children }: { titulo: string; children: ReactNode }) {
