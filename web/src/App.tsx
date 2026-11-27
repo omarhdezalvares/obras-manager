@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { Landing } from "./pages/Landing";
 import { Olvide, Registro, Restablecer, Verificar } from "./pages/Acceso";
+import { Privacidad, Terminos } from "./pages/Legal";
 import { Dashboard } from "./pages/Dashboard";
 import { Obras } from "./pages/Obras";
 import { ObraDetail } from "./pages/ObraDetail";
@@ -39,7 +40,11 @@ export default function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/olvide" element={<Olvide />} />
         <Route path="/restablecer" element={<Restablecer />} />
+      <Route path="/terminos" element={<Terminos />} />
+      <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/verificar" element={<Verificar />} />
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/privacidad" element={<Privacidad />} />
         <Route path="*" element={<Login />} />
       </Routes>
     );

@@ -91,11 +91,12 @@ export function Registro() {
   const [giro, setGiro] = useState("");
   const [canal, setCanal] = useState("");
   const [canalDetalle, setCanalDetalle] = useState("");
+  const [acepta, setAcepta] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const { password, validar, campos } = usePasswordNueva();
   const { error, loading, onSubmit } = useEnvio(async () => {
     validar();
-    await registrar({ empresa, email, password, giro, canal, ...(canal === "Otro" ? { canalDetalle } : {}) });
+    await registrar({ empresa, email, password, giro, canal, ...(canal === "Otro" ? { canalDetalle } : {}), aceptaTerminos: true });
     setEnviado(true);
   });
 
@@ -141,6 +142,13 @@ export function Registro() {
           )}
         </div>
         {campos}
+        <label className="flex items-start gap-2 text-sm text-ink">
+          <input type="checkbox" required className="mt-1 h-4 w-4 accent-accent" checked={acepta} onChange={(e) => setAcepta(e.target.checked)} />
+          <span>
+            Acepto los <Link to="/terminos" target="_blank" className={enlace}>Términos y condiciones</Link> y el{" "}
+            <Link to="/privacidad" target="_blank" className={enlace}>Aviso de privacidad</Link>
+          </span>
+        </label>
         {error && <p className="text-sm text-crit">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Enviando…" : "Crear cuenta"}

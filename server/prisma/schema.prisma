@@ -28,6 +28,8 @@ model Tenant {
   giro                 String?
   canal                String? // como se entero de Bitacora
   canalDetalle         String? // texto cuando canal = "Otro"
+  terminosVersion      String? // VERSION_LEGAL que acepto al registrarse
+  terminosAceptadosAt  DateTime?
   rfc            String?
   direccion      String?
   telefono       String?
@@ -390,6 +392,7 @@ model RegistroPendiente {
   giro         String?
   canal        String?
   canalDetalle String?
+  terminosVersion String?
   tokenHash    String   @unique
   expiresAt    DateTime
   createdAt    DateTime @default(now())

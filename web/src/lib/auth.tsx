@@ -9,6 +9,7 @@ export interface DatosRegistro {
   giro: string;
   canal: string;
   canalDetalle?: string;
+  aceptaTerminos: true;
 }
 
 interface AuthContextValue {

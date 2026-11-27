@@ -40,7 +40,11 @@ export function Landing() {
       <footer className="border-t border-line py-8">
         <div className={`${contenedor} flex flex-col gap-2 text-sm text-ink-soft sm:flex-row sm:justify-between`}>
           <p>Bitácora, control de obras para contratistas de construcción y servicios en campo. Guadalajara, Jalisco.</p>
-          <Link to="/entrar" className="font-medium text-ink hover:text-accent">Iniciar sesión</Link>
+          <nav className="flex gap-4">
+            <Link to="/terminos" className="hover:text-accent">Términos</Link>
+            <Link to="/privacidad" className="hover:text-accent">Privacidad</Link>
+            <Link to="/entrar" className="font-medium text-ink hover:text-accent">Iniciar sesión</Link>
+          </nav>
         </div>
       </footer>
     </div>

@@ -8,6 +8,7 @@ import { hash } from "./tokenPassword";
 import { HttpError } from "../middleware/auth";
 import { ALL_ROLES, ROLES } from "./roles";
 import type { Marketing } from "./marketing";
+import { VERSION_LEGAL } from "./legal";
 
 type MarketingOpcional = { [K in keyof Marketing]?: string | null };
 
@@ -20,7 +21,7 @@ function slugDe(nombre: string): string {
 }
 
 // Alta de una empresa nueva con sus roles, catalogo base y su primer Administrador, todo o nada.
-export async function crearEmpresa(datos: { empresa: string; email: string; passwordHash: string } & MarketingOpcional) {
+export async function crearEmpresa(datos: { empresa: string; email: string; passwordHash: string; terminosVersion?: string | null; terminosAceptadosAt?: Date | null } & MarketingOpcional) {
   return prisma.$transaction(async (tx) => {
     const tenant = await tx.tenant.create({ data: {
         nombre: datos.empresa,
@@ -30,6 +31,8 @@ export async function crearEmpresa(datos: { empresa: string; email: string; pass
         giro: datos.giro ?? null,
         canal: datos.canal ?? null,
         canalDetalle: datos.canalDetalle ?? null,
+        terminosVersion: datos.terminosVersion ?? null,
+        terminosAceptadosAt: datos.terminosAceptadosAt ?? null,
       }, });
     await tx.rol.createMany({ data: ALL_ROLES.map((nombre) => ({ tenantId: tenant.id, nombre })) });
     await tx.material.createMany({ data: MATERIALES_BASE.map((nombre) => ({ tenantId: tenant.id, nombre })) });
@@ -52,6 +55,7 @@ export async function solicitarRegistro(datos: { empresa: string; email: string;
       giro: datos.giro,
       canal: datos.canal,
       canalDetalle: datos.canalDetalle,
+      terminosVersion: VERSION_LEGAL,
       tokenHash: hash(token),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     },
@@ -74,5 +78,5 @@ export async function confirmarRegistro(token: string) {
   if (await prisma.usuario.findUnique({ where: { email: fila.email } })) {
     throw new HttpError(409, "Ya existe una cuenta con ese correo; inicia sesión o recupera tu contraseña");
   }
-  return crearEmpresa(fila);
+  return crearEmpresa({ ...fila, terminosAceptadosAt: fila.createdAt });
 }

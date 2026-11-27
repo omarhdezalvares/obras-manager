@@ -49,7 +49,9 @@ after(async () => {
 });
 
 test("registro: la empresa se crea hasta confirmar el correo", async () => {
-  const datos = { empresa: "Constructora Pérez", email: "dueno@perez.mx", password: "Segura123!", giro: "Plomería", canal: "Otro", canalDetalle: "Radio" };
+  const datos = { empresa: "Constructora Pérez", email: "dueno@perez.mx", password: "Segura123!", giro: "Plomería", canal: "Otro", canalDetalle: "Radio", aceptaTerminos: true };
+  const { aceptaTerminos: _, ...sinAceptar } = datos;
+  assert.equal((await post("/api/auth/registro", sinAceptar)).status, 400, "hay que aceptar los terminos");
   assert.equal((await post("/api/auth/registro", { empresa: "Sin Giro", email: "singiro@x.mx", password: "Segura123!" })).status, 400, "giro y canal obligatorios");
   const token = await tokenEnviado(async () => assert.equal((await post("/api/auth/registro", datos)).status, 202));
   assert.ok(token);
@@ -62,6 +64,9 @@ test("registro: la empresa se crea hasta confirmar el correo", async () => {
   const { prisma } = await import("../../lib/prisma");
   const t = await prisma.tenant.findUniqueOrThrow({ where: { id: res.data.usuario.tenantId } });
   assert.deepEqual([t.giro, t.canal, t.canalDetalle], ["Plomería", "Otro", "Radio"]);
+  const { VERSION_LEGAL } = await import("../../lib/legal");
+  assert.equal(t.terminosVersion, VERSION_LEGAL);
+  assert.ok(t.terminosAceptadosAt && t.terminosAceptadosAt < new Date(), "guarda cuando acepto");
   assert.equal((await post("/api/auth/verificar", { token })).status, 400, "el link ya se uso");
   assert.equal((await post("/api/auth/verificar", { token: "falso" })).status, 400);
 

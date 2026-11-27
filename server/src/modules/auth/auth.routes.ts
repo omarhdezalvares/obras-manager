@@ -83,6 +83,7 @@ const registroSchema = z
     empresa: z.string().trim().min(2, "Escribe el nombre de tu empresa").max(120),
     email: z.string().email(),
     password: passwordSegura,
+    aceptaTerminos: z.literal(true, { errorMap: () => ({ message: "Acepta los Términos y el Aviso de privacidad" }) }),
   })
   .and(marketingSchema);
 
